@@ -8,7 +8,10 @@ Plot::Plot()
     setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables |
                     QCP::iSelectAxes | QCP::iSelectItems | QCP::iSelectLegend | QCP::iSelectOther);
     connect(this, SIGNAL(selectionChangedByUser()), this, SLOT(plotSelectionChanged()));
-    connect(this, SIGNAL(plottableClick(QCPAbstractPlottable*,QMouseEvent*)), this, SLOT(graphClicked(QCPAbstractPlottable*)));
+
+    // It seems it never called in QCP 2.0.0.b, see QCustomPlot::mousePressEvent + QCustomPlot::mouseReleaseEvent:
+    // mMouseEventLayerable can't be QCPAbstractPlottable because of QCPAbstractPlottable always ignores mousePressEvent.
+    //connect(this, SIGNAL(plottableClick(QCPAbstractPlottable*,int,QMouseEvent*)), this, SLOT(graphClicked(QCPAbstractPlottable*,int,QMouseEvent*)));
 }
 
 void Plot::mousePressEvent(QMouseEvent *event)
@@ -48,15 +51,27 @@ void Plot::plotSelectionChanged()
     if (yAxis->selectedParts().testFlag(QCPAxis::spAxis) ||
         yAxis->selectedParts().testFlag(QCPAxis::spTickLabels))
         yAxis->setSelectedParts(QCPAxis::spAxis | QCPAxis::spTickLabels);
-}
 
-void Plot::graphClicked(QCPAbstractPlottable *plottable)
+    // selection changes event we click on another point of the same graph, so
+    // TODO remember selected graph and only emit signal when it was changhed
+    for (int i = 0; i < plottableCount(); i++)
+    {
+        auto g = dynamic_cast<Graph*>(plottable(i));
+        if (g && !isService(g) && g->selected())
+        {
+            emit graphSelected(g);
+            return;
+        }
+    }
+}
+/*
+void Plot::graphClicked(QCPAbstractPlottable *plottable, int, QMouseEvent *)
 {
     auto g = dynamic_cast<Graph*>(plottable);
     if (_serviceGraphs.contains(g)) g = nullptr;
     emit graphSelected(g);
 }
-
+*/
 void Plot::autolimits(bool autoReplot)
 {
     bool onlyEnlarge = false;
@@ -73,3 +88,4 @@ void Plot::autolimits(bool autoReplot)
 }
 
 } // namespace QCPL
+

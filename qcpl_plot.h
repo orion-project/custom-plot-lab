@@ -28,10 +28,12 @@ protected:
     
 private slots:
     void plotSelectionChanged();
-    void graphClicked(QCPAbstractPlottable*);
+    //void graphClicked(QCPAbstractPlottable*,int,QMouseEvent*);
 
 private:
     QVector<Graph*> _serviceGraphs;
+
+    bool isService(Graph* g) const { return _serviceGraphs.contains(g); }
 };
 
 } // namespace QCPL
