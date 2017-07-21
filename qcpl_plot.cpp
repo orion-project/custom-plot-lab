@@ -1,4 +1,5 @@
 #include "qcpl_plot.h"
+#include "qcpl_colors.h"
 
 namespace QCPL {
 
@@ -72,7 +73,7 @@ void Plot::graphClicked(QCPAbstractPlottable *plottable, int, QMouseEvent *)
     emit graphSelected(g);
 }
 */
-void Plot::autolimits(bool autoReplot)
+void Plot::autolimits()
 {
     bool onlyEnlarge = false;
     for (int i = 0; i < graphCount(); i++)
@@ -85,6 +86,46 @@ void Plot::autolimits(bool autoReplot)
         }
     }
     if (autoReplot) replot();
+}
+
+Graph* Plot::makeNewGraph(const QString& title)
+{
+    auto g = addGraph();
+
+    if (graphAutoColors)
+        g->setPen(nextGraphColor());
+
+    g->setName(title);
+    g->setSelectable(_selectionType);
+    g->setSelectionDecorator(makeSelectionDecorator(g));
+    return g;
+}
+
+Graph* Plot::makeNewGraph(const QString &title, const QVector<double> &x, const QVector<double> &y)
+{
+    auto g = makeNewGraph(title);
+    g->setData(x, y);
+
+    if (autoReplot) replot();
+
+    return g;
+}
+
+QColor Plot::nextGraphColor()
+{
+    if (_nextColorIndex == defaultColorSet().size())
+        _nextColorIndex = 0;
+    return defaultColorSet().at(_nextColorIndex++);
+}
+
+QCPSelectionDecorator* Plot::makeSelectionDecorator(Graph* g) const
+{
+    // TODO: teach QCP apply the same custom default decorator for all plottables
+    auto sd = new QCPSelectionDecorator;
+    sd->setPen(g->pen());
+    sd->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, Qt::black, Qt::white, 8));
+    sd->setUsedScatterProperties(QCPScatterStyle::spAll);
+    return sd;
 }
 
 } // namespace QCPL

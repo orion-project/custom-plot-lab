@@ -16,8 +16,14 @@ public:
 
     QVector<Graph*>& serviceGraphs() { return _serviceGraphs; }
 
+    bool graphAutoColors = true;
+    bool autoReplot = true;
+
+    Graph* makeNewGraph(const QString &title);
+    Graph* makeNewGraph(const QString &title, const QVector<double>& x, const QVector<double>& y);
+
 public slots:
-    void autolimits(bool autoReplot = true);
+    void autolimits();
 
 signals:
     void graphSelected(Graph*);
@@ -32,8 +38,15 @@ private slots:
 
 private:
     QVector<Graph*> _serviceGraphs;
+    QCP::SelectionType _selectionType = QCP::stWhole;
+
+    int _nextColorIndex = 0;
 
     bool isService(Graph* g) const { return _serviceGraphs.contains(g); }
+
+    QColor nextGraphColor();
+
+    QCPSelectionDecorator* makeSelectionDecorator(Graph* g) const;
 };
 
 } // namespace QCPL
