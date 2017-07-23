@@ -39,14 +39,12 @@ private slots:
 private:
     QVector<Graph*> _serviceGraphs;
     QCP::SelectionType _selectionType = QCP::stWhole;
-
+    QCPSelectionDecorator _selectionDecorator;
     int _nextColorIndex = 0;
 
     bool isService(Graph* g) const { return _serviceGraphs.contains(g); }
 
     QColor nextGraphColor();
-
-    QCPSelectionDecorator* makeSelectionDecorator(Graph* g) const;
 };
 
 } // namespace QCPL

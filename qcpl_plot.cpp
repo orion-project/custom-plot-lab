@@ -1,10 +1,17 @@
 #include "qcpl_plot.h"
 #include "qcpl_colors.h"
+#include "qcpl_graph.h"
 
 namespace QCPL {
 
 Plot::Plot()
 {
+    // TODO: make selector customizable: line color/width/visibility, points count/color/size/visibility
+    _selectionDecorator.setPen(QPen(QBrush(QColor(0, 255, 255, 120)), 2));
+    _selectionDecorator.setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssSquare, Qt::black, Qt::black, 6));
+    _selectionDecorator.setUsedScatterProperties(QCPScatterStyle::spAll);
+    LineGraph::setSharedSelectionDecorator(&_selectionDecorator);
+
     legend->setVisible(true);
     setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables |
                     QCP::iSelectAxes | QCP::iSelectItems | QCP::iSelectLegend | QCP::iSelectOther);
@@ -90,14 +97,13 @@ void Plot::autolimits()
 
 Graph* Plot::makeNewGraph(const QString& title)
 {
-    auto g = addGraph();
+    auto g = new LineGraph(xAxis, yAxis);
 
     if (graphAutoColors)
         g->setPen(nextGraphColor());
 
     g->setName(title);
     g->setSelectable(_selectionType);
-    g->setSelectionDecorator(makeSelectionDecorator(g));
     return g;
 }
 
@@ -116,16 +122,6 @@ QColor Plot::nextGraphColor()
     if (_nextColorIndex == defaultColorSet().size())
         _nextColorIndex = 0;
     return defaultColorSet().at(_nextColorIndex++);
-}
-
-QCPSelectionDecorator* Plot::makeSelectionDecorator(Graph* g) const
-{
-    // TODO: teach QCP apply the same custom default decorator for all plottables
-    auto sd = new QCPSelectionDecorator;
-    sd->setPen(g->pen());
-    sd->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, Qt::black, Qt::white, 8));
-    sd->setUsedScatterProperties(QCPScatterStyle::spAll);
-    return sd;
 }
 
 } // namespace QCPL
