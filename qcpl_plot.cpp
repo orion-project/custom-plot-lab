@@ -6,11 +6,15 @@ namespace QCPL {
 
 Plot::Plot()
 {
-    // TODO: make selector customizable: line color/width/visibility, points count/color/size/visibility
-    _selectionDecorator.setPen(QPen(QBrush(QColor(0, 255, 255, 120)), 2));
-    _selectionDecorator.setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssSquare, Qt::black, Qt::black, 6));
-    _selectionDecorator.setUsedScatterProperties(QCPScatterStyle::spAll);
-    LineGraph::setSharedSelectionDecorator(&_selectionDecorator);
+    if (!LineGraph::sharedSelectionDecorator())
+    {
+        // TODO: make selector customizable: line color/width/visibility, points count/color/size/visibility
+        auto decorator = new QCPSelectionDecorator;
+        decorator->setPen(QPen(QBrush(QColor(0, 255, 255, 120)), 2));
+        decorator->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssSquare, Qt::black, Qt::black, 6));
+        decorator->setUsedScatterProperties(QCPScatterStyle::spAll);
+        LineGraph::setSharedSelectionDecorator(decorator);
+    }
 
     legend->setVisible(true);
     setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables |
@@ -92,7 +96,7 @@ void Plot::autolimits()
             onlyEnlarge = true;
         }
     }
-    if (autoReplot) replot();
+    updatePlot();
 }
 
 Graph* Plot::makeNewGraph(const QString& title)
@@ -112,7 +116,7 @@ Graph* Plot::makeNewGraph(const QString &title, const QVector<double> &x, const 
     auto g = makeNewGraph(title);
     g->setData(x, y);
 
-    if (autoReplot) replot();
+    updatePlot();
 
     return g;
 }
@@ -122,6 +126,33 @@ QColor Plot::nextGraphColor()
     if (_nextColorIndex == defaultColorSet().size())
         _nextColorIndex = 0;
     return defaultColorSet().at(_nextColorIndex++);
+}
+
+void Plot::updatePlot()
+{
+    if (autoReplot) replot();
+}
+
+void Plot::setTitleVisible(bool on)
+{
+    if (_title && on) return;
+    if (on)
+    {
+        _title = new QCPTextElement(this, "", QFont("sans", 14, QFont::Bold));
+        _title->setSelectable(true);
+        // TODO restore title format
+
+        plotLayout()->insertRow(0);
+        plotLayout()->addElement(0, 0, _title);
+        connect(_title, &QCPTextElement::doubleClicked, [this](){ emit editTitleRequest(); });
+    }
+    else
+    {
+        // TODO backup title format
+        plotLayout()->remove(_title);
+        plotLayout()->simplify();
+        _title = nullptr;
+    }
 }
 
 } // namespace QCPL

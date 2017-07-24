@@ -8,7 +8,7 @@ QCPSelectionDecorator* LineGraph::_sharedSelectionDecorator = nullptr;
 
 void LineGraph::setSharedSelectionDecorator(QCPSelectionDecorator* decorator)
 {
-    if (_sharedSelectionDecorator)
+    if (_sharedSelectionDecorator && _sharedSelectionDecorator != decorator)
     {
         delete _sharedSelectionDecorator;
         _sharedSelectionDecorator = nullptr;

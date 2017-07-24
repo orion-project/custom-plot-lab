@@ -1,10 +1,12 @@
-#include "GraphDataGrid.h"
+#include "qcpl_graph_grid.h"
 
 #include <QApplication>
 #include <QClipboard>
 #include <QContextMenuEvent>
 #include <QHeaderView>
 #include <QMenu>
+
+namespace QCPL {
 
 GraphDataGrid::GraphDataGrid() : QTableWidget()
 {
@@ -22,7 +24,7 @@ GraphDataGrid::GraphDataGrid() : QTableWidget()
     setHorizontalHeaderLabels({ "X", "Y" });
 }
 
-void GraphDataGrid::setData(const QVector<double>& x, const QVector<double>& y)
+void GraphDataGrid::setData(const ValueArray& x, const ValueArray& y)
 {
     int count = qMin(x.size(), y.size());
 
@@ -97,7 +99,10 @@ void GraphDataGrid::copy()
         qApp->clipboard()->setText(str);
 }
 
+// TODO number formatter should be passed outside
 QString GraphDataGrid::formatValue(const double& value) const
 {
     return QString::number(value);
 }
+
+} // namespace QCPL

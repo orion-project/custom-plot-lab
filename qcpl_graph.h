@@ -10,6 +10,7 @@ class LineGraph : public QCPGraph
 public:
     explicit LineGraph(QCPAxis *keyAxis, QCPAxis *valueAxis);
 
+    static QCPSelectionDecorator* sharedSelectionDecorator() { return _sharedSelectionDecorator; }
     static void setSharedSelectionDecorator(QCPSelectionDecorator* decorator);
 
 protected:
