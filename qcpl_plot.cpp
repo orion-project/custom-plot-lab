@@ -121,6 +121,12 @@ Graph* Plot::makeNewGraph(const QString &title, const QVector<double> &x, const 
     return g;
 }
 
+void Plot::updateGraph(Graph* graph, const QVector<double>& x, const QVector<double>& y)
+{
+    graph->setData(x, y);
+    updatePlot();
+}
+
 QColor Plot::nextGraphColor()
 {
     if (_nextColorIndex == defaultColorSet().size())
@@ -130,7 +136,7 @@ QColor Plot::nextGraphColor()
 
 void Plot::updatePlot()
 {
-    if (autoReplot) replot();
+    if (_replotEnabled) replot();
 }
 
 void Plot::setTitleVisible(bool on)
