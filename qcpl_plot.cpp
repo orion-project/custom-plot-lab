@@ -2,10 +2,45 @@
 #include "qcpl_colors.h"
 #include "qcpl_graph.h"
 
+// TODO: make in conditional, e.g. #ifdef USE_ORION
+#include "helpers/OriDialogs.h"
+#include "helpers/OriWidgets.h"
+#include "widgets/OriValueEdit.h"
+
+/// Returns true when range is corrected, false when it's unchanged.
+static bool correctZeroRange(QCPRange& range, double safeMargin)
+{
+    auto epsilon = std::numeric_limits<double>::epsilon();
+    if (range.size() > epsilon) return false;
+
+    // constant line at zero level
+    if (qAbs(range.lower) <= epsilon)
+    {
+        range.lower = -1;
+        range.upper = 1;
+        return true;
+    }
+
+    // constant line at any level
+    double delta = qAbs(range.lower) * safeMargin;
+    range.lower -= delta;
+    range.upper += delta;
+    return true;
+}
+
 namespace QCPL {
 
-Plot::Plot()
+Plot::Plot(QWidget *parent) : QCustomPlot(parent),
+        // TODO: make configurable
+        _safeMarginsX(1.0/100.0),
+        _safeMarginsY(5.0/100.0),
+        _zoomStepX(1.0/100.0),
+        _zoomStepY(1.0/100.0),
+        _numberPrecision(10)
 {
+    yAxis->setNumberPrecision(_numberPrecision);
+    xAxis->setNumberPrecision(_numberPrecision);
+
     if (!LineGraph::sharedSelectionDecorator())
     {
         // TODO: make selector customizable: line color/width/visibility, points count/color/size/visibility
@@ -17,41 +52,77 @@ Plot::Plot()
     }
 
     legend->setVisible(true);
+
     setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables |
                     QCP::iSelectAxes | QCP::iSelectItems | QCP::iSelectLegend | QCP::iSelectOther);
     connect(this, SIGNAL(selectionChangedByUser()), this, SLOT(plotSelectionChanged()));
+    connect(this, SIGNAL(plottableClick(QCPAbstractPlottable*,int,QMouseEvent*)), this, SLOT(graphClicked(QCPAbstractPlottable*)));
+    connect(this, SIGNAL(axisDoubleClick(QCPAxis*,QCPAxis::SelectablePart,QMouseEvent*)), this, SLOT(setLimitsDlg(QCPAxis*)));
+}
 
-    // It seems it never called in QCP 2.0.0.b, see QCustomPlot::mousePressEvent + QCustomPlot::mouseReleaseEvent:
-    // mMouseEventLayerable can't be QCPAbstractPlottable because of QCPAbstractPlottable always ignores mousePressEvent.
-    //connect(this, SIGNAL(plottableClick(QCPAbstractPlottable*,int,QMouseEvent*)), this, SLOT(graphClicked(QCPAbstractPlottable*,int,QMouseEvent*)));
+Plot::PlotPart Plot::selectedPart() const
+{
+    if (xAxis->selectedParts().testFlag(QCPAxis::spAxis))
+        return PlotPart::AxisX;
+
+    if (yAxis->selectedParts().testFlag(QCPAxis::spAxis))
+        return PlotPart::AxisY;
+
+    return PlotPart::None;
+}
+
+void Plot::mouseDoubleClickEvent(QMouseEvent *event)
+{
+    QCustomPlot::mouseDoubleClickEvent(event);
+
+    QCPLayerable *selectedLayerable = layerableAt(event->pos(), true);
+    if (!selectedLayerable)
+        emit emptySpaceDoubleClicked(event);
 }
 
 void Plot::mousePressEvent(QMouseEvent *event)
 {
-    QCustomPlot::mousePressEvent(event);
-
     // if an axis is selected, only allow the direction of that axis to be dragged
     // if no axis is selected, both directions may be dragged
-    if (xAxis->selectedParts().testFlag(QCPAxis::spAxis))
+    switch (selectedPart()) {
+    case PlotPart::AxisX:
         axisRect()->setRangeDrag(xAxis->orientation());
-    else if (yAxis->selectedParts().testFlag(QCPAxis::spAxis))
+        break;
+    case PlotPart::AxisY:
         axisRect()->setRangeDrag(yAxis->orientation());
-    else
+        break;
+    default:
         axisRect()->setRangeDrag(Qt::Horizontal | Qt::Vertical);
+    }
+    QCustomPlot::mousePressEvent(event);
 }
 
 void Plot::wheelEvent(QWheelEvent *event)
 {
-    QCustomPlot::wheelEvent(event);
-
     // if an axis is selected, only allow the direction of that axis to be zoomed
     // if no axis is selected, both directions may be zoomed
-    if (xAxis->selectedParts().testFlag(QCPAxis::spAxis))
+    switch (selectedPart()) {
+    case PlotPart::AxisX:
         axisRect()->setRangeZoom(xAxis->orientation());
-    else if (yAxis->selectedParts().testFlag(QCPAxis::spAxis))
+        break;
+    case PlotPart::AxisY:
         axisRect()->setRangeZoom(yAxis->orientation());
-    else
+        break;
+    default:
         axisRect()->setRangeZoom(Qt::Horizontal | Qt::Vertical);
+    }
+    QCustomPlot::wheelEvent(event);
+}
+
+void Plot::contextMenuEvent(QContextMenuEvent *event)
+{
+    QMenu* menu = nullptr;
+    QPointF pos(event->x(), event->y());
+    if (xAxis->getPartAt(pos) != QCPAxis::spNone)
+        menu = menuAxisX;
+    else if (yAxis->getPartAt(pos) != QCPAxis::spNone)
+        menu = menuAxisY;
+    if (menu) menu->popup(event->globalPos());
 }
 
 void Plot::plotSelectionChanged()
@@ -63,40 +134,169 @@ void Plot::plotSelectionChanged()
     if (yAxis->selectedParts().testFlag(QCPAxis::spAxis) ||
         yAxis->selectedParts().testFlag(QCPAxis::spTickLabels))
         yAxis->setSelectedParts(QCPAxis::spAxis | QCPAxis::spTickLabels);
-
-    // selection changes event we click on another point of the same graph, so
-    // TODO remember selected graph and only emit signal when it was changhed
-    for (int i = 0; i < plottableCount(); i++)
-    {
-        auto g = dynamic_cast<Graph*>(plottable(i));
-        if (g && !isService(g) && g->selected())
-        {
-            emit graphSelected(g);
-            return;
-        }
-    }
 }
-/*
-void Plot::graphClicked(QCPAbstractPlottable *plottable, int, QMouseEvent *)
+
+void Plot::graphClicked(QCPAbstractPlottable *plottable)
 {
-    auto g = dynamic_cast<Graph*>(plottable);
+    // selection changes even we click on another point of the same graph, so
+    // TODO remember selected graph and only emit signal when it was changhed
+    auto g = dynamic_cast<QCPGraph*>(plottable);
     if (_serviceGraphs.contains(g)) g = nullptr;
     emit graphSelected(g);
 }
-*/
-void Plot::autolimits()
+
+void Plot::autolimits(QCPAxis* axis, bool replot)
 {
-    bool onlyEnlarge = false;
+    QCPRange totalRange;
+    bool isTotalValid = false;
     for (int i = 0; i < graphCount(); i++)
     {
         auto g = graph(i);
-        if (g && !_serviceGraphs.contains(g))
+
+        if (!g->visible()) continue;
+
+        if (excludeServiceGraphsFromAutolimiting)
+            if (_serviceGraphs.contains(g))
+                continue;
+
+        bool hasRange = false;
+        auto range = axis == xAxis
+                ? g->getKeyRange(hasRange, QCP::sdBoth)
+                : g->getValueRange(hasRange, QCP::sdBoth, QCPRange());
+        if (!hasRange) continue;
+
+        if (!isTotalValid)
         {
-            g->rescaleAxes(onlyEnlarge);
-            onlyEnlarge = true;
+            totalRange = range;
+            isTotalValid = true;
         }
+        else totalRange.expand(range);
     }
-    updatePlot();
+
+    if (!isTotalValid) return;
+
+    bool corrected = correctZeroRange(totalRange, safeMargins(axis));
+    axis->setRange(totalRange);
+
+    if (!corrected && useSafeMargins)
+        extendLimits(axis, safeMargins(axis), false);
+
+    if (replot) this->replot();
+}
+
+void Plot::extendLimits(double factor, bool replot)
+{
+    extendLimits(xAxis, factor, false);
+    extendLimits(yAxis, factor, replot);
+}
+
+void Plot::extendLimits(QCPAxis* axis, double factor, bool replot)
+{
+    auto range = axis->range();
+    auto delta = (range.upper - range.lower) * factor;
+    range.upper += delta;
+    range.lower -= delta;
+    setAxisRange(axis, range);
+    if (replot) this->replot();
+}
+
+void Plot::setLimits(QCPAxis* axis, double min, double max, bool replot)
+{
+    QCPRange range(min, max);
+    range.normalize();
+    setAxisRange(axis, range);
+    if (replot) this->replot();
+}
+
+AxisLimits Plot::limits(QCPAxis* axis) const
+{
+    auto range = axis->range();
+    return AxisLimits(range.lower, range.upper);
+}
+
+double Plot::safeMargins(QCPAxis* axis)
+{
+    return axis == xAxis ? _safeMarginsX : _safeMarginsY;
+}
+
+void Plot::setAxisRange(QCPAxis* axis, const QCPRange& range)
+{
+    QCPRange r = range;
+    correctZeroRange(r, safeMargins(axis));
+    axis->setRange(r);
+}
+
+bool Plot::setLimitsDlg(QCPAxis* axis)
+{
+    QString unitStr;
+    if (getAxisUnitString)
+        unitStr = getAxisUnitString(axis);
+    auto range = axis->range();
+    if (setLimitsDlg(range, tr("%1 Limits").arg(getAxisTitle(axis)), unitStr))
+    {
+        setAxisRange(axis, range);
+        replot();
+        return true;
+    }
+    return false;
+}
+
+bool Plot::setLimitsDlg(QCPRange& range, const QString& title, const QString &unit)
+{
+    auto editorMin = new Ori::Widgets::ValueEdit;
+    auto editorMax = new Ori::Widgets::ValueEdit;
+    Ori::Gui::adjustFont(editorMin);
+    Ori::Gui::adjustFont(editorMax);
+    editorMin->setNumberPrecision(_numberPrecision);
+    editorMax->setNumberPrecision(_numberPrecision);
+    editorMin->setValue(range.lower);
+    editorMax->setValue(range.upper);
+    editorMin->selectAll();
+
+    QWidget w;
+
+    auto layout = new QFormLayout(&w);
+    layout->setMargin(0);
+    layout->addRow(new QLabel(unit.isEmpty() ? QString("Min") : QString("Min (%1)").arg(unit)), editorMin);
+    layout->addRow(new QLabel(unit.isEmpty() ? QString("Max") : QString("Max (%1)").arg(unit)), editorMax);
+
+    if (Ori::Dlg::Dialog(&w, false)
+            .withTitle(title)
+            .withContentToButtonsSpacingFactor(3)
+            .exec())
+    {
+        range.lower = editorMin->value();
+        range.upper = editorMax->value();
+        range.normalize();
+        return true;
+    }
+    return false;
+}
+
+QString Plot::getAxisTitle(QCPAxis* axis) const
+{
+   if (axis == xAxis)
+       return tr("X-axis");
+   if (axis == yAxis)
+       return tr("Y-axis");
+   auto label = axis->label();
+   return label.isEmpty() ? tr("Axis") : label;
+}
+
+bool Plot::isFrameVisible() const
+{
+    return xAxis2->visible();
+}
+
+void Plot::setFrameVisible(bool on)
+{
+    // Secondary axes only form frame rect
+    xAxis2->setVisible(on);
+    yAxis2->setVisible(on);
+    xAxis2->setTicks(false);
+    yAxis2->setTicks(false);
+    xAxis2->setSelectableParts({});
+    yAxis2->setSelectableParts({});
 }
 
 Graph* Plot::makeNewGraph(const QString& title)
@@ -111,20 +311,18 @@ Graph* Plot::makeNewGraph(const QString& title)
     return g;
 }
 
-Graph* Plot::makeNewGraph(const QString &title, const QVector<double> &x, const QVector<double> &y)
+Graph* Plot::makeNewGraph(const QString &title, const GraphData &data, bool replot)
 {
     auto g = makeNewGraph(title);
-    g->setData(x, y);
-
-    updatePlot();
-
+    g->setData(data.x, data.y);
+    if (replot) this->replot();
     return g;
 }
 
-void Plot::updateGraph(Graph* graph, const QVector<double>& x, const QVector<double>& y)
+void Plot::updateGraph(Graph* graph, const GraphData &data, bool replot)
 {
-    graph->setData(x, y);
-    updatePlot();
+    graph->setData(data.x, data.y);
+    if (replot) this->replot();
 }
 
 QColor Plot::nextGraphColor()
@@ -132,11 +330,6 @@ QColor Plot::nextGraphColor()
     if (_nextColorIndex == defaultColorSet().size())
         _nextColorIndex = 0;
     return defaultColorSet().at(_nextColorIndex++);
-}
-
-void Plot::updatePlot()
-{
-    if (_replotEnabled) replot();
 }
 
 void Plot::setTitleVisible(bool on)

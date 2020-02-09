@@ -24,6 +24,7 @@ GraphDataGrid::GraphDataGrid() : QTableWidget()
     setHorizontalHeaderLabels({ "X", "Y" });
 }
 
+// TODO: it should use QTableView and a custom model that will only draw raw values instead of making tons of QTableWidgetItem
 void GraphDataGrid::setData(const ValueArray& x, const ValueArray& y)
 {
     int count = qMin(x.size(), y.size());
@@ -102,7 +103,7 @@ void GraphDataGrid::copy()
 // TODO number formatter should be passed outside
 QString GraphDataGrid::formatValue(const double& value) const
 {
-    return QString::number(value);
+    return QString::number(value, 'g', 10);
 }
 
 } // namespace QCPL

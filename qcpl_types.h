@@ -12,6 +12,19 @@ struct GraphData
     ValueArray x, y;
 };
 
+struct AxisLimits
+{
+    double min;
+    double max;
+
+    AxisLimits() { min = 0; max = 0; }
+    AxisLimits(double min, double max) { this->min = min; this->max = max; }
+
+    bool isInvalid() const;
+
+    QString str() const;
+};
+
 } // namespace QCPL
 
 #endif // QCPL_TYPES_H
