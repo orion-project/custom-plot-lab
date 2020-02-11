@@ -64,7 +64,7 @@ public slots:
     void zoomOutY() { extendLimitsY(_zoomStepY); }
 
 signals:
-    void graphSelected(Graph*);
+    void graphClicked(Graph*);
     void emptySpaceDoubleClicked(QMouseEvent *event);
     void editTitleRequest();
 
@@ -76,7 +76,7 @@ protected:
     
 private slots:
     void plotSelectionChanged();
-    void graphClicked(QCPAbstractPlottable*);
+    void rawGraphClicked(QCPAbstractPlottable*);
     bool setLimitsDlg(QCPAxis* axis);
 
 private:

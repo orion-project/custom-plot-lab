@@ -1,65 +1,84 @@
 #include "qcpl_graph_grid.h"
 
 #include <QApplication>
+#include <QAbstractItemModel>
 #include <QClipboard>
 #include <QContextMenuEvent>
 #include <QHeaderView>
+#include <QTableView>
+#include <QTextStream>
 #include <QMenu>
+
+namespace {
+
+class GraphDataModel : public QAbstractItemModel
+{
+public:
+    GraphDataModel(QObject* parent): QAbstractItemModel(parent) {}
+    QModelIndex index(int row, int col, const QModelIndex &parent) const override { Q_UNUSED(parent) return createIndex(row, col); }
+    QModelIndex parent(const QModelIndex &child) const override { Q_UNUSED(child) return QModelIndex(); }
+    int rowCount(const QModelIndex &parent) const override { Q_UNUSED(parent) return _x.size(); }
+    int columnCount(const QModelIndex &parent) const override { Q_UNUSED(parent) return 2; }
+    QVariant headerData(int section, Qt::Orientation orientation, int role) const override
+    {
+        if (role != Qt::DisplayRole) return QVariant();
+        switch (orientation)
+        {
+        case Qt::Vertical:
+            return section + 1;
+        case Qt::Horizontal:
+            return section == 0 ? QStringLiteral("X") : QStringLiteral("Y");
+        }
+        return QVariant();
+    }
+    QVariant data(const QModelIndex &index, int role) const override
+    {
+        if (role != Qt::DisplayRole) return QVariant();
+        const QCPL::ValueArray& vals = index.column() == 0 ? _x : _y;
+        // TODO: number formatter should be passed outside
+        return QString::number(vals.at(index.row()), 'g', 10);
+    }
+    void setGraphData(const QCPL::ValueArray& x, const QCPL::ValueArray& y)
+    {
+        beginResetModel();
+        _x = x;
+        _y = y;
+        endResetModel();
+    }
+private:
+    QCPL::ValueArray _x, _y;
+};
+
+} // namespace
 
 namespace QCPL {
 
-GraphDataGrid::GraphDataGrid() : QTableWidget()
+GraphDataGrid::GraphDataGrid(QWidget *parent) : QTableView(parent)
 {
+    auto model = new GraphDataModel(this);
+
+    setModel(model);
+    setShowGrid(false);
     setAlternatingRowColors(true);
     setSelectionMode(QAbstractItemView::ContiguousSelection);
-    setEditTriggers(QAbstractItemView::NoEditTriggers);
-    setColumnCount(2);
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
     horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
     horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
-#else
-    horizontalHeader()->setResizeMode(0, QHeaderView::Stretch);
-    horizontalHeader()->setResizeMode(1, QHeaderView::Stretch);
-#endif
-    setHorizontalHeaderLabels({ "X", "Y" });
+
+    model->setGraphData({0.0}, {0.0});
+    resizeRowsToContents();
+    verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
+    verticalHeader()->setDefaultSectionSize(rowHeight(0));
+    model->setGraphData({}, {});
 }
 
-// TODO: it should use QTableView and a custom model that will only draw raw values instead of making tons of QTableWidgetItem
 void GraphDataGrid::setData(const ValueArray& x, const ValueArray& y)
 {
-    int count = qMin(x.size(), y.size());
-
-    if (rowCount() != count)
-        setRowCount(count);
-
-    for (int i = 0; i < count; i++)
-    {
-        auto str_x = formatValue(x.at(i));
-        auto str_y = formatValue(y.at(i));
-        auto it = item(i, 0);
-        if (!it)
-        {
-            it = new QTableWidgetItem(str_x);
-            it->setTextAlignment(Qt::AlignRight);
-            setItem(i, 0, it);
-
-            it = new QTableWidgetItem(str_y);
-            it->setTextAlignment(Qt::AlignRight);
-            setItem(i, 1, it);
-
-            resizeRowToContents(i);
-        }
-        else
-        {
-            it->setText(str_x);
-            item(i, 1)->setText(str_y);
-        }
-    }
+    dynamic_cast<GraphDataModel*>(model())->setGraphData(x, y);
 }
 
 void GraphDataGrid::contextMenuEvent(QContextMenuEvent* event)
 {
-    QTableWidget::contextMenuEvent(event);
+    QTableView::contextMenuEvent(event);
 
     if (!_contextMenu)
     {
@@ -70,40 +89,35 @@ void GraphDataGrid::contextMenuEvent(QContextMenuEvent* event)
     _contextMenu->popup(mapToGlobal(event->pos()));
 }
 
-// TODO copy entire selected range on Ctrl+C (currently only one cell is copied)
-void GraphDataGrid::copy()
+void GraphDataGrid::keyPressEvent(QKeyEvent *event)
 {
-    QStringList x, y;
-    foreach (QTableWidgetItem *it, selectedItems())
-    {
-        if (it->column() == 0)
-            x.append(it->text());
-        else
-            y.append(it->text());
-    }
-    QString str;
-    if (!x.isEmpty() && !y.isEmpty())
-    {
-        if (x.size() == y.size())
-        {
-            QStringList strs;
-            for (int i = 0; i < x.size(); i++)
-                strs.append(x.at(i) + '\t' + y.at(i));
-            str = strs.join("\n");
-        }
-    }
-    else if (!x.isEmpty())
-        str = x.join("\n");
-    else if (!y.isEmpty())
-        str = y.join("\n");
-    if (!str.isEmpty())
-        qApp->clipboard()->setText(str);
+    if (event->matches(QKeySequence::Copy))
+        copy();
+    else
+        QTableView::keyPressEvent(event);
 }
 
-// TODO number formatter should be passed outside
-QString GraphDataGrid::formatValue(const double& value) const
+void GraphDataGrid::copy()
 {
-    return QString::number(value, 'g', 10);
+    auto selection = selectionModel()->selection();
+    if (selection.isEmpty()) return;
+    QString text;
+    QTextStream stream(&text);
+    auto range = selection.first();
+    int row1 = range.top();
+    int row2 = range.bottom();
+    int col1 = range.left();
+    int col2 = range.right();
+    bool twoCols = col1 != col2;
+    for (int row = row1; row <= row2; row++)
+    {
+        stream << model()->data(model()->index(row, col1)).toString();
+        if (twoCols)
+            stream << '\t' << model()->data(model()->index(row, col2)).toString();
+        if (row < row2)
+            stream << '\n';
+    }
+    qApp->clipboard()->setText(text);
 }
 
 } // namespace QCPL

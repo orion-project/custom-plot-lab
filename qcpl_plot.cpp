@@ -2,7 +2,6 @@
 #include "qcpl_colors.h"
 #include "qcpl_graph.h"
 
-// TODO: make in conditional, e.g. #ifdef USE_ORION
 #include "helpers/OriDialogs.h"
 #include "helpers/OriWidgets.h"
 #include "widgets/OriValueEdit.h"
@@ -56,7 +55,7 @@ Plot::Plot(QWidget *parent) : QCustomPlot(parent),
     setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables |
                     QCP::iSelectAxes | QCP::iSelectItems | QCP::iSelectLegend | QCP::iSelectOther);
     connect(this, SIGNAL(selectionChangedByUser()), this, SLOT(plotSelectionChanged()));
-    connect(this, SIGNAL(plottableClick(QCPAbstractPlottable*,int,QMouseEvent*)), this, SLOT(graphClicked(QCPAbstractPlottable*)));
+    connect(this, SIGNAL(plottableClick(QCPAbstractPlottable*,int,QMouseEvent*)), this, SLOT(rawGraphClicked(QCPAbstractPlottable*)));
     connect(this, SIGNAL(axisDoubleClick(QCPAxis*,QCPAxis::SelectablePart,QMouseEvent*)), this, SLOT(setLimitsDlg(QCPAxis*)));
 }
 
@@ -136,13 +135,11 @@ void Plot::plotSelectionChanged()
         yAxis->setSelectedParts(QCPAxis::spAxis | QCPAxis::spTickLabels);
 }
 
-void Plot::graphClicked(QCPAbstractPlottable *plottable)
+void Plot::rawGraphClicked(QCPAbstractPlottable *plottable)
 {
-    // selection changes even we click on another point of the same graph, so
-    // TODO remember selected graph and only emit signal when it was changhed
     auto g = dynamic_cast<QCPGraph*>(plottable);
     if (_serviceGraphs.contains(g)) g = nullptr;
-    emit graphSelected(g);
+    emit graphClicked(g);
 }
 
 void Plot::autolimits(QCPAxis* axis, bool replot)
