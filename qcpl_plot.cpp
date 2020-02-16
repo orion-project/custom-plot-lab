@@ -238,6 +238,19 @@ bool Plot::setLimitsDlg(QCPAxis* axis)
     return false;
 }
 
+bool Plot::setLimitsDlgXY()
+{
+    auto range = (selectedPart() == PlotPart::AxisY ? yAxis : xAxis)->range();
+    if (setLimitsDlg(range, tr("Limits for X and Y"), QString()))
+    {
+        setAxisRange(xAxis, range);
+        setAxisRange(yAxis, range);
+        replot();
+        return true;
+    }
+    return false;
+}
+
 bool Plot::setLimitsDlg(QCPRange& range, const QString& title, const QString &unit)
 {
     auto editorMin = new Ori::Widgets::ValueEdit;

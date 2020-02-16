@@ -50,12 +50,16 @@ public:
     void extendLimitsX(double factor, bool replot = true) { extendLimits(xAxis, factor, replot); }
     void extendLimitsY(double factor, bool replot = true) { extendLimits(yAxis, factor, replot); }
 
+    enum class PlotPart { None, AxisX, AxisY };
+    PlotPart selectedPart() const;
+
 public slots:
     void autolimits(bool replot = true) { autolimits(xAxis, false); autolimits(yAxis, replot); }
     void autolimitsX(bool replot = true) { autolimits(xAxis, replot); }
     void autolimitsY(bool replot = true) { autolimits(yAxis, replot); }
     bool setLimitsDlgX() { return setLimitsDlg(xAxis); }
     bool setLimitsDlgY() { return setLimitsDlg(yAxis); }
+    bool setLimitsDlgXY();
     void zoomIn() { extendLimits(-(_zoomStepX+_zoomStepY)/2.0); }
     void zoomOut() { extendLimits((_zoomStepX+_zoomStepY)/2.0); }
     void zoomInX() { extendLimitsX(-_zoomStepX); }
@@ -80,7 +84,6 @@ private slots:
     bool setLimitsDlg(QCPAxis* axis);
 
 private:
-    enum class PlotPart { None, AxisX, AxisY };
 
     QVector<Graph*> _serviceGraphs;
     QCP::SelectionType _selectionType = QCP::stWhole;
@@ -101,7 +104,6 @@ private:
     bool setLimitsDlg(QCPRange& range, const QString &title, const QString& unit);
     void setAxisRange(QCPAxis* axis, const QCPRange &range);
     double safeMargins(QCPAxis* axis);
-    PlotPart selectedPart() const;
     QString getAxisTitle(QCPAxis* axis) const;
 };
 
