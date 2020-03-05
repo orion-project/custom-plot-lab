@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/qcpl_images">
+        <file alias="plot_tracing">./img/plot_tracing.png</file>
+    </qresource>
+</RCC>

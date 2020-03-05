@@ -2,7 +2,9 @@
 
 #include <QApplication>
 
-QCPCursor::QCPCursor(QCustomPlot *plot) : QCPGraph(plot->xAxis, plot->yAxis)
+namespace QCPL {
+
+Cursor::Cursor(QCustomPlot *plot) : QCPGraph(plot->xAxis, plot->yAxis)
 {
     setAntialiased(false);
     setPen(QPen(QColor::fromRgb(80, 80, 255))); // TODO make customizable
@@ -14,33 +16,36 @@ QCPCursor::QCPCursor(QCustomPlot *plot) : QCPGraph(plot->xAxis, plot->yAxis)
 
     removeFromLegend();
     setPosition(0, 0);
+
+    auto axesLayer = plot->layer(QStringLiteral("axes"));
+    if (axesLayer) setLayer(axesLayer);
 }
 
-void QCPCursor::setVisible(bool on)
+void Cursor::setVisible(bool on)
 {
     QCPGraph::setVisible(on);
     parentPlot()->replot();
 }
 
-void QCPCursor::setShape(CursorShape value)
+void Cursor::setShape(CursorShape value)
 {
     _shape = value;
     parentPlot()->replot();
 }
 
-void QCPCursor::mouseDoubleClickEvent(QMouseEvent *event, const QVariant &details)
+void Cursor::mouseDoubleClickEvent(QMouseEvent *event, const QVariant &details)
 {
     Q_UNUSED(details)
     _followMouse = false;
     setPixelPosition(event->pos());
 }
 
-void QCPCursor::mouseDoubleClick(QMouseEvent *evt)
+void Cursor::mouseDoubleClick(QMouseEvent *evt)
 {
     setPixelPosition(evt->pos());
 }
 
-void QCPCursor::mousePress(QMouseEvent *evt)
+void Cursor::mousePress(QMouseEvent *evt)
 {
     if (!visible()) return;
     if (evt->button() == Qt::LeftButton)
@@ -50,7 +55,7 @@ void QCPCursor::mousePress(QMouseEvent *evt)
     }
 }
 
-void QCPCursor::mouseRelease(QMouseEvent*)
+void Cursor::mouseRelease(QMouseEvent*)
 {
     if (!visible()) return;
     _dragX = false;
@@ -60,7 +65,7 @@ void QCPCursor::mouseRelease(QMouseEvent*)
 #endif
 }
 
-void QCPCursor::mouseMove(QMouseEvent *evt)
+void Cursor::mouseMove(QMouseEvent *evt)
 {
     if (!visible()) return;
     if (_followMouse)
@@ -116,7 +121,7 @@ void QCPCursor::mouseMove(QMouseEvent *evt)
     }
 }
 
-void QCPCursor::draw(QCPPainter *painter)
+void Cursor::draw(QCPPainter *painter)
 {
     painter->setPen(mPen);
     painter->setBrush(Qt::NoBrush);
@@ -130,13 +135,13 @@ void QCPCursor::draw(QCPPainter *painter)
         painter->drawLine(QPointF(x, r->bottom()), QPointF(x, r->top()));
 }
 
-QPointF QCPCursor::position() const
+QPointF Cursor::position() const
 {
     auto point = data()->constBegin();
     return QPointF(point->key, point->value);
 }
 
-void QCPCursor::setPosition(const double& x, const double& y, bool replot)
+void Cursor::setPosition(const double& x, const double& y, bool replot)
 {
     setData(QVector<double>() << x, QVector<double>() << y);
     if (replot)
@@ -144,26 +149,26 @@ void QCPCursor::setPosition(const double& x, const double& y, bool replot)
     emit positionChanged();
 }
 
-void QCPCursor::pixelPosition(double& x, double& y) const
+void Cursor::pixelPosition(double& x, double& y) const
 {
     QPointF point = position();
     coordsToPixels(point.x(), point.y(), x, y);
 }
 
-void QCPCursor::setPixelPosition(const double &x, const double &y, bool replot)
+void Cursor::setPixelPosition(const double &x, const double &y, bool replot)
 {
     double key, value;
     pixelsToCoords(x, y, key, value);
     setPosition(key, value, replot);
 }
 
-void QCPCursor::moveToCenter(bool replot)
+void Cursor::moveToCenter(bool replot)
 {
     QCPAxisRect *r = parentPlot()->axisRect();
     setPixelPosition((r->right() + r->left())/2, (r->top() + r->bottom())/2, replot);
 }
 
-void QCPCursor::setFollowMouse(bool value)
+void Cursor::setFollowMouse(bool value)
 {
     _followMouse = value;
     if (_followMouse)
@@ -174,3 +179,5 @@ void QCPCursor::setFollowMouse(bool value)
         setPixelPosition(parentPlot()->mapFromGlobal(QCursor::pos()));
     }
 }
+
+} // namespace QCPL
