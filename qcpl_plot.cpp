@@ -57,6 +57,33 @@ Plot::Plot(QWidget *parent) : QCustomPlot(parent),
     connect(this, SIGNAL(selectionChangedByUser()), this, SLOT(plotSelectionChanged()));
     connect(this, SIGNAL(plottableClick(QCPAbstractPlottable*,int,QMouseEvent*)), this, SLOT(rawGraphClicked(QCPAbstractPlottable*)));
     connect(this, SIGNAL(axisDoubleClick(QCPAxis*,QCPAxis::SelectablePart,QMouseEvent*)), this, SLOT(setLimitsDlg(QCPAxis*)));
+
+    // TODO make font customizable
+    auto f = font();
+#ifdef Q_OS_MAC
+    f.setPointSize(16);
+#else
+    f.setPointSize(14);
+#endif
+    _title = new QCPTextElement(this);
+    _title->setFont(f);
+    _title->setSelectedFont(f);
+    _title->setSelectable(true);
+    _title->setMargins({10, 10, 10, 0});
+    _title->setVisible(false);
+    //TODO:
+    //plotLayout()->insertRow(0);
+    //plotLayout()->addElement(0, 0, _title);
+
+#ifdef Q_OS_MAC
+    f.setPointSize(14);
+#else
+    f.setPointSize(10);
+#endif
+    xAxis->setLabelFont(f);
+    yAxis->setLabelFont(f);
+    xAxis->setSelectedLabelFont(f);
+    yAxis->setSelectedLabelFont(f);
 }
 
 Plot::PlotPart Plot::selectedPart() const
