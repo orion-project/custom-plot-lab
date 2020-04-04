@@ -53,6 +53,10 @@ public:
     enum class PlotPart { None, AxisX, AxisY };
     PlotPart selectedPart() const;
 
+    // TODO: should be a row below the title, it can be 0 or 1, depending on if title is visible
+    int axisRectRow() const { return 0; }
+    int axisRectCol() const { return 0; }
+
 public slots:
     void autolimits(bool replot = true) { autolimits(xAxis, false); autolimits(yAxis, replot); }
     void autolimitsX(bool replot = true) { autolimits(xAxis, replot); }
