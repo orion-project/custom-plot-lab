@@ -7,6 +7,8 @@ QT_BEGIN_NAMESPACE
 class QMenu;
 QT_END_NAMESPACE
 
+class QCPGraph;
+
 #include "qcpl_types.h"
 
 namespace QCPL {
@@ -20,6 +22,7 @@ public:
 
     void setData(const ValueArray& x, const ValueArray& y);
     void setData(const GraphData& d) { setData(d.x, d.y); }
+    void setData(QCPGraph* graph);
 
 public slots:
     void copy();

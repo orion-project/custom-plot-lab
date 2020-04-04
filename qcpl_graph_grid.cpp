@@ -9,16 +9,39 @@
 #include <QTextStream>
 #include <QMenu>
 
+#include "qcustomplot/qcustomplot.h"
+
 namespace {
 
 class GraphDataModel : public QAbstractItemModel
 {
 public:
-    GraphDataModel(QObject* parent): QAbstractItemModel(parent) {}
-    QModelIndex index(int row, int col, const QModelIndex &parent) const override { Q_UNUSED(parent) return createIndex(row, col); }
-    QModelIndex parent(const QModelIndex &child) const override { Q_UNUSED(child) return QModelIndex(); }
-    int rowCount(const QModelIndex &parent) const override { Q_UNUSED(parent) return _x.size(); }
-    int columnCount(const QModelIndex &parent) const override { Q_UNUSED(parent) return 2; }
+    GraphDataModel(QObject* parent) : QAbstractItemModel(parent) {}
+
+    QModelIndex index(int row, int col, const QModelIndex &parent) const override
+    {
+        Q_UNUSED(parent)
+        return createIndex(row, col);
+    }
+
+    QModelIndex parent(const QModelIndex &child) const override
+    {
+        Q_UNUSED(child)
+        return QModelIndex();
+    }
+
+    int rowCount(const QModelIndex &parent) const override
+    {
+        Q_UNUSED(parent)
+        return _data ? _data->size() : _x.size();
+    }
+
+    int columnCount(const QModelIndex &parent) const override
+    {
+        Q_UNUSED(parent)
+        return 2;
+    }
+
     QVariant headerData(int section, Qt::Orientation orientation, int role) const override
     {
         if (role != Qt::DisplayRole) return QVariant();
@@ -31,22 +54,49 @@ public:
         }
         return QVariant();
     }
+
     QVariant data(const QModelIndex &index, int role) const override
     {
         if (role != Qt::DisplayRole) return QVariant();
-        const QCPL::ValueArray& vals = index.column() == 0 ? _x : _y;
+        double value;
+        if (!_data)
+        {
+            qDebug() << "use arrays";
+            const QCPL::ValueArray& vals = index.column() == 0 ? _x : _y;
+            value = vals.at(index.row());
+        }
+        else
+        {
+            qDebug() << "use data";
+            auto it = _data->at(index.row());
+            value = index.column() == 0 ? it->key : it->value;
+        }
         // TODO: number formatter should be passed outside
-        return QString::number(vals.at(index.row()), 'g', 10);
+        return QString::number(value, 'g', 10);
     }
+
     void setGraphData(const QCPL::ValueArray& x, const QCPL::ValueArray& y)
     {
         beginResetModel();
+        _data.reset();
         _x = x;
         _y = y;
         endResetModel();
     }
+
+    void setGraphData(QSharedPointer<QCPGraphDataContainer> data)
+    {
+        qDebug() << "set data" << data.get()->size();
+        beginResetModel();
+        _x.clear();
+        _y.clear();
+        _data = data;
+        endResetModel();
+    }
+
 private:
     QCPL::ValueArray _x, _y;
+    QSharedPointer<QCPGraphDataContainer> _data;
 };
 
 } // namespace
@@ -74,6 +124,11 @@ GraphDataGrid::GraphDataGrid(QWidget *parent) : QTableView(parent)
 void GraphDataGrid::setData(const ValueArray& x, const ValueArray& y)
 {
     dynamic_cast<GraphDataModel*>(model())->setGraphData(x, y);
+}
+
+void GraphDataGrid::setData(QCPGraph* graph)
+{
+    dynamic_cast<GraphDataModel*>(model())->setGraphData(graph->data());
 }
 
 void GraphDataGrid::contextMenuEvent(QContextMenuEvent* event)
