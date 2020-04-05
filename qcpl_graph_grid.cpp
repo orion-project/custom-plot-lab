@@ -1,14 +1,12 @@
 #include "qcpl_graph_grid.h"
 
-#include <QApplication>
 #include <QAbstractItemModel>
-#include <QClipboard>
 #include <QContextMenuEvent>
 #include <QHeaderView>
 #include <QTableView>
-#include <QTextStream>
 #include <QMenu>
 
+#include "qcpl_types.h"
 #include "qcustomplot/qcustomplot.h"
 
 namespace {
@@ -61,18 +59,15 @@ public:
         double value;
         if (!_data)
         {
-            qDebug() << "use arrays";
             const QCPL::ValueArray& vals = index.column() == 0 ? _x : _y;
             value = vals.at(index.row());
         }
         else
         {
-            qDebug() << "use data";
             auto it = _data->at(index.row());
             value = index.column() == 0 ? it->key : it->value;
         }
-        // TODO: number formatter should be passed outside
-        return QString::number(value, 'g', 10);
+        return _formatter->format(value);
     }
 
     void setGraphData(const QCPL::ValueArray& x, const QCPL::ValueArray& y)
@@ -86,7 +81,6 @@ public:
 
     void setGraphData(QSharedPointer<QCPGraphDataContainer> data)
     {
-        qDebug() << "set data" << data.get()->size();
         beginResetModel();
         _x.clear();
         _y.clear();
@@ -94,9 +88,17 @@ public:
         endResetModel();
     }
 
+    void setFormatter(const QCPL::ValueFormatter *formatter)
+    {
+        beginResetModel();
+        _formatter = formatter;
+        endResetModel();
+    }
+
 private:
     QCPL::ValueArray _x, _y;
     QSharedPointer<QCPGraphDataContainer> _data;
+    const QCPL::ValueFormatter *_formatter;
 };
 
 } // namespace
@@ -106,6 +108,7 @@ namespace QCPL {
 GraphDataGrid::GraphDataGrid(QWidget *parent) : QTableView(parent)
 {
     auto model = new GraphDataModel(this);
+    model->setFormatter(getDefaultValueFormatter());
 
     setModel(model);
     setShowGrid(false);
@@ -119,6 +122,11 @@ GraphDataGrid::GraphDataGrid(QWidget *parent) : QTableView(parent)
     verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
     verticalHeader()->setDefaultSectionSize(rowHeight(0));
     model->setGraphData({}, {});
+}
+
+void GraphDataGrid::setFormatter(const ValueFormatter *formatter)
+{
+    dynamic_cast<GraphDataModel*>(model())->setFormatter(formatter ? formatter : getDefaultValueFormatter());
 }
 
 void GraphDataGrid::setData(const ValueArray& x, const ValueArray& y)
@@ -156,23 +164,24 @@ void GraphDataGrid::copy()
 {
     auto selection = selectionModel()->selection();
     if (selection.isEmpty()) return;
-    QString text;
-    QTextStream stream(&text);
     auto range = selection.first();
     int row1 = range.top();
     int row2 = range.bottom();
     int col1 = range.left();
     int col2 = range.right();
-    bool twoCols = col1 != col2;
-    for (int row = row1; row <= row2; row++)
+    auto exporter = GraphDataExporter(getExportSettings ? getExportSettings() : GraphDataExportSettings());
+    if (col1 != col2)
     {
-        stream << model()->data(model()->index(row, col1)).toString();
-        if (twoCols)
-            stream << '\t' << model()->data(model()->index(row, col2)).toString();
-        if (row < row2)
-            stream << '\n';
+        for (int row = row1; row <= row2; row++)
+            exporter.add(model()->data(model()->index(row, col1)).toDouble(),
+                         model()->data(model()->index(row, col2)).toDouble());
     }
-    qApp->clipboard()->setText(text);
+    else
+    {
+        for (int row = row1; row <= row2; row++)
+            exporter.add(model()->data(model()->index(row, col1)).toDouble());
+    }
+    exporter.toClipboard();
 }
 
 } // namespace QCPL

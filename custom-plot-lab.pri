@@ -5,6 +5,7 @@ QT += printsupport
 SOURCES += \
     $$PWD/qcpl_cursor.cpp \
     $$PWD/qcpl_cursor_panel.cpp \
+    $$PWD/qcpl_export.cpp \
     $$PWD/qcustomplot/qcustomplot.cpp \
     $$PWD/qcpl_plot.cpp \
     $$PWD/qcpl_colors.cpp \
@@ -15,6 +16,7 @@ SOURCES += \
 HEADERS  += \
     $$PWD/qcpl_cursor.h \
     $$PWD/qcpl_cursor_panel.h \
+    $$PWD/qcpl_export.h \
     $$PWD/qcustomplot/qcustomplot.h \
     $$PWD/qcpl_plot.h \
     $$PWD/qcpl_colors.h \
