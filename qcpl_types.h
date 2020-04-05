@@ -25,23 +25,6 @@ struct AxisLimits
     QString str() const;
 };
 
-class ValueFormatter
-{
-public:
-    virtual ~ValueFormatter();
-    virtual bool isDecimalComma() const = 0;
-    virtual QString format(double v) const = 0;
-};
-
-class DefaultValueFormatter : public ValueFormatter
-{
-public:
-    bool isDecimalComma() const override { return false; }
-    QString format(double v) const override;
-};
-
-const ValueFormatter* getDefaultValueFormatter();
-
 } // namespace QCPL
 
 #endif // QCPL_TYPES_H

@@ -8,11 +8,14 @@
 
 namespace QCPL {
 
-GraphDataExporter::GraphDataExporter(const GraphDataExportSettings& settings): _settings(settings)
+GraphDataExporter::GraphDataExporter(const GraphDataExportSettings& settings)
 {
-    _formatter = settings.formatter ? settings.formatter : getDefaultValueFormatter();
-    _quote = settings.csv && _formatter->isDecimalComma();
     _stream = new QTextStream(&_result);
+    _stream->setRealNumberNotation(QTextStream::SmartNotation);
+    _stream->setRealNumberPrecision(settings.numberPrecision);
+    _stream->setLocale(settings.systemLocale ? QLocale::system() : QLocale::c());
+    _quote = settings.csv && _stream->locale().decimalPoint() == ',';
+    _csv = settings.csv;
 }
 
 GraphDataExporter::~GraphDataExporter()
@@ -23,22 +26,22 @@ GraphDataExporter::~GraphDataExporter()
 void GraphDataExporter::add(double v)
 {
     if (_quote)
-        *_stream << '"' << _formatter->format(v) << '"';
-    else *_stream << _formatter->format(v);
+        *_stream << '"' << v << '"';
+    else *_stream << v;
     *_stream << '\n';
 }
 
 void GraphDataExporter::add(double x, double y)
 {
     if (_quote)
-        *_stream << '"' << _formatter->format(x) << '"';
-    else *_stream << _formatter->format(x);
+        *_stream << '"' << x << '"';
+    else *_stream << x;
 
-    *_stream << (_settings.csv ? ',' : '\t');
+    *_stream << (_csv ? ',' : '\t');
 
     if (_quote)
-        *_stream << '"' << _formatter->format(y) << '"';
-    else *_stream << _formatter->format(y);
+        *_stream << '"' << y << '"';
+    else *_stream << y;
 
     *_stream << '\n';
 }

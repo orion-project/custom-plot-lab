@@ -14,8 +14,6 @@ class QCPGraph;
 
 namespace QCPL {
 
-class ValueFormatter;
-
 class GraphDataGrid : public QTableView
 {
     Q_OBJECT
@@ -25,10 +23,7 @@ public:
 
     std::function<GraphDataExportSettings()> getExportSettings;
 
-    /// Set a formatter for table cell values.
-    /// Set `nullptr` to use default formatting.
-    /// Table doesn't take ownership of the formatter.
-    void setFormatter(const ValueFormatter *formatter);
+    void setNumberPrecision(int value);
 
     void setData(const ValueArray& x, const ValueArray& y);
     void setData(const GraphData& d) { setData(d.x, d.y); }

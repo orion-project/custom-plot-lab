@@ -1,7 +1,7 @@
 #ifndef QCPL_EXPORT_H
 #define QCPL_EXPORT_H
 
-#include <QVector>
+#include <QString>
 
 QT_BEGIN_NAMESPACE
 class QTextStream;
@@ -9,12 +9,11 @@ QT_END_NAMESPACE
 
 namespace QCPL {
 
-class ValueFormatter;
-
 struct GraphDataExportSettings
 {
     bool csv = false;
-    const ValueFormatter *formatter = nullptr;
+    bool systemLocale = false;
+    int numberPrecision = 6;
 };
 
 class GraphDataExporter
@@ -29,11 +28,9 @@ public:
     void toClipboard();
 
 private:
-    GraphDataExportSettings _settings;
     QString _result;
     QTextStream* _stream;
-    const ValueFormatter *_formatter;
-    bool _quote;
+    bool _quote, _csv;
 };
 
 } // namespace QCPL

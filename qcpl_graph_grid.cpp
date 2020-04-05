@@ -55,7 +55,7 @@ public:
 
     QVariant data(const QModelIndex &index, int role) const override
     {
-        if (role != Qt::DisplayRole) return QVariant();
+        if (role != Qt::DisplayRole && role != Qt::UserRole) return QVariant();
         double value;
         if (!_data)
         {
@@ -67,7 +67,9 @@ public:
             auto it = _data->at(index.row());
             value = index.column() == 0 ? it->key : it->value;
         }
-        return _formatter->format(value);
+        if (role == Qt::DisplayRole)
+            return QString::number(value, 'g', _numberPrecision);
+        else return value;
     }
 
     void setGraphData(const QCPL::ValueArray& x, const QCPL::ValueArray& y)
@@ -88,17 +90,17 @@ public:
         endResetModel();
     }
 
-    void setFormatter(const QCPL::ValueFormatter *formatter)
+    void setNumberPrecision(int value)
     {
         beginResetModel();
-        _formatter = formatter;
+        _numberPrecision = value;
         endResetModel();
     }
 
 private:
     QCPL::ValueArray _x, _y;
     QSharedPointer<QCPGraphDataContainer> _data;
-    const QCPL::ValueFormatter *_formatter;
+    int _numberPrecision = 6;
 };
 
 } // namespace
@@ -108,7 +110,6 @@ namespace QCPL {
 GraphDataGrid::GraphDataGrid(QWidget *parent) : QTableView(parent)
 {
     auto model = new GraphDataModel(this);
-    model->setFormatter(getDefaultValueFormatter());
 
     setModel(model);
     setShowGrid(false);
@@ -124,9 +125,9 @@ GraphDataGrid::GraphDataGrid(QWidget *parent) : QTableView(parent)
     model->setGraphData({}, {});
 }
 
-void GraphDataGrid::setFormatter(const ValueFormatter *formatter)
+void GraphDataGrid::setNumberPrecision(int value)
 {
-    dynamic_cast<GraphDataModel*>(model())->setFormatter(formatter ? formatter : getDefaultValueFormatter());
+    dynamic_cast<GraphDataModel*>(model())->setNumberPrecision(value);
 }
 
 void GraphDataGrid::setData(const ValueArray& x, const ValueArray& y)
@@ -173,13 +174,13 @@ void GraphDataGrid::copy()
     if (col1 != col2)
     {
         for (int row = row1; row <= row2; row++)
-            exporter.add(model()->data(model()->index(row, col1)).toDouble(),
-                         model()->data(model()->index(row, col2)).toDouble());
+            exporter.add(model()->data(model()->index(row, col1), Qt::UserRole).toDouble(),
+                         model()->data(model()->index(row, col2), Qt::UserRole).toDouble());
     }
     else
     {
         for (int row = row1; row <= row2; row++)
-            exporter.add(model()->data(model()->index(row, col1)).toDouble());
+            exporter.add(model()->data(model()->index(row, col1), Qt::UserRole).toDouble());
     }
     exporter.toClipboard();
 }
