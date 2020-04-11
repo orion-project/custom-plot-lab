@@ -75,12 +75,14 @@ signals:
     void graphClicked(Graph*);
     void emptySpaceDoubleClicked(QMouseEvent *event);
     void editTitleRequest();
+    void resized(const QSize& oldSize, const QSize& newSize);
 
 protected:
     void contextMenuEvent(QContextMenuEvent *event) override;
     void mouseDoubleClickEvent(QMouseEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
     void wheelEvent(QWheelEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
     
 private slots:
     void plotSelectionChanged();

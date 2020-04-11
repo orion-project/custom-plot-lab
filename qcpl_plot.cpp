@@ -151,6 +151,12 @@ void Plot::contextMenuEvent(QContextMenuEvent *event)
     if (menu) menu->popup(event->globalPos());
 }
 
+void Plot::resizeEvent(QResizeEvent *event)
+{
+    QCustomPlot::resizeEvent(event);
+    emit resized(event->oldSize(), event->size());
+}
+
 void Plot::plotSelectionChanged()
 {
     // handle axis and tick labels as one selectable object:
