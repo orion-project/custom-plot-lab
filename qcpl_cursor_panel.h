@@ -27,6 +27,8 @@ public:
     void placeIn(QToolBar* toolbar);
     void fillMenu(QMenu *menu);
 
+    void setNumberPrecision(int value, bool update);
+
     bool autoUpdateInfo() const { return _autoUpdateInfo; }
     void setAutoUpdateInfo(bool v) { _autoUpdateInfo = v; }
 
@@ -44,6 +46,7 @@ private:
     QAction *actnCursorFollow, *actnCursorSetX, *actnCursorSetY,
         *actnShowCursor, *actnCursorVert, *actnCursorHorz, *actnCursorBoth;
     bool _autoUpdateInfo = true;
+    int _numberPrecision = 6;
 
     void createActions();
     QString formatCursorInfo();

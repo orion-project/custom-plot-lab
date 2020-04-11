@@ -140,10 +140,9 @@ void CursorPanel::cursorPositionCanged()
 QString CursorPanel::formatCursorInfo()
 {
     auto point = _cursor->position();
-    // TODO: add an ability to set custom format settings
-    return QStringLiteral("X: <a href='do://set_x'>%1</a>; Y: <a href='do://set_y'>%2</a>")
-            .arg(QString::number(point.x(), 'g', 16))
-            .arg(QString::number(point.y(), 'g', 16));
+    return QStringLiteral("X = <a href='do://set_x'>%1</a>; Y = <a href='do://set_y'>%2</a>")
+            .arg(QString::number(point.x(), 'g', _numberPrecision))
+            .arg(QString::number(point.y(), 'g', _numberPrecision));
 }
 
 void CursorPanel::update()
@@ -227,6 +226,12 @@ void CursorPanel::setEnabled(bool on)
 {
     _cursor->setVisible(on);
     actnShowCursor->setChecked(on);
+}
+
+void CursorPanel::setNumberPrecision(int value, bool update)
+{
+    _numberPrecision = value;
+    if (update) this->update();
 }
 
 } // namespace QCPL
