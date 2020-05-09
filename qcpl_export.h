@@ -13,6 +13,7 @@ struct GraphDataExportSettings
 {
     bool csv = false;
     bool systemLocale = false;
+    bool transposed = false;
     int numberPrecision = 6;
 };
 
@@ -28,9 +29,12 @@ public:
     void toClipboard();
 
 private:
-    QString _result;
-    QTextStream* _stream;
+    QString _result, _result1;
+    QTextStream *_stream;
+    QTextStream *_stream1 = nullptr;
     bool _quote, _csv;
+
+    void addToRow(QTextStream* stream, double v);
 };
 
 } // namespace QCPL
