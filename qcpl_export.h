@@ -25,6 +25,7 @@ public:
 
     void add(double v);
     void add(double x, double y);
+    void add(const QVector<double>& v);
 
     void toClipboard();
 

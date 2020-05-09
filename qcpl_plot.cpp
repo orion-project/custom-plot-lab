@@ -148,6 +148,14 @@ void Plot::contextMenuEvent(QContextMenuEvent *event)
         menu = menuAxisX;
     else if (yAxis->getPartAt(pos) != QCPAxis::spNone)
         menu = menuAxisY;
+    else if (menuGraph) {
+        for (auto g : selectedGraphs())
+            if (!isService(g)) {
+                menu = menuGraph;
+                break;
+            }
+    }
+    if (!menu) menu = menuPlot;
     if (menu) menu->popup(event->globalPos());
 }
 
@@ -395,6 +403,20 @@ void Plot::setTitleVisible(bool on)
         plotLayout()->simplify();
         _title = nullptr;
     }
+}
+
+Graph* Plot::selectedGraph() const
+{
+    auto graphs = selectedGraphs();
+    return graphs.isEmpty() ? nullptr : graphs.first();
+}
+
+void Plot::copyPlotImage()
+{
+    QImage image(width(), height(), QImage::Format_RGB32);
+    QCPPainter painter(&image);
+    toPainter(&painter);
+    qApp->clipboard()->setImage(image);
 }
 
 } // namespace QCPL

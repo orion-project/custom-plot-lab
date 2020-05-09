@@ -16,6 +16,7 @@ public:
     explicit Plot(QWidget* parent = nullptr);
 
     QVector<Graph*>& serviceGraphs() { return _serviceGraphs; }
+    Graph* selectedGraph() const;
 
     bool graphAutoColors = true;
     bool useSafeMargins = true;
@@ -23,6 +24,8 @@ public:
 
     QMenu *menuAxisX = nullptr;
     QMenu *menuAxisY = nullptr;
+    QMenu *menuGraph = nullptr;
+    QMenu *menuPlot = nullptr;
 
     /// The callback used to get axis units for showing in the axis limits dialog.
     std::function<QString(QCPAxis*)> getAxisUnitString;
@@ -70,6 +73,7 @@ public slots:
     void zoomOutX() { extendLimitsX(_zoomStepX); }
     void zoomInY() { extendLimitsY(-_zoomStepY); }
     void zoomOutY() { extendLimitsY(_zoomStepY); }
+    void copyPlotImage();
 
 signals:
     void graphClicked(Graph*);
@@ -90,7 +94,6 @@ private slots:
     bool setLimitsDlg(QCPAxis* axis);
 
 private:
-
     QVector<Graph*> _serviceGraphs;
     QCP::SelectionType _selectionType = QCP::stWhole;
     QCPTextElement *_title = nullptr;

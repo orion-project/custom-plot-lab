@@ -53,10 +53,8 @@ void GraphDataExporter::addToRow(QTextStream* stream, double v)
     if (_quote)
         *stream << '"' << v << '"';
     else *stream << v;
-    if (_csv)
-        *stream << ',';
-    else
-        *stream << ' ';
+
+    *_stream << (_csv ? ',' : '\t');
 }
 
 void GraphDataExporter::add(double x, double y)
@@ -82,6 +80,21 @@ void GraphDataExporter::add(double x, double y)
     }
 }
 
+void GraphDataExporter::add(const QVector<double>& v)
+{
+    int sz = v.size();
+    for (int i = 0; i < sz; i++)
+    {
+        if (_quote)
+            *_stream << '"' << v.at(i) << '"';
+        else *_stream << v.at(i);
+
+        if (i < sz-1)
+            *_stream << (_csv ? ',' : '\t');
+    }
+    *_stream << '\n';
+}
+
 void GraphDataExporter::toClipboard()
 {
     QString res;
@@ -91,7 +104,7 @@ void GraphDataExporter::toClipboard()
         auto r1 = _result1.trimmed();
         if (r.endsWith(',')) r = r.left(r.length()-1);
         if (r1.endsWith(',')) r1 = r1.left(r1.length()-1);
-        res = r + '\n' + r1;
+        res = r1.isEmpty() ? r : (r + '\n' + r1 + '\n');
     }
     else res = _result;
     qApp->clipboard()->setText(res);
