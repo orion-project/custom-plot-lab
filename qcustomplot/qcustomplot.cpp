@@ -678,7 +678,7 @@ QCPPaintBufferPixmap::~QCPPaintBufferPixmap()
 QCPPainter *QCPPaintBufferPixmap::startPainting()
 {
   QCPPainter *result = new QCPPainter(&mBuffer);
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
   result->setRenderHint(QPainter::HighQualityAntialiasing);
 #endif
   return result;
@@ -5758,6 +5758,7 @@ QPointF QCPLabelPainterPrivate::getAnchorPos(const QPointF &tickPos)
         case asBottomRight: return tickPos+QPointF(-mPadding*M_SQRT1_2, -mPadding*M_SQRT1_2);
         case asBottomLeft:  return tickPos+QPointF(mPadding*M_SQRT1_2, -mPadding*M_SQRT1_2);
       }
+      break;
     }
     case amSkewedUpright:
     case amSkewedRotated:
@@ -15469,7 +15470,7 @@ void QCustomPlot::paintEvent(QPaintEvent *event)
   QCPPainter painter(this);
   if (painter.isActive())
   {
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
   painter.setRenderHint(QPainter::HighQualityAntialiasing); // to make Antialiasing look good if using the OpenGL graphicssystem
 #endif
     if (mBackgroundBrush.style() != Qt::NoBrush)
@@ -18523,8 +18524,13 @@ void QCPAxisRect::layoutChanged()
 */
 void QCPAxisRect::mousePressEvent(QMouseEvent *event, const QVariant &details)
 {
+#ifdef Q_OS_MAC
+    auto button = Qt::LeftButton;
+#else
+    auto button = Qt::MiddleButton;
+#endif
   Q_UNUSED(details)
-  if (event->buttons() & Qt::LeftButton)
+  if (event->buttons() & button)
   {
     mDragging = true;
     // initialize antialiasing backup in case we start dragging:
@@ -18557,7 +18563,7 @@ void QCPAxisRect::mouseMoveEvent(QMouseEvent *event, const QPointF &startPos)
 {
   Q_UNUSED(startPos)
   // Mouse range dragging interaction:
-  if (mDragging && mParentPlot->interactions().testFlag(QCP::iRangeDrag))
+  if (mDragging && mParentPlot->interactions().testFlag(QCP::iRangeDrag) && !mParentPlot->skipDragging)
   {
     
     if (mRangeDrag.testFlag(Qt::Horizontal))
@@ -32089,7 +32095,7 @@ QCPPolarAxisRadial::SelectablePart QCPPolarAxisRadial::getPartAt(const QPointF &
   else if (mAxisPainter->labelSelectionBox().contains(pos.toPoint()))
     return spAxisLabel;
   else */
-    return spNone;
+  return spNone;
 }
 
 /* inherits documentation from base class */
@@ -32909,7 +32915,7 @@ QCPPolarAxisAngular::SelectablePart QCPPolarAxisAngular::getPartAt(const QPointF
   else if (mAxisPainter->labelSelectionBox().contains(pos.toPoint()))
     return spAxisLabel;
   else */
-    return spNone;
+  return spNone;
 }
 
 /* inherits documentation from base class */
