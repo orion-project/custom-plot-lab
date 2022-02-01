@@ -11,15 +11,37 @@ namespace QCPL {
 class ExporterImpl
 {
 public:
-    virtual ~ExporterImpl() {};
-    virtual void add(const double& v) = 0;
-    virtual void add(const double& x, const double& y) = 0;
-    virtual void add(const QVector<double>& v) = 0;
+    ExporterImpl(const GraphDataExportSettings& settings)
+    {
+        _formatter = new QTextStream(&_formatted);
+        _formatter->setRealNumberNotation(QTextStream::SmartNotation);
+        _formatter->setRealNumberPrecision(settings.numberPrecision);
+        _formatter->setLocale(settings.systemLocale ? QLocale::system() : QLocale::c());
+
+        _quote = settings.csv && _formatter->locale().decimalPoint() == ',';
+        _csv = settings.csv;
+    }
+
+    virtual ~ExporterImpl()
+    {
+        delete _formatter;
+    };
+
+    virtual void add(const QString& v) = 0;
+    virtual void add(const QString& x, const QString& y) = 0;
     virtual QString result() const = 0;
+
+    QString format(const double& v)
+    {
+        _formatted.clear();
+        *_formatter << v;
+        return _formatted;
+    }
+
 protected:
     bool _quote, _csv;
 
-    void addValue(QTextStream* stream, const double& v)
+    void addValue(QTextStream* stream, const QString& v)
     {
         if (_quote)
             *stream << '"' << v << '"';
@@ -35,27 +57,19 @@ protected:
     {
         *stream << '\n';
     }
+private:
+    QString _formatted;
+    QTextStream *_formatter;
 };
 
 namespace {
 
-QTextStream* makeStream(QString* target, const GraphDataExportSettings& settings)
-{
-    auto stream = new QTextStream(target);
-    stream->setRealNumberNotation(QTextStream::SmartNotation);
-    stream->setRealNumberPrecision(settings.numberPrecision);
-    stream->setLocale(settings.systemLocale ? QLocale::system() : QLocale::c());
-    return stream;
-}
-
 class ColumnExporter : public ExporterImpl
 {
 public:
-    ColumnExporter(const GraphDataExportSettings& settings)
+    ColumnExporter(const GraphDataExportSettings& settings) : ExporterImpl(settings)
     {
-        _stream = makeStream(&_result, settings);
-        _quote = settings.csv && _stream->locale().decimalPoint() == ',';
-        _csv = settings.csv;
+        _stream = new QTextStream(&_result);
     }
 
     ~ColumnExporter()
@@ -63,28 +77,18 @@ public:
         delete _stream;
     }
 
-    void add(const double& v) override
+    void add(const QString& v) override
     {
         addValue(_stream, v);
         addNewline(_stream);
     }
 
-    void add(const double& x, const double& y) override
+    void add(const QString& x, const QString& y) override
     {
         addValue(_stream, x);
         addSeparator(_stream);
         addValue(_stream, y);
         addNewline(_stream);
-    }
-
-    void add(const QVector<double>& v) override
-    {
-        int sz = v.size();
-        for (int i = 0; i < sz; i++)
-        {
-            addValue(_stream, v.at(i));
-            addNewline(_stream);
-        }
     }
 
     QString result() const override
@@ -100,12 +104,10 @@ private:
 class RowExporter : public ExporterImpl
 {
 public:
-    RowExporter(const GraphDataExportSettings& settings)
+    RowExporter(const GraphDataExportSettings& settings) : ExporterImpl(settings)
     {
-        _streamX = makeStream(&_resultX, settings);
-        _streamY = makeStream(&_resultY, settings);
-        _quote = settings.csv && _streamX->locale().decimalPoint() == ',';
-        _csv = settings.csv;
+        _streamX = new QTextStream(&_resultX);
+        _streamY = new QTextStream(&_resultY);
     }
 
     ~RowExporter()
@@ -114,13 +116,13 @@ public:
         delete _streamY;
     }
 
-    void add(const double& v) override
+    void add(const QString& v) override
     {
         addValue(_streamX, v);
         addSeparator(_streamX);
     }
 
-    void add(const double& x, const double& y) override
+    void add(const QString& x, const QString& y) override
     {
         addValue(_streamX, x);
         addSeparator(_streamX);
@@ -129,25 +131,15 @@ public:
         addSeparator(_streamY);
     }
 
-    void add(const QVector<double>& v) override
-    {
-        int sz = v.size();
-        for (int i = 0; i < sz; i++)
-        {
-            addValue(_streamX, v.at(i));
-            if (i < sz-1)
-                addSeparator(_streamX);
-        }
-        addNewline(_streamX);
-    }
-
     QString result() const override
     {
         QString rx = _resultX.trimmed();
         QString ry = _resultY.trimmed();
         if (rx.endsWith(',')) rx = rx.left(rx.length()-1);
         if (ry.endsWith(',')) ry = ry.left(ry.length()-1);
-        return ry.isEmpty() ? rx : (rx + '\n' + ry + '\n');
+        if (ry.isEmpty())
+            return rx + '\n';
+        return rx + '\n' + ry + '\n';
     }
 
 private:
@@ -167,6 +159,7 @@ GraphDataExporter::GraphDataExporter(const GraphDataExportSettings& settings)
         _impl = new RowExporter(settings);
     else
         _impl = new ColumnExporter(settings);
+    _merge = settings.mergePoints;
 }
 
 GraphDataExporter::~GraphDataExporter()
@@ -176,17 +169,38 @@ GraphDataExporter::~GraphDataExporter()
 
 void GraphDataExporter::add(const double &v)
 {
-    _impl->add(v);
+    auto str = _impl->format(v);
+
+    if (_merge)
+    {
+        if (_prev == str)
+            return;
+        _prev = str;
+    }
+
+    _impl->add(str);
 }
 
 void GraphDataExporter::add(const double &x, const double &y)
 {
-    _impl->add(x, y);
+    auto strX = _impl->format(x);
+    auto strY = _impl->format(y);
+
+    if (_merge)
+    {
+        if (_prevX == strX && _prevY == strY)
+            return;
+        _prevX = strX;
+        _prevY = strY;
+    }
+
+    _impl->add(strX, strY);
 }
 
-void GraphDataExporter::add(const QVector<double>& v)
+void GraphDataExporter::add(const QVector<double>& vs)
 {
-    _impl->add(v);
+    foreach (const auto& v, vs)
+        add(v);
 }
 
 void GraphDataExporter::toClipboard()

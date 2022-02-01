@@ -11,6 +11,7 @@ struct GraphDataExportSettings
     bool systemLocale = false;
     bool transposed = false;
     int numberPrecision = 6;
+    bool mergePoints = false;
 };
 
 class GraphDataExporter
@@ -21,12 +22,14 @@ public:
 
     void add(const double& v);
     void add(const double& x, const double& y);
-    void add(const QVector<double>& v);
+    void add(const QVector<double>& vs);
 
     void toClipboard();
 
 private:
     class ExporterImpl* _impl;
+    QString _prev, _prevX, _prevY;
+    bool _merge;
 };
 
 } // namespace QCPL
