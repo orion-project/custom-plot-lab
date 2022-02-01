@@ -8,106 +8,190 @@
 
 namespace QCPL {
 
+class ExporterImpl
+{
+public:
+    virtual ~ExporterImpl() {};
+    virtual void add(const double& v) = 0;
+    virtual void add(const double& x, const double& y) = 0;
+    virtual void add(const QVector<double>& v) = 0;
+    virtual QString result() const = 0;
+protected:
+    bool _quote, _csv;
+
+    void addValue(QTextStream* stream, const double& v)
+    {
+        if (_quote)
+            *stream << '"' << v << '"';
+        else *stream << v;
+    }
+
+    void addSeparator(QTextStream* stream)
+    {
+        *stream << (_csv ? ',' : '\t');
+    }
+
+    void addNewline(QTextStream* stream)
+    {
+        *stream << '\n';
+    }
+};
+
+namespace {
+
+QTextStream* makeStream(QString* target, const GraphDataExportSettings& settings)
+{
+    auto stream = new QTextStream(target);
+    stream->setRealNumberNotation(QTextStream::SmartNotation);
+    stream->setRealNumberPrecision(settings.numberPrecision);
+    stream->setLocale(settings.systemLocale ? QLocale::system() : QLocale::c());
+    return stream;
+}
+
+class ColumnExporter : public ExporterImpl
+{
+public:
+    ColumnExporter(const GraphDataExportSettings& settings)
+    {
+        _stream = makeStream(&_result, settings);
+        _quote = settings.csv && _stream->locale().decimalPoint() == ',';
+        _csv = settings.csv;
+    }
+
+    ~ColumnExporter()
+    {
+        delete _stream;
+    }
+
+    void add(const double& v) override
+    {
+        addValue(_stream, v);
+        addNewline(_stream);
+    }
+
+    void add(const double& x, const double& y) override
+    {
+        addValue(_stream, x);
+        addSeparator(_stream);
+        addValue(_stream, y);
+        addNewline(_stream);
+    }
+
+    void add(const QVector<double>& v) override
+    {
+        int sz = v.size();
+        for (int i = 0; i < sz; i++)
+        {
+            addValue(_stream, v.at(i));
+            addNewline(_stream);
+        }
+    }
+
+    QString result() const override
+    {
+        return _result;
+    }
+
+private:
+    QString _result;
+    QTextStream *_stream;
+};
+
+class RowExporter : public ExporterImpl
+{
+public:
+    RowExporter(const GraphDataExportSettings& settings)
+    {
+        _streamX = makeStream(&_resultX, settings);
+        _streamY = makeStream(&_resultY, settings);
+        _quote = settings.csv && _streamX->locale().decimalPoint() == ',';
+        _csv = settings.csv;
+    }
+
+    ~RowExporter()
+    {
+        delete _streamX;
+        delete _streamY;
+    }
+
+    void add(const double& v) override
+    {
+        addValue(_streamX, v);
+        addSeparator(_streamX);
+    }
+
+    void add(const double& x, const double& y) override
+    {
+        addValue(_streamX, x);
+        addSeparator(_streamX);
+
+        addValue(_streamY, y);
+        addSeparator(_streamY);
+    }
+
+    void add(const QVector<double>& v) override
+    {
+        int sz = v.size();
+        for (int i = 0; i < sz; i++)
+        {
+            addValue(_streamX, v.at(i));
+            if (i < sz-1)
+                addSeparator(_streamX);
+        }
+        addNewline(_streamX);
+    }
+
+    QString result() const override
+    {
+        QString rx = _resultX.trimmed();
+        QString ry = _resultY.trimmed();
+        if (rx.endsWith(',')) rx = rx.left(rx.length()-1);
+        if (ry.endsWith(',')) ry = ry.left(ry.length()-1);
+        return ry.isEmpty() ? rx : (rx + '\n' + ry + '\n');
+    }
+
+private:
+    QString _resultX, _resultY;
+    QTextStream *_streamX, *_streamY;
+};
+
+} // namespace
+
+//------------------------------------------------------------------------------
+//                             GraphDataExporter
+//------------------------------------------------------------------------------
+
 GraphDataExporter::GraphDataExporter(const GraphDataExportSettings& settings)
 {
-    _stream = new QTextStream(&_result);
-    _stream->setRealNumberNotation(QTextStream::SmartNotation);
-    _stream->setRealNumberPrecision(settings.numberPrecision);
-    _stream->setLocale(settings.systemLocale ? QLocale::system() : QLocale::c());
     if (settings.transposed)
-    {
-        _stream1 = new QTextStream(&_result1);
-        _stream1->setRealNumberNotation(QTextStream::SmartNotation);
-        _stream1->setRealNumberPrecision(settings.numberPrecision);
-        _stream1->setLocale(settings.systemLocale ? QLocale::system() : QLocale::c());
-    }
-    _quote = settings.csv && _stream->locale().decimalPoint() == ',';
-    _csv = settings.csv;
+        _impl = new RowExporter(settings);
+    else
+        _impl = new ColumnExporter(settings);
 }
 
 GraphDataExporter::~GraphDataExporter()
 {
-    delete _stream;
-    if (_stream1)
-        delete _stream1;
+    delete _impl;
 }
 
-void GraphDataExporter::add(double v)
+void GraphDataExporter::add(const double &v)
 {
-    if (_stream1)
-    {
-        // don't use _stream1 here, it's only a marker that we use row-mode
-        addToRow(_stream, v);
-    }
-    else
-    {
-        if (_quote)
-            *_stream << '"' << v << '"';
-        else *_stream << v;
-        *_stream << '\n';
-    }
+    _impl->add(v);
 }
 
-void GraphDataExporter::addToRow(QTextStream* stream, double v)
+void GraphDataExporter::add(const double &x, const double &y)
 {
-    if (_quote)
-        *stream << '"' << v << '"';
-    else *stream << v;
-
-    *_stream << (_csv ? ',' : '\t');
-}
-
-void GraphDataExporter::add(double x, double y)
-{
-    if (_stream1)
-    {
-        addToRow(_stream, x);
-        addToRow(_stream1, y);
-    }
-    else
-    {
-        if (_quote)
-            *_stream << '"' << x << '"';
-        else *_stream << x;
-
-        *_stream << (_csv ? ',' : '\t');
-
-        if (_quote)
-            *_stream << '"' << y << '"';
-        else *_stream << y;
-
-        *_stream << '\n';
-    }
+    _impl->add(x, y);
 }
 
 void GraphDataExporter::add(const QVector<double>& v)
 {
-    int sz = v.size();
-    for (int i = 0; i < sz; i++)
-    {
-        if (_quote)
-            *_stream << '"' << v.at(i) << '"';
-        else *_stream << v.at(i);
-
-        if (i < sz-1)
-            *_stream << (_csv ? ',' : '\t');
-    }
-    *_stream << '\n';
+    _impl->add(v);
 }
 
 void GraphDataExporter::toClipboard()
 {
-    QString res;
-    if (_stream1)
-    {
-        auto r = _result.trimmed();
-        auto r1 = _result1.trimmed();
-        if (r.endsWith(',')) r = r.left(r.length()-1);
-        if (r1.endsWith(',')) r1 = r1.left(r1.length()-1);
-        res = r1.isEmpty() ? r : (r + '\n' + r1 + '\n');
-    }
-    else res = _result;
-    qApp->clipboard()->setText(res);
+    qApp->clipboard()->setText(_impl->result());
 }
 
 } // namespace QCPL

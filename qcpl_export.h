@@ -1,11 +1,7 @@
 #ifndef QCPL_EXPORT_H
 #define QCPL_EXPORT_H
 
-#include <QString>
-
-QT_BEGIN_NAMESPACE
-class QTextStream;
-QT_END_NAMESPACE
+#include <QVector>
 
 namespace QCPL {
 
@@ -23,19 +19,14 @@ public:
     GraphDataExporter(const GraphDataExportSettings& settings);
     ~GraphDataExporter();
 
-    void add(double v);
-    void add(double x, double y);
+    void add(const double& v);
+    void add(const double& x, const double& y);
     void add(const QVector<double>& v);
 
     void toClipboard();
 
 private:
-    QString _result, _result1;
-    QTextStream *_stream;
-    QTextStream *_stream1 = nullptr;
-    bool _quote, _csv;
-
-    void addToRow(QTextStream* stream, double v);
+    class ExporterImpl* _impl;
 };
 
 } // namespace QCPL
