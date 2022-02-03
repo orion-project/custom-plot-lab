@@ -52,8 +52,10 @@ Plot::Plot(QWidget *parent) : QCustomPlot(parent),
     setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables |
                     QCP::iSelectAxes | QCP::iSelectItems | QCP::iSelectLegend | QCP::iSelectOther);
     connect(this, SIGNAL(selectionChangedByUser()), this, SLOT(plotSelectionChanged()));
-    connect(this, SIGNAL(plottableClick(QCPAbstractPlottable*,int,QMouseEvent*)), this, SLOT(rawGraphClicked(QCPAbstractPlottable*)));
-    connect(this, SIGNAL(axisDoubleClick(QCPAxis*,QCPAxis::SelectablePart,QMouseEvent*)), this, SLOT(setLimitsDlg(QCPAxis*)));
+    connect(this, SIGNAL(plottableClick(QCPAbstractPlottable*,int,QMouseEvent*)),
+            this, SLOT(rawGraphClicked(QCPAbstractPlottable*)));
+    connect(this, SIGNAL(axisDoubleClick(QCPAxis*,QCPAxis::SelectablePart,QMouseEvent*)),
+            this, SLOT(axisDoubleClicked(QCPAxis*,QCPAxis::SelectablePart)));
 
     // TODO make font customizable
     auto f = font();
@@ -146,7 +148,7 @@ void Plot::contextMenuEvent(QContextMenuEvent *event)
     else if (yAxis->getPartAt(pos) != QCPAxis::spNone)
         menu = menuAxisY;
     else if (menuGraph) {
-        for (auto g : selectedGraphs())
+        foreach (auto g, selectedGraphs())
             if (!isService(g)) {
                 menu = menuGraph;
                 break;
@@ -178,6 +180,14 @@ void Plot::rawGraphClicked(QCPAbstractPlottable *plottable)
     auto g = dynamic_cast<QCPGraph*>(plottable);
     if (_serviceGraphs.contains(g)) g = nullptr;
     emit graphClicked(g);
+}
+
+void Plot::axisDoubleClicked(QCPAxis *axis, QCPAxis::SelectablePart part)
+{
+    if (part == QCPAxis::spAxisLabel)
+        titleDlg(axis);
+    else
+        limitsDlg(axis);
 }
 
 void Plot::autolimits(QCPAxis* axis, bool replot)
@@ -261,7 +271,7 @@ void Plot::setAxisRange(QCPAxis* axis, const QCPRange& range)
     axis->setRange(r);
 }
 
-bool Plot::setLimitsDlg(QCPAxis* axis)
+bool Plot::limitsDlg(QCPAxis* axis)
 {
     auto range = axis->range();
     AxisLimitsDlgProps props;
@@ -276,7 +286,7 @@ bool Plot::setLimitsDlg(QCPAxis* axis)
     return false;
 }
 
-bool Plot::setLimitsDlgXY()
+bool Plot::limitsDlgXY()
 {
     auto range = (selectedPart() == PlotPart::AxisY ? yAxis : xAxis)->range();
     AxisLimitsDlgProps props;
@@ -285,6 +295,16 @@ bool Plot::setLimitsDlgXY()
     {
         setAxisRange(xAxis, range);
         setAxisRange(yAxis, range);
+        replot();
+        return true;
+    }
+    return false;
+}
+
+bool Plot::titleDlg(QCPAxis* axis)
+{
+    if (axisTitleDlg(axis, tr("%1 Title").arg(getAxisTitle(axis))))
+    {
         replot();
         return true;
     }

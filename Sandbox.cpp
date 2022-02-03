@@ -16,13 +16,13 @@ PlotWindow::PlotWindow(QWidget *parent) : QMainWindow(parent)
     m->addAction("Auto", this, [this]{ _plot->autolimits(); });
     m->addAction("Auto X", this, [this]{ _plot->autolimitsX(); });
     m->addAction("Auto Y", this, [this]{ _plot->autolimitsY(); });
-    m->addAction("Limits...", this, [this]{ _plot->setLimitsDlgXY(); });
-    m->addAction("Limits X...", this, [this]{ _plot->setLimitsDlgX(); });
-    m->addAction("Limits Y...", this, [this]{ _plot->setLimitsDlgY(); });
+    m->addAction("Limits...", this, [this]{ _plot->limitsDlgXY(); });
+    m->addAction("Limits X...", this, [this]{ _plot->limitsDlgX(); });
+    m->addAction("Limits Y...", this, [this]{ _plot->limitsDlgY(); });
 
-//    m = menuBar()->addMenu("Format");
-//    m->addAction("X-axis title...", this, [this]{ QCPL::editTitleDlg(_plot.ax) });
-//    m->addAction("Y-axis title...", this, &PlotWindow::editAxisTitleY);
+    m = menuBar()->addMenu("Format");
+    m->addAction("X-axis title...", this, [this]{ _plot->titleDlgX(); });
+    m->addAction("Y-axis title...", this, [this]{ _plot->titleDlgY(); });
 
     addRandomSample();
     _plot->autolimits();
@@ -38,13 +38,3 @@ void PlotWindow::addRandomSample()
 {
     _plot->makeNewGraph(OriPetname::make(), QCPL::makeRandomSample());
 }
-
-//void PlotWindow::editAxisTitleX()
-//{
-//    _plot->xAxis->
-//}
-
-//void PlotWindow::editAxisTitleY()
-//{
-
-//}

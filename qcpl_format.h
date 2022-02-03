@@ -8,7 +8,7 @@ class QCPRange;
 
 namespace QCPL {
 
-bool axisTitleDlg(QCPAxis* axis);
+bool axisTitleDlg(QCPAxis* axis, const QString& title);
 
 struct AxisLimitsDlgProps
 {

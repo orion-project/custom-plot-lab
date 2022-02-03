@@ -5,10 +5,23 @@
 #include "helpers/OriWidgets.h"
 #include "widgets/OriValueEdit.h"
 
+#include <QPlainTextEdit>
+
 namespace QCPL {
 
-bool axisTitleDlg(QCPAxis* axis)
+bool axisTitleDlg(QCPAxis* axis, const QString& title)
 {
+    QPlainTextEdit editor;
+    editor.setPlainText(axis->label());
+
+    if (Ori::Dlg::Dialog(&editor, false)
+            .withTitle(title)
+            .withContentToButtonsSpacingFactor(3)
+            .exec())
+    {
+        axis->setLabel(editor.toPlainText().trimmed());
+        return true;
+    }
     return false;
 }
 

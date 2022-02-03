@@ -64,9 +64,9 @@ public slots:
     void autolimits(bool replot = true) { autolimits(xAxis, false); autolimits(yAxis, replot); }
     void autolimitsX(bool replot = true) { autolimits(xAxis, replot); }
     void autolimitsY(bool replot = true) { autolimits(yAxis, replot); }
-    bool setLimitsDlgX() { return setLimitsDlg(xAxis); }
-    bool setLimitsDlgY() { return setLimitsDlg(yAxis); }
-    bool setLimitsDlgXY();
+    bool limitsDlgX() { return limitsDlg(xAxis); }
+    bool limitsDlgY() { return limitsDlg(yAxis); }
+    bool limitsDlgXY();
     void zoomIn() { extendLimits(-(_zoomStepX+_zoomStepY)/2.0); }
     void zoomOut() { extendLimits((_zoomStepX+_zoomStepY)/2.0); }
     void zoomInX() { extendLimitsX(-_zoomStepX); }
@@ -74,6 +74,8 @@ public slots:
     void zoomInY() { extendLimitsY(-_zoomStepY); }
     void zoomOutY() { extendLimitsY(_zoomStepY); }
     void copyPlotImage();
+    bool titleDlgX() { return titleDlg(xAxis); }
+    bool titleDlgY() { return titleDlg(yAxis); }
 
 signals:
     void graphClicked(Graph*);
@@ -91,7 +93,7 @@ protected:
 private slots:
     void plotSelectionChanged();
     void rawGraphClicked(QCPAbstractPlottable*);
-    bool setLimitsDlg(QCPAxis* axis);
+    void axisDoubleClicked(QCPAxis*, QCPAxis::SelectablePart);
 
 private:
     QVector<Graph*> _serviceGraphs;
@@ -108,6 +110,8 @@ private:
 
     QColor nextGraphColor();
 
+    bool limitsDlg(QCPAxis* axis);
+    bool titleDlg(QCPAxis* axis);
     void autolimits(QCPAxis* axis, bool replot);
     void extendLimits(QCPAxis* axis, double factor, bool replot);
     void setAxisRange(QCPAxis* axis, const QCPRange &range);
