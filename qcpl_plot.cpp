@@ -85,6 +85,16 @@ Plot::Plot(QWidget *parent) : QCustomPlot(parent),
     yAxis->setSelectedLabelFont(f);
 }
 
+Plot::~Plot()
+{
+    auto it = _formatters.constBegin();
+    while (it != _formatters.constEnd())
+    {
+        delete it.value();
+        it++;
+    }
+}
+
 Plot::PlotPart Plot::selectedPart() const
 {
     if (xAxis->selectedParts().testFlag(QCPAxis::spAxis))
@@ -307,6 +317,7 @@ bool Plot::titleDlg(QCPAxis* axis)
 {
     AxisTitleDlgProps props;
     props.title = tr("%1 Title").arg(getAxisTitle(axis));
+    props.formatter = _formatters.contains(axis) ? _formatters[axis] : nullptr;
     if (axisTitleDlg(axis, props))
     {
         replot();
@@ -385,7 +396,7 @@ void Plot::setTitleVisible(bool on)
 
         plotLayout()->insertRow(0);
         plotLayout()->addElement(0, 0, _title);
-        connect(_title, &QCPTextElement::doubleClicked, [this](){ emit editTitleRequest(); });
+        connect(_title, &QCPTextElement::doubleClicked, this, [this](){ emit editTitleRequest(); });
     }
     else
     {
@@ -408,6 +419,20 @@ void Plot::copyPlotImage()
     QCPPainter painter(&image);
     toPainter(&painter);
     qApp->clipboard()->setImage(image);
+}
+
+void Plot::addTextVar(void* target, const QString& name, const QString& descr, TextVarGetter getter)
+{
+    if (!_formatters.contains(target))
+    {
+        if (target == xAxis)
+            _formatters[target] = new AxisTitleFormatter(xAxis);
+        else if (target == yAxis)
+            _formatters[target] = new AxisTitleFormatter(yAxis);
+        else
+            return;
+    }
+    _formatters[target]->addVar(name, descr, getter);
 }
 
 } // namespace QCPL

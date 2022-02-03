@@ -6,9 +6,11 @@
 #include <QColorDialog>
 #include <QDebug>
 #include <QFontComboBox>
+#include <QMenu>
 #include <QPainter>
 #include <QPlainTextEdit>
 #include <QToolBar>
+#include <QToolButton>
 
 namespace QCPL {
 
@@ -23,7 +25,7 @@ static QPixmap makeColorIcon(const QBrush &b)
     return pixmap;
 }
 
-static QWidget* makeToolbarSeparator()
+static QWidget* makeSeparator()
 {
     auto w = new QWidget;
     w->setFixedWidth(Ori::Gui::layoutSpacing());
@@ -49,7 +51,7 @@ TitleEditor::TitleEditor(const TitleEditorOptions &opts) : QWidget()
     connect(_comboSize, SIGNAL(activated(QString)), this, SLOT(setFontSize(QString)));
     toolbar->addWidget(_comboSize);
 
-    toolbar->addWidget(makeToolbarSeparator());
+    toolbar->addWidget(makeSeparator());
 
     _actnBold = toolbar->addAction(QIcon(":/qcpl_images/bold"), tr("Bold"), this, &TitleEditor::toggleBold);
     _actnItalic = toolbar->addAction(QIcon(":/qcpl_images/italic"), tr("Italic"), this, &TitleEditor::toggleItalic);
@@ -58,9 +60,26 @@ TitleEditor::TitleEditor(const TitleEditorOptions &opts) : QWidget()
     _actnItalic->setCheckable(true);
     _actnUnderline->setCheckable(true);
 
-    toolbar->addWidget(makeToolbarSeparator());
+    toolbar->addWidget(makeSeparator());
 
     _actnColor = toolbar->addAction(tr("Color..."), this, &TitleEditor::selectColor);
+
+    if (!opts.vars.isEmpty())
+    {
+        auto varsMenu = new QMenu(this);
+        foreach (const auto& var, opts.vars)
+        {
+            auto action = varsMenu->addAction(var.descr + '\t' + var.name, this, &TitleEditor::insertVar);
+            action->setData(var.name);
+        }
+        auto varsButton = new QToolButton;
+        varsButton->setIcon(QIcon(":/qcpl_images/var"));
+        varsButton->setToolTip(tr("Insert Variable"));
+        varsButton->setPopupMode(QToolButton::InstantPopup);
+        varsButton->setMenu(varsMenu);
+        toolbar->addWidget(makeSeparator());
+        toolbar->addWidget(varsButton);
+    }
 
     _editor = new QPlainTextEdit;
 
@@ -141,6 +160,12 @@ void TitleEditor::toggleUnderline()
     auto font = _editor->font();
     font.setUnderline(_actnUnderline->isChecked());
     _editor->setFont(font);
+}
+
+void TitleEditor::insertVar()
+{
+    auto action = qobject_cast<QAction*>(sender());
+    _editor->textCursor().insertText(action->data().toString());
 }
 
 } // namespace QCPL

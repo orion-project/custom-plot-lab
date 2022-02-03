@@ -3,6 +3,8 @@
 
 #include <QWidget>
 
+#include "qcpl_types.h"
+
 QT_BEGIN_NAMESPACE
 class QAction;
 class QComboBox;
@@ -15,6 +17,7 @@ namespace QCPL {
 struct TitleEditorOptions
 {
     QSize iconSize;
+    QVector<TextVariable> vars;
 };
 
 class TitleEditor : public QWidget
@@ -46,6 +49,7 @@ private:
     void toggleItalic();
     void toggleUnderline();
     void selectColor();
+    void insertVar();
 };
 
 } // namespace QCPL

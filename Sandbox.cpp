@@ -24,6 +24,9 @@ PlotWindow::PlotWindow(QWidget *parent) : QMainWindow(parent)
     m->addAction("X-axis title...", this, [this]{ _plot->titleDlgX(); });
     m->addAction("Y-axis title...", this, [this]{ _plot->titleDlgY(); });
 
+    _plot->addTextVar(_plot->xAxis, "{var1}", "Short var 1", []{ return "Galenium overloader"; });
+    _plot->addTextVar(_plot->xAxis, "{var2}", "Longer variable name 2", []{ return "mm"; });
+
     addRandomSample();
     _plot->autolimits();
 

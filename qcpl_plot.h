@@ -8,12 +8,15 @@ namespace QCPL {
 
 typedef QCPGraph Graph;
 
+class TextFormatterBase;
+
 class Plot : public QCustomPlot
 {
     Q_OBJECT
 
 public:
     explicit Plot(QWidget* parent = nullptr);
+    ~Plot();
 
     QVector<Graph*>& serviceGraphs() { return _serviceGraphs; }
     Graph* selectedGraph() const;
@@ -60,6 +63,8 @@ public:
     int axisRectRow() const { return 0; }
     int axisRectCol() const { return 0; }
 
+    void addTextVar(void* target, const QString& name, const QString& descr, TextVarGetter getter);
+
 public slots:
     void autolimits(bool replot = true) { autolimits(xAxis, false); autolimits(yAxis, replot); }
     void autolimitsX(bool replot = true) { autolimits(xAxis, replot); }
@@ -105,6 +110,7 @@ private:
     const double _zoomStepX;
     const double _zoomStepY;
     const int _numberPrecision;
+    QMap<void*, TextFormatterBase*> _formatters;
 
     bool isService(Graph* g) const { return _serviceGraphs.contains(g); }
 

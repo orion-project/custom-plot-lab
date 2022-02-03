@@ -85,19 +85,19 @@ void Cursor::mouseMove(QMouseEvent *evt)
             {
                 double cursorX, cursorY;
                 pixelPosition(cursorX, cursorY);
-                setPixelPosition(evt->x(), cursorY);
+                setPixelPosition(evt->pos().x(), cursorY);
             }
             else
             {
                 double cursorX, cursorY;
                 pixelPosition(cursorX, cursorY);
-                setPixelPosition(cursorX, evt->y());
+                setPixelPosition(cursorX, evt->pos().y());
             }
         }
         else
         {
-            double mouseX = evt->x();
-            double mouseY = evt->y();
+            double mouseX = evt->pos().x();
+            double mouseY = evt->pos().y();
             double cursorX, cursorY;
             pixelPosition(cursorX, cursorY);
             QCPAxisRect *r = parentPlot()->axisRect();

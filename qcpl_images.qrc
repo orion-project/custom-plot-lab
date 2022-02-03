@@ -4,5 +4,6 @@
         <file alias="bold">./img/bold.svg</file>
         <file alias="italic">./img/italic.svg</file>
         <file alias="underline">./img/underline.svg</file>
+        <file alias="var">./img/var.svg</file>
     </qresource>
 </RCC>

@@ -10,19 +10,36 @@ namespace QCPL {
 
 bool axisTitleDlg(QCPAxis* axis, const AxisTitleDlgProps& props)
 {
+    auto style = qApp->style();
+
     TitleEditorOptions opts;
+    opts.iconSize = props.iconSize;
+    if (props.formatter)
+        opts.vars = props.formatter->vars();
     TitleEditor editor(opts);
-    editor.setText(axis->label());
+    if (props.formatter)
+        editor.setText(props.formatter->text());
+    else
+        editor.setText(axis->label());
     editor.setFont(axis->labelFont());
     editor.setColor(axis->labelColor());
+    editor.setContentsMargins(style->pixelMetric(QStyle::PM_LayoutLeftMargin)/2, 0,
+                              style->pixelMetric(QStyle::PM_LayoutRightMargin)/2, 0);
 
     if (Ori::Dlg::Dialog(&editor, false)
             .withTitle(props.title)
+            .withSkipContentMargins()
             .withContentToButtonsSpacingFactor(2)
             .withPersistenceId("axis-title")
             .exec())
     {
-        axis->setLabel(editor.text());
+        if (props.formatter)
+        {
+            props.formatter->setText(editor.text());
+            props.formatter->format();
+        }
+        else
+            axis->setLabel(editor.text());
         axis->setLabelFont(editor.font());
         axis->setLabelColor(editor.color());
         axis->setSelectedLabelFont(editor.font());
@@ -46,7 +63,7 @@ bool axisLimitsDlg(QCPRange& range, const AxisLimitsDlgProps& props)
     QWidget w;
 
     auto layout = new QFormLayout(&w);
-    layout->setMargin(0);
+    layout->setContentsMargins(0, 0, 0, 0);
     layout->addRow(new QLabel(props.unit.isEmpty() ? QString("Min") : QString("Min (%1)").arg(props.unit)), editorMin);
     layout->addRow(new QLabel(props.unit.isEmpty() ? QString("Max") : QString("Max (%1)").arg(props.unit)), editorMax);
 
@@ -61,6 +78,57 @@ bool axisLimitsDlg(QCPRange& range, const AxisLimitsDlgProps& props)
         return true;
     }
     return false;
+}
+
+//------------------------------------------------------------------------------
+//                            QCPL::TextProcessor
+//------------------------------------------------------------------------------
+
+void TextProcessor::addVar(const QString& name, TextVarGetter getter)
+{
+    _vars.append({name, getter});
+}
+
+QString TextProcessor::process(const QString& text) const
+{
+    QString str(text);
+    foreach (const auto& var, _vars)
+    {
+        int pos = str.indexOf(var.name);
+        if (pos >= 0)
+        {
+            QString value = var.getter();
+            while (pos >= 0)
+            {
+                str.replace(pos, var.name.length(), value);
+                pos = str.indexOf(var.name, pos + value.length());
+            }
+        }
+    }
+    return str;
+}
+
+//------------------------------------------------------------------------------
+//                           QCPL::TextFormatterBase
+//------------------------------------------------------------------------------
+
+void TextFormatterBase::addVar(const QString& name, const QString& descr, TextVarGetter getter)
+{
+    _vars.append({name, descr});
+    _processor.addVar(name, getter);
+}
+
+//------------------------------------------------------------------------------
+//                          QCPL::AxisTitleFormatter
+//------------------------------------------------------------------------------
+
+AxisTitleFormatter::AxisTitleFormatter(QCPAxis* axis): _axis(axis)
+{
+}
+
+void AxisTitleFormatter::format()
+{
+    _axis->setLabel(_processor.process(_text));
 }
 
 } // namespace QCPL

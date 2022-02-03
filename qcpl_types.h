@@ -25,6 +25,14 @@ struct AxisLimits
     QString str() const;
 };
 
+struct TextVariable
+{
+    QString name;
+    QString descr;
+};
+
+using TextVarGetter = std::function<QString()>;
+
 } // namespace QCPL
 
 #endif // QCPL_TYPES_H
