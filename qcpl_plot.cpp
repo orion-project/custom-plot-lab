@@ -275,9 +275,10 @@ bool Plot::limitsDlg(QCPAxis* axis)
 {
     auto range = axis->range();
     AxisLimitsDlgProps props;
+    props.title = tr("%1 Limits").arg(getAxisTitle(axis));
     props.precision = _numberPrecision;
     props.unit = getAxisUnitString ? getAxisUnitString(axis) : QString();
-    if (axisLimitsDlg(range, tr("%1 Limits").arg(getAxisTitle(axis)), props))
+    if (axisLimitsDlg(range, props))
     {
         setAxisRange(axis, range);
         replot();
@@ -290,8 +291,9 @@ bool Plot::limitsDlgXY()
 {
     auto range = (selectedPart() == PlotPart::AxisY ? yAxis : xAxis)->range();
     AxisLimitsDlgProps props;
+    props.title = tr("Limits for X and Y");
     props.precision = _numberPrecision;
-    if (axisLimitsDlg(range, tr("Limits for X and Y"), props))
+    if (axisLimitsDlg(range, props))
     {
         setAxisRange(xAxis, range);
         setAxisRange(yAxis, range);
@@ -303,7 +305,9 @@ bool Plot::limitsDlgXY()
 
 bool Plot::titleDlg(QCPAxis* axis)
 {
-    if (axisTitleDlg(axis, tr("%1 Title").arg(getAxisTitle(axis))))
+    AxisTitleDlgProps props;
+    props.title = tr("%1 Title").arg(getAxisTitle(axis));
+    if (axisTitleDlg(axis, props))
     {
         replot();
         return true;

@@ -1,31 +1,37 @@
 #include "qcpl_format.h"
 #include "qcpl_plot.h"
+#include "qcpl_title_editor.h"
 
 #include "helpers/OriDialogs.h"
 #include "helpers/OriWidgets.h"
 #include "widgets/OriValueEdit.h"
 
-#include <QPlainTextEdit>
-
 namespace QCPL {
 
-bool axisTitleDlg(QCPAxis* axis, const QString& title)
+bool axisTitleDlg(QCPAxis* axis, const AxisTitleDlgProps& props)
 {
-    QPlainTextEdit editor;
-    editor.setPlainText(axis->label());
+    TitleEditorOptions opts;
+    TitleEditor editor(opts);
+    editor.setText(axis->label());
+    editor.setFont(axis->labelFont());
+    editor.setColor(axis->labelColor());
 
     if (Ori::Dlg::Dialog(&editor, false)
-            .withTitle(title)
-            .withContentToButtonsSpacingFactor(3)
+            .withTitle(props.title)
+            .withContentToButtonsSpacingFactor(2)
+            .withPersistenceId("axis-title")
             .exec())
     {
-        axis->setLabel(editor.toPlainText().trimmed());
+        axis->setLabel(editor.text());
+        axis->setLabelFont(editor.font());
+        axis->setLabelColor(editor.color());
+        axis->setSelectedLabelFont(editor.font());
         return true;
     }
     return false;
 }
 
-bool axisLimitsDlg(QCPRange& range, const QString &title, const AxisLimitsDlgProps& props)
+bool axisLimitsDlg(QCPRange& range, const AxisLimitsDlgProps& props)
 {
     auto editorMin = new Ori::Widgets::ValueEdit;
     auto editorMax = new Ori::Widgets::ValueEdit;
@@ -45,7 +51,7 @@ bool axisLimitsDlg(QCPRange& range, const QString &title, const AxisLimitsDlgPro
     layout->addRow(new QLabel(props.unit.isEmpty() ? QString("Max") : QString("Max (%1)").arg(props.unit)), editorMax);
 
     if (Ori::Dlg::Dialog(&w, false)
-            .withTitle(title)
+            .withTitle(props.title)
             .withContentToButtonsSpacingFactor(3)
             .exec())
     {

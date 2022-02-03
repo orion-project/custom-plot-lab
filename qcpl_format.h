@@ -8,15 +8,21 @@ class QCPRange;
 
 namespace QCPL {
 
-bool axisTitleDlg(QCPAxis* axis, const QString& title);
+struct AxisTitleDlgProps
+{
+    QString title;
+};
+
+bool axisTitleDlg(QCPAxis* axis, const AxisTitleDlgProps& props);
 
 struct AxisLimitsDlgProps
 {
+    QString title;
     QString unit;
     int precision = 6;
 };
 
-bool axisLimitsDlg(QCPRange& range, const QString& title, const AxisLimitsDlgProps& props);
+bool axisLimitsDlg(QCPRange& range, const AxisLimitsDlgProps& props);
 
 } // namespace QCPL
 
