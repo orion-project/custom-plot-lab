@@ -2,8 +2,6 @@
 
 #include "tools/OriPetname.h"
 
-#include <QRandomGenerator>
-
 PlotWindow::PlotWindow(QWidget *parent) : QMainWindow(parent)
 {
     setWindowTitle("custom-plot-lab sandbox");
@@ -11,32 +9,29 @@ PlotWindow::PlotWindow(QWidget *parent) : QMainWindow(parent)
     _plot = new QCPL::Plot;
     setCentralWidget(_plot);
 
-    auto menuData = menuBar()->addMenu("Data");
-    menuData->addAction("Add random graph", this, &PlotWindow::addRandomGraph);
+    auto m = menuBar()->addMenu("Data");
+    m->addAction("Add random graph", this, [this]{ _plot->makeNewGraph(OriPetname::make(), QCPL::makeRandomSample()); });
 
-    auto menuLimits = menuBar()->addMenu("Limits");
-    menuLimits->addAction("Auto", this, [this]{ _plot->autolimits(); });
-    menuLimits->addAction("Auto X", this, [this]{ _plot->autolimitsX(); });
-    menuLimits->addAction("Auto Y", this, [this]{ _plot->autolimitsY(); });
+    m = menuBar()->addMenu("Limits");
+    m->addAction("Auto", this, [this]{ _plot->autolimits(); });
+    m->addAction("Auto X", this, [this]{ _plot->autolimitsX(); });
+    m->addAction("Auto Y", this, [this]{ _plot->autolimitsY(); });
+
+    m = menuBar()->addMenu("Format");
+    m->addAction("X-axis title...", this, &PlotWindow::editAxisTitleX);
+    m->addAction("Y-axis title...", this, &PlotWindow::editAxisTitleY);
 }
 
 PlotWindow::~PlotWindow()
 {
 }
 
-void PlotWindow::addRandomGraph()
+void PlotWindow::editAxisTitleX()
 {
-    const double H = 25;
-    const int count = 100;
-    QVector<double> xs(count);
-    QVector<double> ys(count);
-    auto rnd = QRandomGenerator::global();
-    double y = (rnd->generate()%100)*H*0.01;
-    for (int i = 0; i < count; i++)
-    {
-        y = qAbs(y + (rnd->generate()%100)*H*0.01 - H*0.5);
-        xs[i] = i;
-        ys[i] = y;
-    }
-    _plot->makeNewGraph(OriPetname::make(), {xs, ys});
+
+}
+
+void PlotWindow::editAxisTitleY()
+{
+
 }

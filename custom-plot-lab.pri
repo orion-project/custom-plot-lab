@@ -11,7 +11,8 @@ SOURCES += \
     $$PWD/qcpl_colors.cpp \
     $$PWD/qcpl_graph.cpp \
     $$PWD/qcpl_types.cpp \
-    $$PWD/qcpl_graph_grid.cpp
+    $$PWD/qcpl_graph_grid.cpp \
+    $$PWD/qcpl_utils.cpp
 
 HEADERS  += \
     $$PWD/qcpl_cursor.h \
@@ -22,7 +23,8 @@ HEADERS  += \
     $$PWD/qcpl_colors.h \
     $$PWD/qcpl_graph.h \
     $$PWD/qcpl_types.h \
-    $$PWD/qcpl_graph_grid.h
+    $$PWD/qcpl_graph_grid.h \
+    $$PWD/qcpl_utils.h
 
 RESOURCES += \
     $$PWD/qcpl_images.qrc
