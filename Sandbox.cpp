@@ -10,28 +10,41 @@ PlotWindow::PlotWindow(QWidget *parent) : QMainWindow(parent)
     setCentralWidget(_plot);
 
     auto m = menuBar()->addMenu("Data");
-    m->addAction("Add random graph", this, [this]{ _plot->makeNewGraph(OriPetname::make(), QCPL::makeRandomSample()); });
+    m->addAction("Add random graph", this, &PlotWindow::addRandomSample);
 
     m = menuBar()->addMenu("Limits");
     m->addAction("Auto", this, [this]{ _plot->autolimits(); });
     m->addAction("Auto X", this, [this]{ _plot->autolimitsX(); });
     m->addAction("Auto Y", this, [this]{ _plot->autolimitsY(); });
+    m->addAction("Limits...", this, [this]{ _plot->setLimitsDlgXY(); });
+    m->addAction("Limits X...", this, [this]{ _plot->setLimitsDlgX(); });
+    m->addAction("Limits Y...", this, [this]{ _plot->setLimitsDlgY(); });
 
-    m = menuBar()->addMenu("Format");
-    m->addAction("X-axis title...", this, &PlotWindow::editAxisTitleX);
-    m->addAction("Y-axis title...", this, &PlotWindow::editAxisTitleY);
+//    m = menuBar()->addMenu("Format");
+//    m->addAction("X-axis title...", this, [this]{ QCPL::editTitleDlg(_plot.ax) });
+//    m->addAction("Y-axis title...", this, &PlotWindow::editAxisTitleY);
+
+    addRandomSample();
+    _plot->autolimits();
+
+    resize(800, 600);
 }
 
 PlotWindow::~PlotWindow()
 {
 }
 
-void PlotWindow::editAxisTitleX()
+void PlotWindow::addRandomSample()
 {
-
+    _plot->makeNewGraph(OriPetname::make(), QCPL::makeRandomSample());
 }
 
-void PlotWindow::editAxisTitleY()
-{
+//void PlotWindow::editAxisTitleX()
+//{
+//    _plot->xAxis->
+//}
 
-}
+//void PlotWindow::editAxisTitleY()
+//{
+
+//}

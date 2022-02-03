@@ -1,10 +1,7 @@
 #include "qcpl_plot.h"
 #include "qcpl_colors.h"
 #include "qcpl_graph.h"
-
-#include "helpers/OriDialogs.h"
-#include "helpers/OriWidgets.h"
-#include "widgets/OriValueEdit.h"
+#include "qcpl_format.h"
 
 /// Returns true when range is corrected, false when it's unchanged.
 static bool correctZeroRange(QCPRange& range, double safeMargin)
@@ -266,11 +263,11 @@ void Plot::setAxisRange(QCPAxis* axis, const QCPRange& range)
 
 bool Plot::setLimitsDlg(QCPAxis* axis)
 {
-    QString unitStr;
-    if (getAxisUnitString)
-        unitStr = getAxisUnitString(axis);
     auto range = axis->range();
-    if (setLimitsDlg(range, tr("%1 Limits").arg(getAxisTitle(axis)), unitStr))
+    AxisLimitsDlgProps props;
+    props.precision = _numberPrecision;
+    props.unit = getAxisUnitString ? getAxisUnitString(axis) : QString();
+    if (axisLimitsDlg(range, tr("%1 Limits").arg(getAxisTitle(axis)), props))
     {
         setAxisRange(axis, range);
         replot();
@@ -282,43 +279,13 @@ bool Plot::setLimitsDlg(QCPAxis* axis)
 bool Plot::setLimitsDlgXY()
 {
     auto range = (selectedPart() == PlotPart::AxisY ? yAxis : xAxis)->range();
-    if (setLimitsDlg(range, tr("Limits for X and Y"), QString()))
+    AxisLimitsDlgProps props;
+    props.precision = _numberPrecision;
+    if (axisLimitsDlg(range, tr("Limits for X and Y"), props))
     {
         setAxisRange(xAxis, range);
         setAxisRange(yAxis, range);
         replot();
-        return true;
-    }
-    return false;
-}
-
-bool Plot::setLimitsDlg(QCPRange& range, const QString& title, const QString &unit)
-{
-    auto editorMin = new Ori::Widgets::ValueEdit;
-    auto editorMax = new Ori::Widgets::ValueEdit;
-    Ori::Gui::adjustFont(editorMin);
-    Ori::Gui::adjustFont(editorMax);
-    editorMin->setNumberPrecision(_numberPrecision);
-    editorMax->setNumberPrecision(_numberPrecision);
-    editorMin->setValue(range.lower);
-    editorMax->setValue(range.upper);
-    editorMin->selectAll();
-
-    QWidget w;
-
-    auto layout = new QFormLayout(&w);
-    layout->setMargin(0);
-    layout->addRow(new QLabel(unit.isEmpty() ? QString("Min") : QString("Min (%1)").arg(unit)), editorMin);
-    layout->addRow(new QLabel(unit.isEmpty() ? QString("Max") : QString("Max (%1)").arg(unit)), editorMax);
-
-    if (Ori::Dlg::Dialog(&w, false)
-            .withTitle(title)
-            .withContentToButtonsSpacingFactor(3)
-            .exec())
-    {
-        range.lower = editorMin->value();
-        range.upper = editorMax->value();
-        range.normalize();
         return true;
     }
     return false;

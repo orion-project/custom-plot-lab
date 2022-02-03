@@ -5,6 +5,7 @@
 
 #include "qcpl_plot.h"
 #include "qcpl_utils.h"
+#include "qcpl_format.h"
 
 class PlotWindow : public QMainWindow
 {
@@ -17,8 +18,7 @@ public:
 private:
     QCPL::Plot *_plot;
 
-    void editAxisTitleX();
-    void editAxisTitleY();
+    void addRandomSample();
 };
 
 #endif // PLOT_WINDOW_H

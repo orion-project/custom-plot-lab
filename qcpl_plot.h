@@ -110,7 +110,6 @@ private:
 
     void autolimits(QCPAxis* axis, bool replot);
     void extendLimits(QCPAxis* axis, double factor, bool replot);
-    bool setLimitsDlg(QCPRange& range, const QString &title, const QString& unit);
     void setAxisRange(QCPAxis* axis, const QCPRange &range);
     double safeMargins(QCPAxis* axis);
     QString getAxisTitle(QCPAxis* axis) const;
