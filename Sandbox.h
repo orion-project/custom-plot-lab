@@ -4,6 +4,7 @@
 #include <QMainWindow>
 
 #include "qcpl_plot.h"
+#include "qcpl_colors.h"
 
 class PlotWindow : public QMainWindow
 {
@@ -15,6 +16,8 @@ public:
 
 private:
     QCPL::Plot *_plot;
+
+    void addRandomGraph();
 };
 
 #endif // PLOT_WINDOW_H

@@ -7,6 +7,7 @@
 namespace QCPL {
 
 const QVector<QColor>& defaultColorSet();
+QColor getRandomColor();
 
 } // namespace QCPL
 
