@@ -2,6 +2,7 @@
 #define QCPL_TYPES_H
 
 #include <QVector>
+#include <QFont>
 
 namespace QCPL {
 
@@ -32,6 +33,13 @@ struct TextVariable
 };
 
 using TextVarGetter = std::function<QString()>;
+
+struct PlotFormatSettings
+{
+    QString fontName;
+    int axisTitleFontSize = 0;
+    int axisTicksFontSize = 0;
+};
 
 } // namespace QCPL
 

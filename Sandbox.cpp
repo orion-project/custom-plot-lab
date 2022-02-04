@@ -21,8 +21,11 @@ PlotWindow::PlotWindow(QWidget *parent) : QMainWindow(parent)
     m->addAction("Limits Y...", this, [this]{ _plot->limitsDlgY(); });
 
     m = menuBar()->addMenu("Format");
+    m->addAction("Plot format...", this, [this]{ QCPL::plotFormatDlg(_plot); });
     m->addAction("X-axis title...", this, [this]{ _plot->titleDlgX(); });
     m->addAction("Y-axis title...", this, [this]{ _plot->titleDlgY(); });
+    m->addAction("X-axis format...", this, [this]{ _plot->formatDlgX(); });
+    m->addAction("Y-axis format...", this, [this]{ _plot->formatDlgY(); });
 
     // Example of usage of text variables
     _plot->addTextVar(_plot->xAxis, "{var1}", "Short var 1", []{ return "Galenium overloader"; });

@@ -64,7 +64,6 @@ public:
     int axisRectCol() const { return 0; }
 
     void addTextVar(void* target, const QString& name, const QString& descr, TextVarGetter getter);
-
     TextFormatterBase* formatter(void* target) { return _formatters.contains(target) ? _formatters[target] : nullptr; }
 
 public slots:
@@ -83,6 +82,8 @@ public slots:
     void copyPlotImage();
     bool titleDlgX() { return titleDlg(xAxis); }
     bool titleDlgY() { return titleDlg(yAxis); }
+    bool formatDlgX() { return formatDlg(xAxis); }
+    bool formatDlgY() { return formatDlg(yAxis); }
 
 signals:
     void graphClicked(Graph*);
@@ -120,6 +121,7 @@ private:
 
     bool limitsDlg(QCPAxis* axis);
     bool titleDlg(QCPAxis* axis);
+    bool formatDlg(QCPAxis* axis);
     void autolimits(QCPAxis* axis, bool replot);
     void extendLimits(QCPAxis* axis, double factor, bool replot);
     void setAxisRange(QCPAxis* axis, const QCPRange &range);

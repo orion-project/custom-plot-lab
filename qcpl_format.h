@@ -11,7 +11,9 @@ class QCPRange;
 
 namespace QCPL {
 
+class Plot;
 class TextFormatterBase;
+
 
 struct AxisTitleDlgProps
 {
@@ -22,6 +24,7 @@ struct AxisTitleDlgProps
 
 bool axisTitleDlg(QCPAxis* axis, const AxisTitleDlgProps& props);
 
+
 struct AxisLimitsDlgProps
 {
     QString title;
@@ -30,6 +33,24 @@ struct AxisLimitsDlgProps
 };
 
 bool axisLimitsDlg(QCPRange& range, const AxisLimitsDlgProps& props);
+
+
+struct AxisFormatDlgProps
+{
+    QString title;
+    Plot *plot;
+};
+
+bool axisFormatDlg(QCPAxis* axis, const AxisFormatDlgProps& props);
+
+
+struct PlotFormatDlgProps
+{
+    QString title;
+};
+
+bool plotFormatDlg(Plot* plot, const PlotFormatDlgProps& props = PlotFormatDlgProps());
+
 
 class TextProcessor
 {

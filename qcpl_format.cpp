@@ -1,6 +1,8 @@
 #include "qcpl_format.h"
 #include "qcpl_plot.h"
 #include "qcpl_text_editor.h"
+#include "qcpl_format_axis.h"
+#include "qcpl_format_plot.h"
 
 #include "helpers/OriDialogs.h"
 #include "helpers/OriWidgets.h"
@@ -80,6 +82,28 @@ bool axisLimitsDlg(QCPRange& range, const AxisLimitsDlgProps& props)
         return true;
     }
     return false;
+}
+
+bool axisFormatDlg(QCPAxis* axis, const AxisFormatDlgProps& props)
+{
+    AxisFormatWidget editor(axis);
+
+    return Ori::Dlg::Dialog(&editor, false)
+            .withTitle(props.title)
+            .withOnApply([&editor, &props]{ editor.apply(); props.plot->replot(); })
+            .connectOkToContentApply()
+            .exec();
+}
+
+bool plotFormatDlg(Plot* plot, const PlotFormatDlgProps &props)
+{
+    PlotFormatWidget editor(plot, {});
+
+    return Ori::Dlg::Dialog(&editor, false)
+            .withTitle(props.title.isEmpty() ? "Plot Format" : props.title)
+            .withOnApply([&editor, plot]{ editor.apply(); plot->replot(); })
+            .connectOkToContentApply()
+            .exec();
 }
 
 //------------------------------------------------------------------------------

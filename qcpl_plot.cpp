@@ -326,6 +326,19 @@ bool Plot::titleDlg(QCPAxis* axis)
     return false;
 }
 
+bool Plot::formatDlg(QCPAxis* axis)
+{
+    AxisFormatDlgProps props;
+    props.title = tr("%1 Format").arg(getAxisTitle(axis));
+    props.plot = this;
+    if (axisFormatDlg(axis, props))
+    {
+        replot();
+        return true;
+    }
+    return false;
+}
+
 QString Plot::getAxisTitle(QCPAxis* axis) const
 {
    if (axis == xAxis)
