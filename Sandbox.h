@@ -15,6 +15,9 @@ public:
     PlotWindow(QWidget *parent = nullptr);
     ~PlotWindow();
 
+protected:
+    void resizeEvent(QResizeEvent *event) override;
+
 private:
     QCPL::Plot *_plot;
 

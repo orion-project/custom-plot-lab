@@ -1,6 +1,6 @@
 #include "qcpl_format.h"
 #include "qcpl_plot.h"
-#include "qcpl_title_editor.h"
+#include "qcpl_text_editor.h"
 
 #include "helpers/OriDialogs.h"
 #include "helpers/OriWidgets.h"
@@ -12,11 +12,11 @@ bool axisTitleDlg(QCPAxis* axis, const AxisTitleDlgProps& props)
 {
     auto style = qApp->style();
 
-    TitleEditorOptions opts;
+    TextEditorWidget::Options opts;
     opts.iconSize = props.iconSize;
     if (props.formatter)
         opts.vars = props.formatter->vars();
-    TitleEditor editor(opts);
+    TextEditorWidget editor(opts);
     if (props.formatter)
         editor.setText(props.formatter->text());
     else
@@ -31,6 +31,8 @@ bool axisTitleDlg(QCPAxis* axis, const AxisTitleDlgProps& props)
             .withSkipContentMargins()
             .withContentToButtonsSpacingFactor(2)
             .withPersistenceId("axis-title")
+            .withAcceptSignal(SIGNAL(acceptRequested()))
+            .withActiveWidget(editor.editor())
             .exec())
     {
         if (props.formatter)

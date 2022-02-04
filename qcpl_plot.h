@@ -65,6 +65,8 @@ public:
 
     void addTextVar(void* target, const QString& name, const QString& descr, TextVarGetter getter);
 
+    TextFormatterBase* formatter(void* target) { return _formatters.contains(target) ? _formatters[target] : nullptr; }
+
 public slots:
     void autolimits(bool replot = true) { autolimits(xAxis, false); autolimits(yAxis, replot); }
     void autolimitsX(bool replot = true) { autolimits(xAxis, replot); }

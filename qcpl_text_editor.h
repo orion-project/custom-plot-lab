@@ -14,18 +14,18 @@ QT_END_NAMESPACE
 
 namespace QCPL {
 
-struct TitleEditorOptions
-{
-    QSize iconSize;
-    QVector<TextVariable> vars;
-};
-
-class TitleEditor : public QWidget
+class TextEditorWidget : public QWidget
 {
     Q_OBJECT
 
 public:
-    TitleEditor(const TitleEditorOptions& opts);
+    struct Options
+    {
+        QSize iconSize;
+        QVector<TextVariable> vars;
+    };
+
+    TextEditorWidget(const Options& opts);
 
     void setText(const QString& text);
     void setFont(const QFont& font);
@@ -33,6 +33,11 @@ public:
     QString text() const;
     QFont font() const;
     QColor color() const { return _color; }
+
+    QPlainTextEdit* editor() const { return _editor; }
+
+signals:
+    void acceptRequested();
 
 private slots:
     void setFontFamily(const QString& family);
