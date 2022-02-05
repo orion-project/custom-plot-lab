@@ -57,6 +57,35 @@ private:
     void insertVar();
 };
 
+class TextEditorWidgetV2 : public QWidget
+{
+    Q_OBJECT
+
+public:
+    struct Options
+    {
+        QVector<TextVariable> vars;
+    };
+
+    TextEditorWidgetV2(const Options& opts);
+
+    void setText(const QString& text);
+    QString text() const;
+
+    QPlainTextEdit* editor() const { return _editor; }
+
+signals:
+    void acceptRequested();
+
+protected:
+    void resizeEvent(QResizeEvent *event) override;
+
+private:
+    QPlainTextEdit *_editor;
+
+    void insertVar();
+};
+
 } // namespace QCPL
 
 #endif // QCPL_UTILS_H

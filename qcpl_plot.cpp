@@ -315,10 +315,10 @@ bool Plot::limitsDlgXY()
 
 bool Plot::titleDlg(QCPAxis* axis)
 {
-    AxisTitleDlgProps props;
+    AxisTitleDlgPropsV2 props;
     props.title = tr("%1 Title").arg(getAxisTitle(axis));
     props.formatter = _formatters.contains(axis) ? _formatters[axis] : nullptr;
-    if (axisTitleDlg(axis, props))
+    if (axisTitleDlgV2(axis, props))
     {
         replot();
         return true;

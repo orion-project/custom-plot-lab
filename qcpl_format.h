@@ -24,6 +24,14 @@ struct AxisTitleDlgProps
 
 bool axisTitleDlg(QCPAxis* axis, const AxisTitleDlgProps& props);
 
+struct AxisTitleDlgPropsV2
+{
+    QString title;
+    TextFormatterBase *formatter = nullptr;
+};
+
+bool axisTitleDlgV2(QCPAxis* axis, const AxisTitleDlgPropsV2& props);
+
 
 struct AxisLimitsDlgProps
 {

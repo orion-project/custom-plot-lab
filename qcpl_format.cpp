@@ -52,6 +52,43 @@ bool axisTitleDlg(QCPAxis* axis, const AxisTitleDlgProps& props)
     return false;
 }
 
+bool axisTitleDlgV2(QCPAxis* axis, const AxisTitleDlgPropsV2& props)
+{
+    auto style = qApp->style();
+
+    TextEditorWidgetV2::Options opts;
+    if (props.formatter)
+        opts.vars = props.formatter->vars();
+    TextEditorWidgetV2 editor(opts);
+    if (props.formatter)
+        editor.setText(props.formatter->text());
+    else
+        editor.setText(axis->label());
+    editor.setContentsMargins(style->pixelMetric(QStyle::PM_LayoutLeftMargin)/2,
+                              style->pixelMetric(QStyle::PM_LayoutTopMargin)/2,
+                              style->pixelMetric(QStyle::PM_LayoutRightMargin)/2, 0);
+
+    if (Ori::Dlg::Dialog(&editor, false)
+            .withTitle(props.title)
+            .withSkipContentMargins()
+            .withContentToButtonsSpacingFactor(2)
+            .withPersistenceId("axis-title-v2")
+            .withAcceptSignal(SIGNAL(acceptRequested()))
+            .withActiveWidget(editor.editor())
+            .exec())
+    {
+        if (props.formatter)
+        {
+            props.formatter->setText(editor.text());
+            props.formatter->format();
+        }
+        else
+            axis->setLabel(editor.text());
+        return true;
+    }
+    return false;
+}
+
 bool axisLimitsDlg(QCPRange& range, const AxisLimitsDlgProps& props)
 {
     auto editorMin = new Ori::Widgets::ValueEdit;

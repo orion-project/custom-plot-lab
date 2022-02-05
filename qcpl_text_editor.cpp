@@ -3,6 +3,7 @@
 #include "helpers/OriLayouts.h"
 #include "helpers/OriWidgets.h"
 
+#include <QApplication>
 #include <QColorDialog>
 #include <QDebug>
 #include <QFontComboBox>
@@ -65,6 +66,31 @@ class TextEditor : public QPlainTextEdit
 {
 public:
     std::function<void()> requestAccept;
+    QToolButton *varsButton = nullptr;
+
+    void setVars(const QVector<TextVariable>& vars)
+    {
+        auto highlighter = new TextEditorHighlighter(document());
+        auto varsMenu = new QMenu(this);
+        foreach (const auto& var, vars)
+        {
+            highlighter->addVar(var.name);
+            auto action = varsMenu->addAction(var.descr + '\t' + var.name, this, &TextEditor::insertVar);
+            action->setData(var.name);
+        }
+        varsButton = new QToolButton;
+        varsButton->setIcon(QIcon(":/qcpl_images/var"));
+        varsButton->setToolTip(tr("Insert Variable"));
+        varsButton->setPopupMode(QToolButton::InstantPopup);
+        varsButton->setMenu(varsMenu);
+    }
+
+    QSize sizeHint() const override
+    {
+        auto sz = QPlainTextEdit::sizeHint();
+        return {sz.width()*25/10, sz.height()/2};
+    }
+
 
 protected:
     void keyPressEvent(QKeyEvent *event) override
@@ -72,6 +98,14 @@ protected:
         if (event->modifiers().testFlag(Qt::ControlModifier) && (event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return))
             requestAccept();
         else QPlainTextEdit::keyPressEvent(event);
+    }
+
+
+private:
+    void insertVar()
+    {
+        auto action = qobject_cast<QAction*>(sender());
+        textCursor().insertText(action->data().toString());
     }
 };
 
@@ -132,28 +166,17 @@ TextEditorWidget::TextEditorWidget(const Options &opts) : QWidget()
 
     _actnColor = toolbar->addAction(tr("Color..."), this, &TextEditorWidget::selectColor);
 
-    _editor = new TextEditor;
-    ((TextEditor*)_editor)->requestAccept = [this]{ emit acceptRequested(); };
+    auto editor = new TextEditor;
+    editor->requestAccept = [this]{ emit acceptRequested(); };
 
     if (!opts.vars.isEmpty())
     {
-        auto highlighter = new TextEditorHighlighter(_editor->document());
-        auto varsMenu = new QMenu(this);
-        foreach (const auto& var, opts.vars)
-        {
-            highlighter->addVar(var.name);
-            auto action = varsMenu->addAction(var.descr + '\t' + var.name, this, &TextEditorWidget::insertVar);
-            action->setData(var.name);
-        }
-        auto varsButton = new QToolButton;
-        varsButton->setIcon(QIcon(":/qcpl_images/var"));
-        varsButton->setToolTip(tr("Insert Variable"));
-        varsButton->setPopupMode(QToolButton::InstantPopup);
-        varsButton->setMenu(varsMenu);
+        editor->setVars(opts.vars);
         toolbar->addWidget(makeSeparator());
-        toolbar->addWidget(varsButton);
+        toolbar->addWidget(editor->varsButton);
     }
 
+    _editor = editor;
     Ori::Layouts::LayoutV({toolbar, _editor}).setSpacing(0).setMargin(0).useFor(this);
 }
 
@@ -233,10 +256,51 @@ void TextEditorWidget::toggleUnderline()
     _editor->setFont(font);
 }
 
-void TextEditorWidget::insertVar()
+//------------------------------------------------------------------------------
+//                            TextEditorWidgetV2
+//------------------------------------------------------------------------------
+
+TextEditorWidgetV2::TextEditorWidgetV2(const Options &opts) : QWidget()
 {
-    auto action = qobject_cast<QAction*>(sender());
-    _editor->textCursor().insertText(action->data().toString());
+    auto editor = new TextEditor;
+    Ori::Gui::adjustFont(editor);
+    editor->requestAccept = [this]{ emit acceptRequested(); };
+
+    if (!opts.vars.isEmpty())
+    {
+        editor->setVars(opts.vars);
+        // TODO: get sizes from style?
+        editor->varsButton->setIconSize({24, 24});
+        editor->varsButton->resize(32, 32);
+    }
+
+    _editor = editor;
+    Ori::Layouts::LayoutV({_editor}).setSpacing(0).setMargin(0).useFor(this);
+
+    if (editor->varsButton)
+        editor->varsButton->setParent(this);
+}
+
+void TextEditorWidgetV2::setText(const QString& text)
+{
+    _editor->setPlainText(text);
+}
+
+QString TextEditorWidgetV2::text() const
+{
+    return _editor->toPlainText().trimmed();
+}
+
+void TextEditorWidgetV2::resizeEvent(QResizeEvent *event)
+{
+    QWidget::resizeEvent(event);
+    auto button = ((TextEditor*)_editor)->varsButton;
+    if (button)
+    {
+        auto r = _editor->geometry();
+        auto m = qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing);
+        button->move(r.right() - button->width() - m, r.top() + m);
+    }
 }
 
 } // namespace QCPL
