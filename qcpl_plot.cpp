@@ -285,7 +285,7 @@ bool Plot::limitsDlg(QCPAxis* axis)
 {
     auto range = axis->range();
     AxisLimitsDlgProps props;
-    props.title = tr("%1 Limits").arg(getAxisTitle(axis));
+    props.title = tr("%1 Limits").arg(getAxisIdent(axis));
     props.precision = _numberPrecision;
     props.unit = getAxisUnitString ? getAxisUnitString(axis) : QString();
     if (axisLimitsDlg(range, props))
@@ -316,8 +316,9 @@ bool Plot::limitsDlgXY()
 bool Plot::titleDlg(QCPAxis* axis)
 {
     AxisTitleDlgPropsV2 props;
-    props.title = tr("%1 Title").arg(getAxisTitle(axis));
+    props.title = tr("%1 Title").arg(getAxisIdent(axis));
     props.formatter = _formatters.contains(axis) ? _formatters[axis] : nullptr;
+    props.defaultTitle = _defaultTitles.contains(axis) ? _defaultTitles[axis] : QString();
     if (axisTitleDlgV2(axis, props))
     {
         replot();
@@ -329,7 +330,7 @@ bool Plot::titleDlg(QCPAxis* axis)
 bool Plot::formatDlg(QCPAxis* axis)
 {
     AxisFormatDlgProps props;
-    props.title = tr("%1 Format").arg(getAxisTitle(axis));
+    props.title = tr("%1 Format").arg(getAxisIdent(axis));
     props.plot = this;
     if (axisFormatDlg(axis, props))
     {
@@ -339,7 +340,7 @@ bool Plot::formatDlg(QCPAxis* axis)
     return false;
 }
 
-QString Plot::getAxisTitle(QCPAxis* axis) const
+QString Plot::getAxisIdent(QCPAxis* axis) const
 {
    if (axis == xAxis)
        return tr("X-axis");
@@ -434,6 +435,13 @@ void Plot::copyPlotImage()
     qApp->clipboard()->setImage(image);
 }
 
+void Plot::addFormatter(void* target, TextFormatterBase* formatter)
+{
+    if (_formatters.contains(target))
+        qWarning() << "Formatter is already registerd for this target, it will be lost (possible memory leak)";
+    _formatters[target] = formatter;
+}
+
 void Plot::addTextVar(void* target, const QString& name, const QString& descr, TextVarGetter getter)
 {
     if (!_formatters.contains(target))
@@ -446,6 +454,35 @@ void Plot::addTextVar(void* target, const QString& name, const QString& descr, T
             return;
     }
     _formatters[target]->addVar(name, descr, getter);
+}
+
+void Plot::updateTitles()
+{
+    auto it = _formatters.constBegin();
+    while (it != _formatters.constEnd())
+    {
+        if (it.value()->text().isEmpty() && _defaultTitles.contains(it.key()))
+            it.value()->setText(_defaultTitles[it.key()]);
+        it.value()->format();
+        it++;
+    }
+}
+
+void Plot::updateTitle(void* target)
+{
+    auto fmt = formatter(target);
+    if (fmt)
+    {
+        if (fmt->text().isEmpty() && _defaultTitles.contains(target))
+            fmt->setText(_defaultTitles[target]);
+        fmt->format();
+    }
+}
+
+void Plot::setFormatterText(void* target, const QString& text)
+{
+    auto fmt = formatter(target);
+    if (fmt) fmt->setText(text);
 }
 
 } // namespace QCPL

@@ -64,6 +64,7 @@ class TextEditorWidgetV2 : public QWidget
 public:
     struct Options
     {
+        QString defaultText;
         QVector<TextVariable> vars;
     };
 

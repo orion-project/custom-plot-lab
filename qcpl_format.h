@@ -27,6 +27,7 @@ bool axisTitleDlg(QCPAxis* axis, const AxisTitleDlgProps& props);
 struct AxisTitleDlgPropsV2
 {
     QString title;
+    QString defaultTitle;
     TextFormatterBase *formatter = nullptr;
 };
 
@@ -81,14 +82,11 @@ class TextFormatterBase
 {
 public:
     virtual ~TextFormatterBase() {}
-
     void addVar(const QString& name, const QString& descr, TextVarGetter getter);
     const QVector<TextVariable>& vars() const { return _vars; }
     virtual void format() = 0;
-
     QString text() const { return _text; };
     void setText(const QString& text) { _text = text; }
-
 protected:
     QString _text;
     TextProcessor _processor;
@@ -99,9 +97,7 @@ class AxisTitleFormatter : public TextFormatterBase
 {
 public:
     AxisTitleFormatter(QCPAxis* axis);
-
     void format() override;
-
 private:
     QCPAxis *_axis;
 };

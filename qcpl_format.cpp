@@ -57,6 +57,7 @@ bool axisTitleDlgV2(QCPAxis* axis, const AxisTitleDlgPropsV2& props)
     auto style = qApp->style();
 
     TextEditorWidgetV2::Options opts;
+    opts.defaultText = props.defaultTitle;
     if (props.formatter)
         opts.vars = props.formatter->vars();
     TextEditorWidgetV2 editor(opts);
@@ -191,7 +192,7 @@ AxisTitleFormatter::AxisTitleFormatter(QCPAxis* axis): _axis(axis)
 
 void AxisTitleFormatter::format()
 {
-    _axis->setLabel(_processor.process(_text));
+    _axis->setLabel(_processor.process(_text).trimmed());
 }
 
 } // namespace QCPL

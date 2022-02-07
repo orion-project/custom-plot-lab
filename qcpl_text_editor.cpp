@@ -34,6 +34,10 @@ public:
         QString s = name;
         s.replace(QStringLiteral("{"), QStringLiteral("\\{"));
         s.replace(QStringLiteral("}"), QStringLiteral("\\}"));
+        s.replace(QStringLiteral("("), QStringLiteral("\\("));
+        s.replace(QStringLiteral(")"), QStringLiteral("\\)"));
+        s.replace(QStringLiteral("["), QStringLiteral("\\["));
+        s.replace(QStringLiteral("]"), QStringLiteral("\\]"));
         _vars << QRegularExpression(s);
     }
 
@@ -68,10 +72,16 @@ public:
     std::function<void()> requestAccept;
     QToolButton *varsButton = nullptr;
 
-    void setVars(const QVector<TextVariable>& vars)
+    // TODO: default text should be processed separately from vars
+    void setVars(const QString& defaultText, const QVector<TextVariable>& vars)
     {
         auto highlighter = new TextEditorHighlighter(document());
         auto varsMenu = new QMenu(this);
+        if (!defaultText.isEmpty())
+        {
+            varsMenu->addAction(tr("Reset to default"), [this, &defaultText]{ setPlainText(defaultText); });
+            varsMenu->addSeparator();
+        }
         foreach (const auto& var, vars)
         {
             highlighter->addVar(var.name);
@@ -175,7 +185,7 @@ TextEditorWidget::TextEditorWidget(const Options &opts) : QWidget()
 
     if (!opts.vars.isEmpty())
     {
-        editor->setVars(opts.vars);
+        editor->setVars(QString(), opts.vars);
         toolbar->addWidget(makeSeparator());
         toolbar->addWidget(editor->varsButton);
     }
@@ -271,12 +281,12 @@ TextEditorWidgetV2::TextEditorWidgetV2(const Options &opts) : QWidget()
     setSizePolicy(p);
 
     auto editor = new TextEditor;
-    Ori::Gui::adjustFont(editor);
+    Ori::Gui::setFontMonospace(editor);
     editor->requestAccept = [this]{ emit acceptRequested(); };
 
     if (!opts.vars.isEmpty())
     {
-        editor->setVars(opts.vars);
+        editor->setVars(opts.defaultText, opts.vars);
         // TODO: get sizes from style?
         editor->varsButton->setIconSize({24, 24});
         editor->varsButton->resize(32, 32);

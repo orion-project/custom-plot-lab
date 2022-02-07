@@ -64,7 +64,27 @@ public:
     int axisRectCol() const { return 0; }
 
     void addTextVar(void* target, const QString& name, const QString& descr, TextVarGetter getter);
+    void addTextVar(const QString& name, const QString& descr, TextVarGetter getter) { addTextVar(_title, name, descr, getter); }
+    void addTextVarX(const QString& name, const QString& descr, TextVarGetter getter) { addTextVar(xAxis, name, descr, getter); }
+    void addTextVarY(const QString& name, const QString& descr, TextVarGetter getter) { addTextVar(yAxis, name, descr, getter); }
+
+    void addFormatter(void* target, TextFormatterBase* formatter);
     TextFormatterBase* formatter(void* target) { return _formatters.contains(target) ? _formatters[target] : nullptr; }
+    void setFormatterText(void* target, const QString& text);
+    void setFormatterText(const QString& text) { setFormatterText(_title, text); }
+    void setFormatterTextX(const QString& text) { setFormatterText(xAxis, text); }
+    void setFormatterTextY(const QString& text) { setFormatterText(yAxis, text); }
+
+    void updateTitles();
+    void updateTitle(void* target);
+    void updateTitle() { updateTitle(_title); }
+    void updateTitleX() { updateTitle(yAxis); }
+    void updateTitleY() { updateTitle(xAxis); }
+
+    void setDefaultTitle(void* target, const QString& text) { _defaultTitles[target] = text; }
+    void setDefaultTitle(const QString& text) { setDefaultTitle(_title, text); }
+    void setDefaultTitleX(const QString& text) { setDefaultTitle(xAxis, text); }
+    void setDefaultTitleY(const QString& text) { setDefaultTitle(yAxis, text); }
 
 public slots:
     void autolimits(bool replot = true) { autolimits(xAxis, false); autolimits(yAxis, replot); }
@@ -114,6 +134,7 @@ private:
     const double _zoomStepY;
     const int _numberPrecision;
     QMap<void*, TextFormatterBase*> _formatters;
+    QMap<void*, QString> _defaultTitles;
 
     bool isService(Graph* g) const { return _serviceGraphs.contains(g); }
 
@@ -126,8 +147,9 @@ private:
     void extendLimits(QCPAxis* axis, double factor, bool replot);
     void setAxisRange(QCPAxis* axis, const QCPRange &range);
     double safeMargins(QCPAxis* axis);
-    QString getAxisTitle(QCPAxis* axis) const;
+    QString getAxisIdent(QCPAxis* axis) const;
 };
+
 
 } // namespace QCPL
 
