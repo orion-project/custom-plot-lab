@@ -88,7 +88,7 @@ public:
     QSize sizeHint() const override
     {
         auto sz = QPlainTextEdit::sizeHint();
-        return {sz.width()*25/10, sz.height()/2};
+        return {sz.width()*2, sz.height()/3};
     }
 
 
@@ -133,6 +133,10 @@ static QWidget* makeSeparator()
 
 TextEditorWidget::TextEditorWidget(const Options &opts) : QWidget()
 {
+    auto p = sizePolicy();
+    p.setVerticalStretch(255);
+    setSizePolicy(p);
+
     auto toolbar = new QToolBar;
     if (!opts.iconSize.isEmpty())
         toolbar->setIconSize(opts.iconSize);
@@ -262,6 +266,10 @@ void TextEditorWidget::toggleUnderline()
 
 TextEditorWidgetV2::TextEditorWidgetV2(const Options &opts) : QWidget()
 {
+    auto p = sizePolicy();
+    p.setVerticalStretch(255);
+    setSizePolicy(p);
+
     auto editor = new TextEditor;
     Ori::Gui::adjustFont(editor);
     editor->requestAccept = [this]{ emit acceptRequested(); };
