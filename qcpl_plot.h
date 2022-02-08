@@ -69,11 +69,15 @@ public:
     void addTextVarY(const QString& name, const QString& descr, TextVarGetter getter) { addTextVar(yAxis, name, descr, getter); }
 
     void addFormatter(void* target, TextFormatterBase* formatter);
-    TextFormatterBase* formatter(void* target) { return _formatters.contains(target) ? _formatters[target] : nullptr; }
+    TextFormatterBase* formatter(void* target) const { return _formatters.contains(target) ? _formatters[target] : nullptr; }
     void setFormatterText(void* target, const QString& text);
     void setFormatterText(const QString& text) { setFormatterText(_title, text); }
     void setFormatterTextX(const QString& text) { setFormatterText(xAxis, text); }
     void setFormatterTextY(const QString& text) { setFormatterText(yAxis, text); }
+    QString formatterText(void* target) const;
+    QString formatterText() const { return formatterText(_title); }
+    QString formatterTextX() const { return formatterText(xAxis); }
+    QString formatterTextY() const { return formatterText(yAxis); }
 
     void updateTitles();
     void updateTitle(void* target);
@@ -110,6 +114,7 @@ signals:
     void emptySpaceDoubleClicked(QMouseEvent *event);
     void editTitleRequest();
     void resized(const QSize& oldSize, const QSize& newSize);
+    void modified(const QString& reason);
 
 protected:
     void contextMenuEvent(QContextMenuEvent *event) override;

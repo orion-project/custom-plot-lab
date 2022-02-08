@@ -322,6 +322,7 @@ bool Plot::titleDlg(QCPAxis* axis)
     if (axisTitleDlgV2(axis, props))
     {
         replot();
+        emit modified(QStringLiteral("%1 changed").arg(props.title));
         return true;
     }
     return false;
@@ -461,8 +462,6 @@ void Plot::updateTitles()
     auto it = _formatters.constBegin();
     while (it != _formatters.constEnd())
     {
-        if (it.value()->text().isEmpty() && _defaultTitles.contains(it.key()))
-            it.value()->setText(_defaultTitles[it.key()]);
         it.value()->format();
         it++;
     }
@@ -471,18 +470,19 @@ void Plot::updateTitles()
 void Plot::updateTitle(void* target)
 {
     auto fmt = formatter(target);
-    if (fmt)
-    {
-        if (fmt->text().isEmpty() && _defaultTitles.contains(target))
-            fmt->setText(_defaultTitles[target]);
-        fmt->format();
-    }
+    if (fmt) fmt->format();
 }
 
 void Plot::setFormatterText(void* target, const QString& text)
 {
     auto fmt = formatter(target);
     if (fmt) fmt->setText(text);
+}
+
+QString Plot::formatterText(void* target) const
+{
+    auto fmt = formatter(target);
+    return fmt ? fmt->text() : QString();
 }
 
 } // namespace QCPL
