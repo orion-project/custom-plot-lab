@@ -85,6 +85,10 @@ public:
     void updateTitleX() { updateTitle(yAxis); }
     void updateTitleY() { updateTitle(xAxis); }
 
+    QString defaultTitle(void* target) const { return _defaultTitles.contains(target) ? _defaultTitles[target] : QString(); }
+    QString defaultTitle() const { return defaultTitle(_title); }
+    QString defaultTitleX() const { return defaultTitle(xAxis); }
+    QString defaultTitleY() const { return defaultTitle(yAxis); }
     void setDefaultTitle(void* target, const QString& text) { _defaultTitles[target] = text; }
     void setDefaultTitle(const QString& text) { setDefaultTitle(_title, text); }
     void setDefaultTitleX(const QString& text) { setDefaultTitle(xAxis, text); }

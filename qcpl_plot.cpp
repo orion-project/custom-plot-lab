@@ -318,7 +318,7 @@ bool Plot::titleDlg(QCPAxis* axis)
     AxisTitleDlgPropsV2 props;
     props.title = tr("%1 Title").arg(getAxisIdent(axis));
     props.formatter = _formatters.contains(axis) ? _formatters[axis] : nullptr;
-    props.defaultTitle = _defaultTitles.contains(axis) ? _defaultTitles[axis] : QString();
+    props.defaultTitle = defaultTitle(axis);
     if (axisTitleDlgV2(axis, props))
     {
         replot();
