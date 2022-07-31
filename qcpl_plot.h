@@ -112,6 +112,7 @@ public slots:
     bool titleDlgY() { return titleDlg(yAxis); }
     bool formatDlgX() { return formatDlg(xAxis); }
     bool formatDlgY() { return formatDlg(yAxis); }
+    bool formatDlg0();
 
 signals:
     void graphClicked(Graph*);
@@ -144,6 +145,7 @@ private:
     const int _numberPrecision;
     QMap<void*, TextFormatterBase*> _formatters;
     QMap<void*, QString> _defaultTitles;
+    QMap<QString, QVariant> _backup;
 
     bool isService(Graph* g) const { return _serviceGraphs.contains(g); }
 

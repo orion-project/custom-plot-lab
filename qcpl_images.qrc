@@ -5,5 +5,9 @@
         <file alias="italic">./img/italic.svg</file>
         <file alias="underline">./img/underline.svg</file>
         <file alias="var">./img/var.svg</file>
+        <file alias="align_left">./img/align_left.svg</file>
+        <file alias="align_right">./img/align_right.svg</file>
+        <file alias="align_center">./img/align_center.svg</file>
+        <file alias="align_just">./img/align_just.svg</file>
     </qresource>
 </RCC>

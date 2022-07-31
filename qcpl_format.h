@@ -1,19 +1,21 @@
 #ifndef QCPL_FORMAT_H
 #define QCPL_FORMAT_H
 
-#include <QVector>
 #include <QSize>
+#include <QVector>
 
 #include "qcpl_types.h"
 
 class QCPAxis;
 class QCPRange;
+class QCPTextElement;
 
 namespace QCPL {
 
 class Plot;
 class TextFormatterBase;
 
+//---------------------------------------------------------------------
 
 struct AxisTitleDlgProps
 {
@@ -24,6 +26,8 @@ struct AxisTitleDlgProps
 
 bool axisTitleDlg(QCPAxis* axis, const AxisTitleDlgProps& props);
 
+//---------------------------------------------------------------------
+
 struct AxisTitleDlgPropsV2
 {
     QString title;
@@ -33,6 +37,7 @@ struct AxisTitleDlgPropsV2
 
 bool axisTitleDlgV2(QCPAxis* axis, const AxisTitleDlgPropsV2& props);
 
+//---------------------------------------------------------------------
 
 struct AxisLimitsDlgProps
 {
@@ -43,6 +48,7 @@ struct AxisLimitsDlgProps
 
 bool axisLimitsDlg(QCPRange& range, const AxisLimitsDlgProps& props);
 
+//---------------------------------------------------------------------
 
 struct AxisFormatDlgProps
 {
@@ -52,6 +58,17 @@ struct AxisFormatDlgProps
 
 bool axisFormatDlg(QCPAxis* axis, const AxisFormatDlgProps& props);
 
+//---------------------------------------------------------------------
+
+struct TitleFormatDlgProps
+{
+    QString title;
+    Plot *plot;
+};
+
+bool titleFormatDlg(QCPTextElement* title, const TitleFormatDlgProps& props);
+
+//---------------------------------------------------------------------
 
 struct PlotFormatDlgProps
 {
@@ -60,6 +77,7 @@ struct PlotFormatDlgProps
 
 bool plotFormatDlg(Plot* plot, const PlotFormatDlgProps& props = PlotFormatDlgProps());
 
+//---------------------------------------------------------------------
 
 class TextProcessor
 {
@@ -78,6 +96,8 @@ private:
     QVector<Var> _vars;
 };
 
+//---------------------------------------------------------------------
+
 class TextFormatterBase
 {
 public:
@@ -92,6 +112,8 @@ protected:
     TextProcessor _processor;
     QVector<TextVariable> _vars;
 };
+
+//---------------------------------------------------------------------
 
 class AxisTitleFormatter : public TextFormatterBase
 {

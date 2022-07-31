@@ -133,6 +133,41 @@ bool axisFormatDlg(QCPAxis* axis, const AxisFormatDlgProps& props)
             .exec();
 }
 
+bool titleFormatDlg(QCPTextElement* title, const TitleFormatDlgProps& props)
+{
+    auto style = qApp->style();
+
+    TextEditorWidget::Options opts;
+    opts.showAlignment = true;
+
+    TextEditorWidget editor(opts);
+    editor.setText(title->text());
+    editor.setFont(title->font());
+    editor.setColor(title->textColor());
+    editor.setTextFlags(title->textFlags());
+    editor.setContentsMargins(style->pixelMetric(QStyle::PM_LayoutLeftMargin)/2, 0,
+                              style->pixelMetric(QStyle::PM_LayoutRightMargin)/2, 0);
+
+    if (Ori::Dlg::Dialog(&editor, false)
+            .withTitle(props.title)
+            .withSkipContentMargins()
+            .withContentToButtonsSpacingFactor(2)
+            .withPersistenceId("plot-title")
+            .withAcceptSignal(SIGNAL(acceptRequested()))
+            .withActiveWidget(editor.editor())
+            .exec())
+    {
+        title->setText(editor.text());
+        title->setFont(editor.font());
+        title->setSelectedFont(editor.font());
+        title->setTextColor(editor.color());
+        title->setTextFlags(editor.textFlags());
+        // TODO: cursor line offsets when alignment changes
+        return true;
+    }
+    return false;
+}
+
 bool plotFormatDlg(Plot* plot, const PlotFormatDlgProps &props)
 {
     PlotFormatWidget editor(plot, {});

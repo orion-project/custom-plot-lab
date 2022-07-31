@@ -7,13 +7,16 @@
 
 QT_BEGIN_NAMESPACE
 class QAction;
+class QActionGroup;
 class QComboBox;
 class QFontComboBox;
 class QPlainTextEdit;
+class QToolButton;
 QT_END_NAMESPACE
 
 namespace QCPL {
 
+/// Full text edit with font and color selectors
 class TextEditorWidget : public QWidget
 {
     Q_OBJECT
@@ -23,6 +26,7 @@ public:
     {
         QSize iconSize;
         QVector<TextVariable> vars;
+        bool showAlignment = false;
     };
 
     TextEditorWidget(const Options& opts);
@@ -30,9 +34,11 @@ public:
     void setText(const QString& text);
     void setFont(const QFont& font);
     void setColor(const QColor& color);
+    void setTextFlags(int flags);
     QString text() const;
     QFont font() const;
     QColor color() const { return _color; }
+    int textFlags() const;
 
     QPlainTextEdit* editor() const { return _editor; }
 
@@ -42,21 +48,28 @@ signals:
 private slots:
     void setFontFamily(const QString& family);
     void setFontSize(const QString& size);
+    void setTextAlign(QAction *a);
 
 private:
     QPlainTextEdit *_editor;
     QColor _color;
-    QAction *_actnBold, *_actnItalic, *_actnUnderline, *_actnColor;
+    QAction *_actnBold, *_actnItalic, *_actnUnderline, *_actnColor,
+        *_actionAlignLeft, *_actionAlignCenter, *_actionAlignRight, *_actionAlignJustify;
+    QActionGroup *_actionsAlignment = nullptr;
     QFontComboBox *_comboFont;
     QComboBox *_comboSize;
+    QToolButton *_alignButton;
+    int _textFlags = 0;
 
     void toggleBold();
     void toggleItalic();
     void toggleUnderline();
     void selectColor();
     void insertVar();
+    void alignmentChanged(Qt::Alignment a);
 };
 
+/// Simplified text editor having only text field and variables button
 class TextEditorWidgetV2 : public QWidget
 {
     Q_OBJECT

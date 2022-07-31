@@ -11,7 +11,6 @@ class QCPAxis;
 
 namespace QCPL {
 
-// TODO it's not clear what edit here
 class AxisFormatWidget : public QWidget
 {
     Q_OBJECT

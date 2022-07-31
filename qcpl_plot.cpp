@@ -24,6 +24,16 @@ static bool correctZeroRange(QCPRange& range, double safeMargin)
     return true;
 }
 
+inline QFont defaultTitleFont() {
+    return QFont("sans",
+             #ifdef Q_OS_MAC
+                 16,
+             #else
+                 14,
+             #endif
+                 QFont::Bold);
+}
+
 namespace QCPL {
 
 Plot::Plot(QWidget *parent) : QCustomPlot(parent),
@@ -57,23 +67,7 @@ Plot::Plot(QWidget *parent) : QCustomPlot(parent),
     connect(this, SIGNAL(axisDoubleClick(QCPAxis*,QCPAxis::SelectablePart,QMouseEvent*)),
             this, SLOT(axisDoubleClicked(QCPAxis*,QCPAxis::SelectablePart)));
 
-    // TODO make font customizable
     auto f = font();
-#ifdef Q_OS_MAC
-    f.setPointSize(16);
-#else
-    f.setPointSize(14);
-#endif
-    _title = new QCPTextElement(this);
-    _title->setFont(f);
-    _title->setSelectedFont(f);
-    _title->setSelectable(true);
-    _title->setMargins({10, 10, 10, 0});
-    _title->setVisible(false);
-    //TODO:
-    //plotLayout()->insertRow(0);
-    //plotLayout()->addElement(0, 0, _title);
-
 #ifdef Q_OS_MAC
     f.setPointSize(14);
 #else
@@ -341,6 +335,26 @@ bool Plot::formatDlg(QCPAxis* axis)
     return false;
 }
 
+bool Plot::formatDlg0()
+{
+    TitleFormatDlgProps props;
+    props.title = tr("Diagram title");
+    props.plot = this;
+
+    bool oldVisible = _title;
+    if (!oldVisible)
+        setTitleVisible(true);
+
+    if (titleFormatDlg(_title, props))
+    {
+        replot();
+        return true;
+    }
+
+    if (!oldVisible) setTitleVisible(false);
+    return false;
+}
+
 QString Plot::getAxisIdent(QCPAxis* axis) const
 {
    if (axis == xAxis)
@@ -405,9 +419,22 @@ void Plot::setTitleVisible(bool on)
     if (_title && on) return;
     if (on)
     {
-        _title = new QCPTextElement(this, "", QFont("sans", 14, QFont::Bold));
+        _title = new QCPTextElement(this);
+        _title->setMargins({10, 10, 10, 0});
         _title->setSelectable(true);
-        // TODO restore title format
+
+        // Restore settings
+        if (_backup.contains("title_color"))
+            _title->setTextColor(_backup["title_color"].toString());
+        if (_backup.contains("title_text"))
+            _title->setText(_backup["title_text"].toString());
+        QFont f = defaultTitleFont();
+        if (_backup.contains("title_font"))
+            f.fromString(_backup["title_font"].toString());
+        _title->setFont(f);
+        _title->setSelectedFont(f);
+        if (_backup.contains("title_flags"))
+            _title->setTextFlags(_backup["title_flags"].toInt());
 
         plotLayout()->insertRow(0);
         plotLayout()->addElement(0, 0, _title);
@@ -415,7 +442,12 @@ void Plot::setTitleVisible(bool on)
     }
     else
     {
-        // TODO backup title format
+        // Store settings
+        _backup["title_text"] = _title->text();
+        _backup["title_color"] = _title->textColor().name();
+        _backup["title_font"] = _title->font().toString();
+        _backup["title_flags"] = _title->textFlags();
+
         plotLayout()->remove(_title);
         plotLayout()->simplify();
         _title = nullptr;

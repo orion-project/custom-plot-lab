@@ -180,6 +180,30 @@ TextEditorWidget::TextEditorWidget(const Options &opts) : QWidget()
 
     _actnColor = toolbar->addAction(tr("Color..."), this, &TextEditorWidget::selectColor);
 
+    if (opts.showAlignment)
+    {
+        _actionsAlignment = new QActionGroup(this);
+        connect(_actionsAlignment, SIGNAL(triggered(QAction*)), this, SLOT(setTextAlign(QAction*)));
+        _actionAlignLeft = new QAction(QIcon(":/qcpl_images/align_left"), tr("Left"), _actionsAlignment);
+        _actionAlignCenter = new QAction(QIcon(":/qcpl_images/align_center"), tr("Center"), _actionsAlignment);
+        _actionAlignRight = new QAction(QIcon(":/qcpl_images/align_right"), tr("Right"), _actionsAlignment);
+        _actionAlignJustify = new QAction(QIcon(":/qcpl_images/align_just"), tr("Justify"), _actionsAlignment);
+        _actionAlignLeft->setCheckable(true);
+        _actionAlignCenter->setCheckable(true);
+        _actionAlignRight->setCheckable(true);
+        _actionAlignJustify->setCheckable(true);
+
+        auto alignMenu = Ori::Gui::menu(tr("Alignment"), this, {
+            _actionAlignLeft, _actionAlignCenter, _actionAlignRight, _actionAlignJustify
+        });
+
+        _alignButton = new QToolButton;
+        _alignButton->setPopupMode(QToolButton::InstantPopup);
+        _alignButton->setMenu(alignMenu);
+
+        toolbar->addWidget(_alignButton);
+    }
+
     auto editor = new TextEditor;
     editor->requestAccept = [this]{ emit acceptRequested(); };
 
@@ -215,6 +239,40 @@ void TextEditorWidget::setColor(const QColor& color)
     _actnColor->setIcon(makeColorIcon(_color));
 }
 
+void TextEditorWidget::setTextFlags(int flags)
+{
+    _textFlags = flags;
+    if (_actionsAlignment)
+    {
+        if (flags & Qt::AlignLeft) {
+            _actionAlignLeft->setChecked(true);
+            setTextAlign(_actionAlignLeft);
+        } else if (flags & Qt::AlignRight) {
+            _actionAlignRight->setChecked(true);
+            setTextAlign(_actionAlignRight);
+        } else if (flags & Qt::AlignHCenter) {
+            _actionAlignCenter->setChecked(true);
+            setTextAlign(_actionAlignCenter);
+        } else if (flags & Qt::AlignJustify) {
+            _actionAlignJustify->setChecked(true);
+            setTextAlign(_actionAlignJustify);
+        }
+    }
+}
+
+void TextEditorWidget::setTextAlign(QAction *a)
+{
+    if (a == _actionAlignLeft) {
+        _alignButton->setIcon(_actionAlignLeft->icon());
+    } else if (a == _actionAlignCenter) {
+        _alignButton->setIcon(_actionAlignCenter->icon());
+    } else if (a == _actionAlignRight) {
+        _alignButton->setIcon(_actionAlignRight->icon());
+    } else if (a == _actionAlignJustify) {
+        _alignButton->setIcon(_actionAlignJustify->icon());
+    }
+}
+
 QString TextEditorWidget::text() const
 {
     return _editor->toPlainText().trimmed();
@@ -247,6 +305,27 @@ void TextEditorWidget::selectColor()
     dlg.setCurrentColor(_color);
     if (dlg.exec())
         setColor(dlg.selectedColor());
+}
+
+int TextEditorWidget::textFlags() const
+{
+    int f = _textFlags;
+    if (_actionsAlignment)
+    {
+        f &= ~Qt::AlignLeft;
+        f &= ~Qt::AlignRight;
+        f &= ~Qt::AlignHCenter;
+        f &= ~Qt::AlignJustify;
+        if (_actionAlignLeft->isChecked())
+            f |= Qt::AlignLeft;
+        else if (_actionAlignRight->isChecked())
+            f |= Qt::AlignRight;
+        else if (_actionAlignCenter->isChecked())
+            f |= Qt::AlignHCenter;
+        else if (_actionAlignJustify->isChecked())
+            f |= Qt::AlignJustify;
+    }
+    return f;
 }
 
 void TextEditorWidget::toggleBold()
