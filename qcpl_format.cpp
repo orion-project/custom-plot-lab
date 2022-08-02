@@ -129,6 +129,7 @@ bool axisFormatDlg(QCPAxis* axis, const AxisFormatDlgProps& props)
     return Ori::Dlg::Dialog(&editor, false)
             .withTitle(props.title)
             .withOnApply([&editor, &props]{ editor.apply(); props.plot->replot(); })
+            .withPersistenceId("axis-format")
             .connectOkToContentApply()
             .exec();
 }

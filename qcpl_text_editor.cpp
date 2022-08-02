@@ -2,11 +2,14 @@
 
 #include "helpers/OriLayouts.h"
 #include "helpers/OriWidgets.h"
+#include "widgets/OriMenuToolButton.h"
 
 #include <QApplication>
 #include <QColorDialog>
 #include <QDebug>
 #include <QFontComboBox>
+#include <QFontDialog>
+#include <QLabel>
 #include <QMenu>
 #include <QPainter>
 #include <QPlainTextEdit>
@@ -134,13 +137,6 @@ static QPixmap makeColorIcon(const QBrush &b)
     return pixmap;
 }
 
-static QWidget* makeSeparator()
-{
-    auto w = new QWidget;
-    w->setFixedWidth(Ori::Gui::layoutSpacing());
-    return w;
-}
-
 TextEditorWidget::TextEditorWidget(const Options &opts) : QWidget()
 {
     auto p = sizePolicy();
@@ -155,6 +151,7 @@ TextEditorWidget::TextEditorWidget(const Options &opts) : QWidget()
     _comboFont->setMaxVisibleItems(16);
     connect(_comboFont, SIGNAL(activated(QString)), this, SLOT(setFontFamily(QString)));
     toolbar->addWidget(_comboFont);
+    toolbar->addWidget(new QLabel(" "));
 
     _comboSize = new QComboBox;
     _comboSize->setEditable(true);
@@ -163,8 +160,7 @@ TextEditorWidget::TextEditorWidget(const Options &opts) : QWidget()
     foreach(int size, fontSizes) _comboSize->addItem(QString::number(size));
     connect(_comboSize, SIGNAL(activated(QString)), this, SLOT(setFontSize(QString)));
     toolbar->addWidget(_comboSize);
-
-    toolbar->addWidget(makeSeparator());
+    toolbar->addWidget(new QLabel(" "));
 
     _actnBold = toolbar->addAction(QIcon(":/qcpl_images/bold"), tr("Bold"), this, &TextEditorWidget::toggleBold);
     _actnItalic = toolbar->addAction(QIcon(":/qcpl_images/italic"), tr("Italic"), this, &TextEditorWidget::toggleItalic);
@@ -176,32 +172,18 @@ TextEditorWidget::TextEditorWidget(const Options &opts) : QWidget()
     _actnItalic->setCheckable(true);
     _actnUnderline->setCheckable(true);
 
-    toolbar->addWidget(makeSeparator());
-
     _actnColor = toolbar->addAction(tr("Color..."), this, &TextEditorWidget::selectColor);
+
+    toolbar->addAction(QIcon(":/qcpl_images/font_dlg"), tr("Select font via dialog"), this, &TextEditorWidget::selectFont);
 
     if (opts.showAlignment)
     {
-        _actionsAlignment = new QActionGroup(this);
-        connect(_actionsAlignment, SIGNAL(triggered(QAction*)), this, SLOT(setTextAlign(QAction*)));
-        _actionAlignLeft = new QAction(QIcon(":/qcpl_images/align_left"), tr("Left"), _actionsAlignment);
-        _actionAlignCenter = new QAction(QIcon(":/qcpl_images/align_center"), tr("Center"), _actionsAlignment);
-        _actionAlignRight = new QAction(QIcon(":/qcpl_images/align_right"), tr("Right"), _actionsAlignment);
-        _actionAlignJustify = new QAction(QIcon(":/qcpl_images/align_just"), tr("Justify"), _actionsAlignment);
-        _actionAlignLeft->setCheckable(true);
-        _actionAlignCenter->setCheckable(true);
-        _actionAlignRight->setCheckable(true);
-        _actionAlignJustify->setCheckable(true);
-
-        auto alignMenu = Ori::Gui::menu(tr("Alignment"), this, {
-            _actionAlignLeft, _actionAlignCenter, _actionAlignRight, _actionAlignJustify
-        });
-
-        _alignButton = new QToolButton;
-        _alignButton->setPopupMode(QToolButton::InstantPopup);
-        _alignButton->setMenu(alignMenu);
-
-        toolbar->addWidget(_alignButton);
+        _btnAlign = new Ori::Widgets::MenuToolButton;
+        _btnAlign->addAction(Qt::AlignLeft, tr("Left"), ":/qcpl_images/align_left");
+        _btnAlign->addAction(Qt::AlignHCenter, tr("Center"), ":/qcpl_images/align_center");
+        _btnAlign->addAction(Qt::AlignRight, tr("Right"), ":/qcpl_images/align_right");
+        _btnAlign->addAction(Qt::AlignJustify, tr("Justify"), ":/qcpl_images/align_just");
+        toolbar->addWidget(_btnAlign);
     }
 
     auto editor = new TextEditor;
@@ -210,7 +192,6 @@ TextEditorWidget::TextEditorWidget(const Options &opts) : QWidget()
     if (!opts.vars.isEmpty())
     {
         editor->setVars(QString(), opts.vars);
-        toolbar->addWidget(makeSeparator());
         toolbar->addWidget(editor->varsButton);
     }
 
@@ -242,35 +223,8 @@ void TextEditorWidget::setColor(const QColor& color)
 void TextEditorWidget::setTextFlags(int flags)
 {
     _textFlags = flags;
-    if (_actionsAlignment)
-    {
-        if (flags & Qt::AlignLeft) {
-            _actionAlignLeft->setChecked(true);
-            setTextAlign(_actionAlignLeft);
-        } else if (flags & Qt::AlignRight) {
-            _actionAlignRight->setChecked(true);
-            setTextAlign(_actionAlignRight);
-        } else if (flags & Qt::AlignHCenter) {
-            _actionAlignCenter->setChecked(true);
-            setTextAlign(_actionAlignCenter);
-        } else if (flags & Qt::AlignJustify) {
-            _actionAlignJustify->setChecked(true);
-            setTextAlign(_actionAlignJustify);
-        }
-    }
-}
-
-void TextEditorWidget::setTextAlign(QAction *a)
-{
-    if (a == _actionAlignLeft) {
-        _alignButton->setIcon(_actionAlignLeft->icon());
-    } else if (a == _actionAlignCenter) {
-        _alignButton->setIcon(_actionAlignCenter->icon());
-    } else if (a == _actionAlignRight) {
-        _alignButton->setIcon(_actionAlignRight->icon());
-    } else if (a == _actionAlignJustify) {
-        _alignButton->setIcon(_actionAlignJustify->icon());
-    }
+    if (_btnAlign)
+        _btnAlign->setSelectedFlags(flags);
 }
 
 QString TextEditorWidget::text() const
@@ -309,23 +263,15 @@ void TextEditorWidget::selectColor()
 
 int TextEditorWidget::textFlags() const
 {
-    int f = _textFlags;
-    if (_actionsAlignment)
-    {
-        f &= ~Qt::AlignLeft;
-        f &= ~Qt::AlignRight;
-        f &= ~Qt::AlignHCenter;
-        f &= ~Qt::AlignJustify;
-        if (_actionAlignLeft->isChecked())
-            f |= Qt::AlignLeft;
-        else if (_actionAlignRight->isChecked())
-            f |= Qt::AlignRight;
-        else if (_actionAlignCenter->isChecked())
-            f |= Qt::AlignHCenter;
-        else if (_actionAlignJustify->isChecked())
-            f |= Qt::AlignJustify;
-    }
-    return f;
+    return _btnAlign ? _btnAlign->selectedFlags(_textFlags) : _textFlags;
+}
+
+void TextEditorWidget::selectFont()
+{
+    bool ok;
+    QFont f = QFontDialog::getFont(&ok, _editor->font(), this);
+    if (!ok) return;
+    setFont(f);
 }
 
 void TextEditorWidget::toggleBold()
