@@ -126,32 +126,49 @@ private:
 //                                TextEditorWidget
 //------------------------------------------------------------------------------
 
-static QPixmap makeColorIcon(const QBrush &b)
+static QPixmap makeColorIcon(QMap<QString, QPixmap>& icons, const QString& baseIcon, const QBrush &b)
 {
-    QPixmap pixmap(24, 24);
-    pixmap.fill(Qt::transparent);
+    auto n = b.style() == Qt::NoBrush ? QStringLiteral("empty") : b.color().name();
+    if (icons.contains(n))
+        return icons[n];
+    auto pixmap = QIcon(baseIcon).pixmap(24, 24);
     QPainter p(&pixmap);
     p.setPen(b.color());
     p.setBrush(b);
-    p.drawRect(5, 5, 14, 14);
+    p.drawRect(0, 18, 23, 5);
+    icons[n] = pixmap;
     return pixmap;
+}
+
+static QPixmap makeTextColorIcon(const QBrush &b)
+{
+    static QMap<QString, QPixmap> icons;
+    return makeColorIcon(icons, QStringLiteral(":/qcpl_images/text_color"), b);
+}
+
+static QPixmap makeBackColorIcon(const QBrush &b)
+{
+    static QMap<QString, QPixmap> icons;
+    return makeColorIcon(icons, QStringLiteral(":/qcpl_images/back_color"), b);
 }
 
 TextEditorWidget::TextEditorWidget(const Options &opts) : QWidget()
 {
+    _opts = opts;
+
     auto p = sizePolicy();
     p.setVerticalStretch(255);
     setSizePolicy(p);
 
-    auto toolbar = new QToolBar;
+    _toolbar = new QToolBar;
     if (!opts.iconSize.isEmpty())
-        toolbar->setIconSize(opts.iconSize);
+        _toolbar->setIconSize(opts.iconSize);
 
     _comboFont = new QFontComboBox;
     _comboFont->setMaxVisibleItems(16);
     connect(_comboFont, SIGNAL(activated(QString)), this, SLOT(setFontFamily(QString)));
-    toolbar->addWidget(_comboFont);
-    toolbar->addWidget(new QLabel(" "));
+    _toolbar->addWidget(_comboFont);
+    _toolbar->addWidget(new QLabel(" "));
 
     _comboSize = new QComboBox;
     _comboSize->setEditable(true);
@@ -159,12 +176,12 @@ TextEditorWidget::TextEditorWidget(const Options &opts) : QWidget()
     QList<int> fontSizes = QFontDatabase::standardSizes();
     foreach(int size, fontSizes) _comboSize->addItem(QString::number(size));
     connect(_comboSize, SIGNAL(activated(QString)), this, SLOT(setFontSize(QString)));
-    toolbar->addWidget(_comboSize);
-    toolbar->addWidget(new QLabel(" "));
+    _toolbar->addWidget(_comboSize);
+    _toolbar->addWidget(new QLabel(" "));
 
-    _actnBold = toolbar->addAction(QIcon(":/qcpl_images/bold"), tr("Bold"), this, &TextEditorWidget::toggleBold);
-    _actnItalic = toolbar->addAction(QIcon(":/qcpl_images/italic"), tr("Italic"), this, &TextEditorWidget::toggleItalic);
-    _actnUnderline = toolbar->addAction(QIcon(":/qcpl_images/underline"), tr("Underline"), this, &TextEditorWidget::toggleUnderline);
+    _actnBold = _toolbar->addAction(QIcon(":/qcpl_images/bold"), tr("Bold"), this, &TextEditorWidget::toggleBold);
+    _actnItalic = _toolbar->addAction(QIcon(":/qcpl_images/italic"), tr("Italic"), this, &TextEditorWidget::toggleItalic);
+    _actnUnderline = _toolbar->addAction(QIcon(":/qcpl_images/underline"), tr("Underline"), this, &TextEditorWidget::toggleUnderline);
     _actnBold->setShortcut(QKeySequence::Bold);
     _actnItalic->setShortcut(QKeySequence::Italic);
     _actnUnderline->setShortcut(QKeySequence::Underline);
@@ -172,9 +189,11 @@ TextEditorWidget::TextEditorWidget(const Options &opts) : QWidget()
     _actnItalic->setCheckable(true);
     _actnUnderline->setCheckable(true);
 
-    _actnColor = toolbar->addAction(tr("Color..."), this, &TextEditorWidget::selectColor);
+    _actnColor = _toolbar->addAction(tr("Color..."), this, &TextEditorWidget::selectColor);
+    if (opts.showBackColor)
+        _actnBackColor = _toolbar->addAction(tr("Back Color..."), this, &TextEditorWidget::selectBackColor);
 
-    toolbar->addAction(QIcon(":/qcpl_images/font_dlg"), tr("Select font via dialog"), this, &TextEditorWidget::selectFont);
+    _toolbar->addAction(QIcon(":/qcpl_images/font_dlg"), tr("Select font via dialog"), this, &TextEditorWidget::selectFont);
 
     if (opts.showAlignment)
     {
@@ -183,7 +202,7 @@ TextEditorWidget::TextEditorWidget(const Options &opts) : QWidget()
         _btnAlign->addAction(Qt::AlignHCenter, tr("Center"), ":/qcpl_images/align_center");
         _btnAlign->addAction(Qt::AlignRight, tr("Right"), ":/qcpl_images/align_right");
         _btnAlign->addAction(Qt::AlignJustify, tr("Justify"), ":/qcpl_images/align_just");
-        toolbar->addWidget(_btnAlign);
+        _toolbar->addWidget(_btnAlign);
     }
 
     auto editor = new TextEditor;
@@ -192,11 +211,11 @@ TextEditorWidget::TextEditorWidget(const Options &opts) : QWidget()
     if (!opts.vars.isEmpty())
     {
         editor->setVars(QString(), opts.vars);
-        toolbar->addWidget(editor->varsButton);
+        _toolbar->addWidget(editor->varsButton);
     }
 
     _editor = editor;
-    Ori::Layouts::LayoutV({toolbar, _editor}).setSpacing(0).setMargin(0).useFor(this);
+    Ori::Layouts::LayoutV({_toolbar, _editor}).setSpacing(0).setMargin(0).useFor(this);
 }
 
 void TextEditorWidget::setText(const QString& text)
@@ -217,7 +236,14 @@ void TextEditorWidget::setFont(const QFont& font)
 void TextEditorWidget::setColor(const QColor& color)
 {
     _color = color;
-    _actnColor->setIcon(makeColorIcon(_color));
+    _actnColor->setIcon(makeTextColorIcon(_color));
+}
+
+void TextEditorWidget::setBackColor(const QColor& color)
+{
+    if (!_actnBackColor) return;
+    _backColor = color;
+    _actnBackColor->setIcon(makeBackColorIcon(_backColor));
 }
 
 void TextEditorWidget::setTextFlags(int flags)
@@ -256,9 +282,19 @@ void TextEditorWidget::setFontSize(const QString& size)
 void TextEditorWidget::selectColor()
 {
     QColorDialog dlg;
+    dlg.setOption(QColorDialog::ShowAlphaChannel, _opts.colorAlphaText);
     dlg.setCurrentColor(_color);
     if (dlg.exec())
         setColor(dlg.selectedColor());
+}
+
+void TextEditorWidget::selectBackColor()
+{
+    QColorDialog dlg;
+    dlg.setOption(QColorDialog::ShowAlphaChannel, _opts.colorAlphaBack);
+    dlg.setCurrentColor(_backColor);
+    if (dlg.exec())
+        setBackColor(dlg.selectedColor());
 }
 
 int TextEditorWidget::textFlags() const
@@ -293,6 +329,11 @@ void TextEditorWidget::toggleUnderline()
     auto font = _editor->font();
     font.setUnderline(_actnUnderline->isChecked());
     _editor->setFont(font);
+}
+
+void TextEditorWidget::addAction(QAction *actn)
+{
+    _toolbar->addAction(actn);
 }
 
 //------------------------------------------------------------------------------

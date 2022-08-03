@@ -113,6 +113,7 @@ public slots:
     bool formatDlgX() { return formatDlg(xAxis); }
     bool formatDlgY() { return formatDlg(yAxis); }
     bool formatDlg0();
+    bool formatDlgLegend();
 
 signals:
     void graphClicked(Graph*);

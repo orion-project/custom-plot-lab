@@ -355,6 +355,33 @@ bool Plot::formatDlg0()
     return false;
 }
 
+bool Plot::formatDlgLegend()
+{
+    LegendFormatDlgProps props;
+    props.title = tr("Legend");
+    props.plot = this;
+
+    bool oldVisible = legend->visible();
+    if (!oldVisible) {
+        legend->setVisible(true);
+        replot();
+    }
+
+
+    if (legendFormatDlg(legend, props))
+    {
+        replot();
+        return true;
+    }
+
+    if (!oldVisible) {
+        legend->setVisible(false);
+        replot();
+    }
+    return false;
+
+}
+
 QString Plot::getAxisIdent(QCPAxis* axis) const
 {
    if (axis == xAxis)

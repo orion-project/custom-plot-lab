@@ -10,6 +10,7 @@ class QAction;
 class QComboBox;
 class QFontComboBox;
 class QPlainTextEdit;
+class QToolBar;
 class QToolButton;
 QT_END_NAMESPACE
 
@@ -31,6 +32,9 @@ public:
         QSize iconSize;
         QVector<TextVariable> vars;
         bool showAlignment = false;
+        bool showBackColor = false;
+        bool colorAlphaText = false;
+        bool colorAlphaBack = false;
     };
 
     TextEditorWidget(const Options& opts);
@@ -38,11 +42,15 @@ public:
     void setText(const QString& text);
     void setFont(const QFont& font);
     void setColor(const QColor& color);
+    void setBackColor(const QColor& color);
     void setTextFlags(int flags);
     QString text() const;
     QFont font() const;
     QColor color() const { return _color; }
+    QColor backColor() const { return _backColor; }
     int textFlags() const;
+
+    void addAction(QAction *actn);
 
     QPlainTextEdit* editor() const { return _editor; }
 
@@ -54,12 +62,15 @@ private slots:
     void setFontSize(const QString& size);
 
 private:
+    Options _opts;
     QPlainTextEdit *_editor;
-    QColor _color;
+    QColor _color, _backColor;
     QAction *_actnBold, *_actnItalic, *_actnUnderline, *_actnColor;
+    QAction *_actnBackColor = nullptr;
     Ori::Widgets::MenuToolButton* _btnAlign = nullptr;
     QFontComboBox *_comboFont;
     QComboBox *_comboSize;
+    QToolBar *_toolbar;
     int _textFlags = 0;
 
     void selectFont();
@@ -67,6 +78,7 @@ private:
     void toggleItalic();
     void toggleUnderline();
     void selectColor();
+    void selectBackColor();
     void insertVar();
 };
 

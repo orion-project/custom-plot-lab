@@ -6,6 +6,8 @@ SOURCES += \
     $$PWD/qcpl_cursor.cpp \
     $$PWD/qcpl_cursor_panel.cpp \
     $$PWD/qcpl_export.cpp \
+    $$PWD/qcpl_format_editors.cpp \
+    $$PWD/qcpl_format_legend.cpp \
     $$PWD/qcpl_text_editor.cpp \
     $$PWD/qcustomplot/qcustomplot.cpp \
     $$PWD/qcpl_plot.cpp \
@@ -22,6 +24,8 @@ HEADERS  += \
     $$PWD/qcpl_cursor.h \
     $$PWD/qcpl_cursor_panel.h \
     $$PWD/qcpl_export.h \
+    $$PWD/qcpl_format_editors.h \
+    $$PWD/qcpl_format_legend.h \
     $$PWD/qcpl_text_editor.h \
     $$PWD/qcustomplot/qcustomplot.h \
     $$PWD/qcpl_plot.h \

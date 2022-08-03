@@ -2,6 +2,7 @@
 #include "qcpl_plot.h"
 #include "qcpl_text_editor.h"
 #include "qcpl_format_axis.h"
+#include "qcpl_format_legend.h"
 #include "qcpl_format_plot.h"
 
 #include "helpers/OriDialogs.h"
@@ -167,6 +168,19 @@ bool titleFormatDlg(QCPTextElement* title, const TitleFormatDlgProps& props)
         return true;
     }
     return false;
+}
+
+bool legendFormatDlg(QCPLegend* legend, const LegendFormatDlgProps& props)
+{
+    LegendFormatWidget editor(legend);
+
+    return Ori::Dlg::Dialog(&editor, false)
+            .withTitle(props.title)
+            .withOnApply([&editor, &props]{ editor.apply(); props.plot->replot(); })
+            .withPersistenceId("legend-format")
+            .withContentToButtonsSpacingFactor(3)
+            .connectOkToContentApply()
+            .exec();
 }
 
 bool plotFormatDlg(Plot* plot, const PlotFormatDlgProps &props)
