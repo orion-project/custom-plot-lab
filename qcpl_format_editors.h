@@ -5,6 +5,8 @@
 #include <QPen>
 
 QT_BEGIN_NAMESPACE
+class QGridLayout;
+class QLabel;
 class QSpinBox;
 class QToolButton;
 QT_END_NAMESPACE
@@ -30,12 +32,20 @@ private:
     QSpinBox *L, *T, *R, *B;
 };
 
+struct PenEditorWidgetOptions
+{
+    QString labelStyle;
+    QGridLayout *gridLayout = nullptr;
+    int gridRow = 0;
+};
+
 class PenEditorWidget : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit PenEditorWidget(QWidget *parent = nullptr);
+
+    explicit PenEditorWidget(PenEditorWidgetOptions opts = PenEditorWidgetOptions(), QWidget *parent = nullptr);
 
     void setValue(const QPen& p);
     QPen value() const;
@@ -55,6 +65,7 @@ private:
 
 QWidget* makeLabelSeparator(const QString& title);
 QWidget* makeParamLabel(const QString& name, const QString& hint);
+QPixmap makeSolidColorIcon(const QBrush &b, const QSize &sz = QSize());
 QPixmap makePenIcon(const QPen& pen, const QSize& sz = QSize());
 
 } // namespace QCPL

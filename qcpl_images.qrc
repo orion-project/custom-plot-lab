@@ -14,5 +14,6 @@
         <file alias="back_color">./img/back_color.svg</file>
         <file alias="frame">./img/frame.svg</file>
         <file alias="frame_none">./img/frame_none.svg</file>
+        <file alias="style_empty">./img/none.svg</file>
     </qresource>
 </RCC>

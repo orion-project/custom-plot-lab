@@ -3,6 +3,16 @@
 
 #include <QWidget>
 
+QT_BEGIN_NAMESPACE
+class QSpinBox;
+class QToolButton;
+QT_END_NAMESPACE
+
+namespace Ori {
+namespace Widgets {
+class MenuToolButton;
+}}
+
 class QCPGraph;
 
 namespace QCPL {
@@ -22,7 +32,15 @@ public slots:
 private:
     QCPGraph *_graph;
 
-    PenEditorWidget *_linePen;
+    PenEditorWidget *_linePen, *_markerPen;
+    QSpinBox *_markerSize, *_markerSkip;
+    Ori::Widgets::MenuToolButton *_btnMarkerShape;
+    QToolButton *_btnMarkerColor;
+    QColor _markerColor;
+
+    void createMarkerShapeAction(int shape, const QString& title);
+    void selectMarkerColor();
+    void setMarkerColor(const QColor& c);
 };
 
 } // namespace QCPL

@@ -71,19 +71,16 @@ QMargins MarginsEditorWidget::value() const
 //                              Helpers
 //---------------------------------------------------------------------
 
-#define PIXMAP \
-    int w, h; \
-    if (sz.isEmpty()) \
-        w = 24, h = 24; \
-    else \
-        w = sz.width(), h = sz.height(); \
-    QPixmap pixmap(w, h); \
-    pixmap.fill(Qt::transparent); \
-    QPainter p(&pixmap);
-
-static QPixmap makeColorIcon(const QBrush &b, const QSize &sz = QSize())
+QPixmap makeSolidColorIcon(const QBrush &b, const QSize &sz)
 {
-    PIXMAP
+    int w, h;
+    if (sz.isEmpty())
+        w = 24, h = 24;
+    else
+        w = sz.width(), h = sz.height();
+    QPixmap pixmap(w, h);
+    pixmap.fill(Qt::transparent);
+    QPainter p(&pixmap);
     p.setPen(b.color());
     p.setBrush(b);
     p.drawRect(5, 5, w-10, h-10);
@@ -92,7 +89,14 @@ static QPixmap makeColorIcon(const QBrush &b, const QSize &sz = QSize())
 
 QPixmap makePenIcon(const QPen& pen, const QSize &sz)
 {
-    PIXMAP
+    int w, h;
+    if (sz.isEmpty())
+        w = 24, h = 24;
+    else
+        w = sz.width(), h = sz.height();
+    QPixmap pixmap(w, h);
+    pixmap.fill(Qt::transparent);
+    QPainter p(&pixmap);
 
     QPen pn = pen;
     pn.setJoinStyle(Qt::MiterJoin);
@@ -105,25 +109,11 @@ QPixmap makePenIcon(const QPen& pen, const QSize &sz)
     return pixmap;
 }
 
-static QPixmap makePenStyleIcon(Qt::PenStyle style, const QColor& color, const QSize &sz = QSize())
-{
-    PIXMAP
-
-    QPen pen(color);
-    pen.setWidth(3);
-    pen.setStyle(style);
-
-    p.setPen(pen);
-    p.drawLine(0, h/2, w, h/2);
-
-    return pixmap;
-}
-
 //---------------------------------------------------------------------
 //                         PenEditorWidget
 //---------------------------------------------------------------------
 
-PenEditorWidget::PenEditorWidget(QWidget *parent) : QWidget(parent)
+PenEditorWidget::PenEditorWidget(PenEditorWidgetOptions opts, QWidget *parent) : QWidget(parent)
 {
     _btnStyle = new Ori::Widgets::MenuToolButton;
     _btnStyle->setIconSize({50, 16});
@@ -140,22 +130,58 @@ PenEditorWidget::PenEditorWidget(QWidget *parent) : QWidget(parent)
     _btnColor->setIconSize({40, 16});
     connect(_btnColor, &QToolButton::clicked, this, &PenEditorWidget::selectColor);
 
-    Ori::Layouts::LayoutH({
-                              new QLabel(tr("Style:")),
-                              _btnStyle,
-                              Ori::Layouts::Space(10),
-                              new QLabel(tr("Width:")),
-                              _width,
-                              Ori::Layouts::Space(10),
-                              new QLabel(tr("Color:")),
-                              _btnColor,
-                          }).setMargin(0).useFor(this);
+    auto labelStyle = new QLabel(opts.labelStyle.isEmpty() ? tr("Style:") : opts.labelStyle);
+    auto labelWidth = new QLabel(tr("Width:"));
+    auto labelColor = new QLabel(tr("Color:"));
+
+    if (opts.gridLayout)
+    {
+        opts.gridLayout->addWidget(labelStyle, opts.gridRow, 0);
+        opts.gridLayout->addWidget(_btnStyle, opts.gridRow, 1);
+        opts.gridLayout->addWidget(labelWidth, opts.gridRow, 2);
+        opts.gridLayout->addWidget(_width, opts.gridRow, 3);
+        opts.gridLayout->addWidget(labelColor, opts.gridRow, 4);
+        opts.gridLayout->addWidget(_btnColor, opts.gridRow, 5);
+    }
+    else
+    {
+        Ori::Layouts::LayoutH({
+                                  labelStyle,
+                                  _btnStyle,
+                                  Ori::Layouts::Space(10),
+                                  labelWidth,
+                                  _width,
+                                  Ori::Layouts::Space(10),
+                                  labelColor,
+                                  _btnColor,
+                              }).setMargin(0).useFor(this);
+    }
 }
 
 void PenEditorWidget::createPenAction(Qt::PenStyle style, const QString& title)
 {
-    QAction * a = new QAction(makePenStyleIcon(style, QColor(0x30, 0x50, 0x80), _btnStyle->iconSize()), title, this);
-    _btnStyle->addAction(style, a);
+    auto sz =_btnStyle->iconSize();
+    int w = sz.width();
+    int h = sz.height();
+
+    QPixmap pixmap(sz);
+    pixmap.fill(Qt::transparent);
+    QPainter p(&pixmap);
+
+    if (style == Qt::NoPen)
+    {
+        auto p1 = QIcon(":/qcpl_images/style_empty").pixmap(h, h);
+        p.drawPixmap(QRect((w-h)/2, 0, h, h), p1, QRect(0, 0, h, h));
+    }
+    else
+    {
+        QPen pen;
+        pen.setWidth(3);
+        pen.setStyle(style);
+        p.setPen(pen);
+        p.drawLine(0, h/2, w, h/2);
+    }
+    _btnStyle->addAction(style, new QAction(pixmap, title, this));
 }
 
 void PenEditorWidget::setValue(const QPen& p)
@@ -187,7 +213,7 @@ void PenEditorWidget::selectColor()
 void PenEditorWidget::setColor(QColor c)
 {
     _color = c;
-    _btnColor->setIcon(makeColorIcon(c, _btnColor->iconSize()));
+    _btnColor->setIcon(makeSolidColorIcon(c, _btnColor->iconSize()));
 }
 
 } // namespace QCPL
