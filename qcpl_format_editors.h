@@ -47,9 +47,15 @@ private:
     QToolButton *_btnColor;
     Ori::Widgets::MenuToolButton *_btnStyle;
 
+    void createPenAction(Qt::PenStyle style, const QString& title);
+
     void selectColor();
     void setColor(QColor c);
 };
+
+QWidget* makeLabelSeparator(const QString& title);
+QWidget* makeParamLabel(const QString& name, const QString& hint);
+QPixmap makePenIcon(const QPen& pen, const QSize& sz = QSize());
 
 } // namespace QCPL
 

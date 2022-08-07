@@ -29,10 +29,14 @@ LegendFormatWidget::LegendFormatWidget(QCPLegend *legend) : QWidget(), _legend(l
     _textProps->setColor(legend->textColor());
     _textProps->setBackColor(legend->brush().color());
 
-    auto actnBorderFormat = new QAction(QIcon(":/qcpl_images/frame"), tr("Border format"), this);
-    connect(actnBorderFormat, &QAction::triggered, this, &LegendFormatWidget::borderFormat);
-    _textProps->addAction(actnBorderFormat);
+    _actnBorderFormat = new QAction(tr("Border format"), this);
+    connect(_actnBorderFormat, &QAction::triggered, this, &LegendFormatWidget::borderFormat);
+    _textProps->addAction(_actnBorderFormat);
     _borderPen = legend->borderPen();
+    if (_borderPen.style() == Qt::NoPen)
+        _actnBorderFormat->setIcon(QIcon(":/qcpl/frame_none"));
+    else
+        _actnBorderFormat->setIcon(makePenIcon(_borderPen));
 
     _iconW = new QSpinBox;
     _iconW->setValue(_legend->iconSize().width());
@@ -111,8 +115,13 @@ void LegendFormatWidget::borderFormat()
     bool ok = Ori::Dlg::Dialog(&editor, false)
             .withTitle(tr("Border Format"))
             .exec();
-    if (ok)
+    if (ok) {
         _borderPen = editor.value();
+        if (_borderPen.style() == Qt::NoPen)
+            _actnBorderFormat->setIcon(QIcon(":/qcpl_images/frame_none"));
+        else
+            _actnBorderFormat->setIcon(makePenIcon(_borderPen));
+    }
 }
 
 } // namespace QCPL

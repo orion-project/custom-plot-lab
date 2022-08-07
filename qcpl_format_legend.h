@@ -39,6 +39,7 @@ private:
     QSpinBox *_iconW, *_iconH, *_iconMargin;
     MarginsEditorWidget *_margins, *_paddings;
     QPen _borderPen;
+    QAction *_actnBorderFormat;
 
     void makeLocationTile(Qt::Alignment align, int row, int col);
     void borderFormat();

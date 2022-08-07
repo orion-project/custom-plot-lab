@@ -7,6 +7,7 @@
 #include "qcpl_types.h"
 
 class QCPAxis;
+class QCPGraph;
 class QCPLegend;
 class QCPRange;
 class QCPTextElement;
@@ -87,6 +88,16 @@ struct PlotFormatDlgProps
 };
 
 bool plotFormatDlg(Plot* plot, const PlotFormatDlgProps& props = PlotFormatDlgProps());
+
+//---------------------------------------------------------------------
+
+struct GraphFormatDlgProps
+{
+    QString title;
+    Plot *plot;
+};
+
+bool graphFormatDlg(QCPGraph* graph, const GraphFormatDlgProps& props);
 
 //---------------------------------------------------------------------
 

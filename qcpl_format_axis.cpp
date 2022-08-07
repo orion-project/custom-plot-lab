@@ -1,11 +1,11 @@
 #include "qcpl_format_axis.h"
 
+#include "qcpl_format_editors.h"
 #include "qcpl_plot.h"
 #include "qcpl_text_editor.h"
 
 #include "helpers/OriLayouts.h"
 #include "helpers/OriWidgets.h"
-#include "widgets/OriLabels.h"
 #include "widgets/OriOptionsGroup.h"
 
 #include <QCheckBox>
@@ -16,12 +16,6 @@
 #include <QSpinBox>
 
 using namespace Ori::Layouts;
-
-static QLabel* paramLabel(QString name, QString hint)
-{
-    // TODO: take some color from palette, don't use hardcoded 'gray'
-    return new QLabel(QStringLiteral("%1 <span style='color:gray'>(%2)</span>  ").arg(name, hint));
-}
 
 static int __tabIndex = 0;
 
@@ -48,8 +42,8 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis) : QTabWidget(), _axis(axis)
     _outerMargin->setValue(axis->padding());
 
     auto titleParams = new QFormLayout;
-    titleParams->addRow(paramLabel(tr("Inner margin"), tr("distance between text and value labels")), _innerMargin);
-    titleParams->addRow(paramLabel(tr("Outer margin"), tr("distance between text and diagram edge")), _outerMargin);
+    titleParams->addRow(makeParamLabel(tr("Inner margin"), tr("distance between text and value labels")), _innerMargin);
+    titleParams->addRow(makeParamLabel(tr("Outer margin"), tr("distance between text and diagram edge")), _outerMargin);
 
     // TODO: move to the second page when it's ready
     _logarithmic = new QCheckBox(tr("Logarithmic"));
@@ -58,23 +52,13 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis) : QTabWidget(), _axis(axis)
     _reversed = new QCheckBox(tr("Reversed"));
     _reversed->setChecked(axis->rangeReversed());
 
-    auto sep1 = new Ori::Widgets::LabelSeparator(tr("Title"));
-    QFont f = sep1->font();
-    f.setBold(true);
-    sep1->flat = true;
-    sep1->setFont(f);
-
-    auto sep2 = new Ori::Widgets::LabelSeparator(tr("Scale"));
-    sep2->flat = true;
-    sep2->setFont(f);
-
     addTab(LayoutV({
-                       sep1,
+                       makeLabelSeparator(tr("Title")),
                        _titleEditor,
                        Space(10),
                        LayoutH({titleParams, Stretch()}),
                        Space(10),
-                       sep2,
+                       makeLabelSeparator(tr("Scale")),
                        _logarithmic,
                        _reversed,
                    }).makeWidget(), tr("Axis"));
@@ -118,8 +102,8 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis) : QTabWidget(), _axis(axis)
     _labelsInside->setChecked(axis->tickLabelSide() == QCPAxis::lsInside);
 
     auto labelsParams = new QFormLayout;
-    labelsParams->addRow(paramLabel(tr("Angle"), tr("clockwise from -90° to 90°")), _labelsAngle);
-    labelsParams->addRow(paramLabel(tr("Margin"), tr("distance between text and axis line")), _labelsPadding);
+    labelsParams->addRow(makeParamLabel(tr("Angle"), tr("clockwise from -90° to 90°")), _labelsAngle);
+    labelsParams->addRow(makeParamLabel(tr("Margin"), tr("distance between text and axis line")), _labelsPadding);
 
     QString sampleNum = QLocale::system().toString(1.5);
     _numberFormat = new Ori::Widgets::OptionsGroup(tr("Number format"), true);

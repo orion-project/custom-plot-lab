@@ -1,9 +1,11 @@
 #include "qcpl_format.h"
-#include "qcpl_plot.h"
-#include "qcpl_text_editor.h"
+
 #include "qcpl_format_axis.h"
+#include "qcpl_format_graph.h"
 #include "qcpl_format_legend.h"
 #include "qcpl_format_plot.h"
+#include "qcpl_plot.h"
+#include "qcpl_text_editor.h"
 
 #include "helpers/OriDialogs.h"
 #include "helpers/OriWidgets.h"
@@ -177,7 +179,6 @@ bool legendFormatDlg(QCPLegend* legend, const LegendFormatDlgProps& props)
     return Ori::Dlg::Dialog(&editor, false)
             .withTitle(props.title)
             .withOnApply([&editor, &props]{ editor.apply(); props.plot->replot(); })
-            .withPersistenceId("legend-format")
             .withContentToButtonsSpacingFactor(3)
             .connectOkToContentApply()
             .exec();
@@ -190,6 +191,17 @@ bool plotFormatDlg(Plot* plot, const PlotFormatDlgProps &props)
     return Ori::Dlg::Dialog(&editor, false)
             .withTitle(props.title.isEmpty() ? "Plot Format" : props.title)
             .withOnApply([&editor, plot]{ editor.apply(); plot->replot(); })
+            .connectOkToContentApply()
+            .exec();
+}
+
+bool graphFormatDlg(QCPGraph* graph, const GraphFormatDlgProps& props)
+{
+    GraphFormatWidget editor(graph);
+
+    return Ori::Dlg::Dialog(&editor, false)
+            .withTitle(props.title)
+            .withOnApply([&editor, &props]{ editor.apply(); props.plot->replot(); })
             .connectOkToContentApply()
             .exec();
 }
