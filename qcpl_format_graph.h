@@ -18,6 +18,7 @@ class QCPGraph;
 namespace QCPL {
 
 class PenEditorWidget;
+class ColorButton;
 
 class GraphFormatWidget : public QWidget
 {
@@ -31,12 +32,10 @@ public slots:
 
 private:
     QCPGraph *_graph;
-
     PenEditorWidget *_linePen, *_markerPen;
     QSpinBox *_markerSize, *_markerSkip;
-    Ori::Widgets::MenuToolButton *_btnMarkerShape;
-    QToolButton *_btnMarkerColor;
-    QColor _markerColor;
+    Ori::Widgets::MenuToolButton *_markerShape;
+    ColorButton *_markerColor;
 
     void createMarkerShapeAction(int shape, const QString& title);
     void selectMarkerColor();

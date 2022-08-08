@@ -22,8 +22,8 @@ GraphFormatWidget::GraphFormatWidget(QCPGraph *graph) : QWidget(), _graph(graph)
 
     QCPScatterStyle scatterStyle = _graph->scatterStyle();
 
-    _btnMarkerShape = new Ori::Widgets::MenuToolButton;
-    _btnMarkerShape->setIconSize({16, 16});
+    _markerShape = new Ori::Widgets::MenuToolButton;
+    _markerShape->setIconSize({16, 16});
     createMarkerShapeAction(QCPScatterStyle::ssNone, tr("None"));
     //createMarkerShapeAction(QCPScatterStyle::ssDot, tr("Dot"));
     createMarkerShapeAction(QCPScatterStyle::ssCross, tr("Cross"));
@@ -39,24 +39,23 @@ GraphFormatWidget::GraphFormatWidget(QCPGraph *graph) : QWidget(), _graph(graph)
     createMarkerShapeAction(QCPScatterStyle::ssPlusSquare, tr("Plus-square"));
     createMarkerShapeAction(QCPScatterStyle::ssCrossCircle, tr("Cross-circle"));
     createMarkerShapeAction(QCPScatterStyle::ssPlusCircle, tr("Plus-circle"));
-    _btnMarkerShape->setSelectedId(scatterStyle.shape());
+    _markerShape->setSelectedId(scatterStyle.shape());
 
     _markerSize = new QSpinBox;
     _markerSize->setValue(scatterStyle.size());
 
-    _btnMarkerColor = new QToolButton;
-    _btnMarkerColor->setIconSize({40, 16});
-    connect(_btnMarkerColor, &QToolButton::clicked, this, &GraphFormatWidget::selectMarkerColor);
-    setMarkerColor(scatterStyle.brush().color());
+    _markerColor = new ColorButton;
+    _markerColor->setIconSize({40, 16});
+    _markerColor->setValue(scatterStyle.brush().color());
 
     auto markerLayout = new QGridLayout;
     markerLayout->setHorizontalSpacing(10);
     markerLayout->addWidget(new QLabel(tr("Shape:")), 0, 0);
-    markerLayout->addWidget(_btnMarkerShape, 0, 1);
+    markerLayout->addWidget(_markerShape, 0, 1);
     markerLayout->addWidget(new QLabel(tr("Size:")), 0, 2);
     markerLayout->addWidget(_markerSize, 0, 3);
     markerLayout->addWidget(new QLabel(tr("Color:")), 0, 4);
-    markerLayout->addWidget(_btnMarkerColor, 0, 5);
+    markerLayout->addWidget(_markerColor, 0, 5);
 
     PenEditorWidgetOptions opts;
     opts.labelStyle = tr("Lines:");
@@ -82,6 +81,7 @@ GraphFormatWidget::GraphFormatWidget(QCPGraph *graph) : QWidget(), _graph(graph)
                     _markerSkip,
                     Stretch(),
                 }),
+                makeLabelSeparator(""),
                 Space(20),
                 Stretch(),
             }).setMargin(0).useFor(this);
@@ -108,34 +108,19 @@ static QPixmap makeScatterShapeIcon(int shape, const QSize& sz)
 
 void GraphFormatWidget::createMarkerShapeAction(int shape, const QString& title)
 {
-    _btnMarkerShape->addAction(shape, new QAction(makeScatterShapeIcon(shape, _btnMarkerShape->iconSize()), title, this));
+    _markerShape->addAction(shape, new QAction(makeScatterShapeIcon(shape, _markerShape->iconSize()), title, this));
 }
 
 void GraphFormatWidget::apply()
 {
     _graph->setPen(_linePen->value());
-
     QCPScatterStyle scatterStyle = _graph->scatterStyle();
-    scatterStyle.setShape(QCPScatterStyle::ScatterShape(_btnMarkerShape->selectedId()));
+    scatterStyle.setShape(QCPScatterStyle::ScatterShape(_markerShape->selectedId()));
     scatterStyle.setSize(_markerSize->value());
-    scatterStyle.setBrush(_markerColor);
+    scatterStyle.setBrush(_markerColor->value());
     scatterStyle.setPen(_markerPen->value());
     _graph->setScatterStyle(scatterStyle);
     _graph->setScatterSkip(_markerSkip->value());
-}
-
-void GraphFormatWidget::selectMarkerColor()
-{
-    QColorDialog dlg;
-    dlg.setCurrentColor(_markerColor);
-    if (dlg.exec())
-        setMarkerColor(dlg.selectedColor());
-}
-
-void GraphFormatWidget::setMarkerColor(const QColor& c)
-{
-    _markerColor = c;
-    _btnMarkerColor->setIcon(makeSolidColorIcon(c, _btnMarkerColor->iconSize()));
 }
 
 } // namespace QCPL

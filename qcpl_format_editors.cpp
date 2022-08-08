@@ -110,13 +110,36 @@ QPixmap makePenIcon(const QPen& pen, const QSize &sz)
 }
 
 //---------------------------------------------------------------------
+//                            ColorButton
+//---------------------------------------------------------------------
+
+ColorButton::ColorButton(QWidget* parent) : QToolButton(parent)
+{
+    connect(this, &QToolButton::clicked, this, &ColorButton::selectColor);
+}
+
+void ColorButton::setValue(const QColor& c)
+{
+    _color = c;
+    setIcon(makeSolidColorIcon(c, iconSize()));
+}
+
+void ColorButton::selectColor()
+{
+    QColorDialog dlg;
+    dlg.setCurrentColor(_color);
+    if (dlg.exec())
+        setValue(dlg.selectedColor());
+}
+
+//---------------------------------------------------------------------
 //                         PenEditorWidget
 //---------------------------------------------------------------------
 
 PenEditorWidget::PenEditorWidget(PenEditorWidgetOptions opts, QWidget *parent) : QWidget(parent)
 {
-    _btnStyle = new Ori::Widgets::MenuToolButton;
-    _btnStyle->setIconSize({50, 16});
+    _style = new Ori::Widgets::MenuToolButton;
+    _style->setIconSize({50, 16});
     createPenAction(Qt::NoPen, "No line");
     createPenAction(Qt::SolidLine, "Solid");
     createPenAction(Qt::DashLine, "Dashed"),
@@ -126,9 +149,8 @@ PenEditorWidget::PenEditorWidget(PenEditorWidgetOptions opts, QWidget *parent) :
 
     _width = new QSpinBox;
 
-    _btnColor = new QToolButton;
-    _btnColor->setIconSize({40, 16});
-    connect(_btnColor, &QToolButton::clicked, this, &PenEditorWidget::selectColor);
+    _color = new ColorButton;
+    _color->setIconSize({40, 16});
 
     auto labelStyle = new QLabel(opts.labelStyle.isEmpty() ? tr("Style:") : opts.labelStyle);
     auto labelWidth = new QLabel(tr("Width:"));
@@ -137,30 +159,30 @@ PenEditorWidget::PenEditorWidget(PenEditorWidgetOptions opts, QWidget *parent) :
     if (opts.gridLayout)
     {
         opts.gridLayout->addWidget(labelStyle, opts.gridRow, 0);
-        opts.gridLayout->addWidget(_btnStyle, opts.gridRow, 1);
+        opts.gridLayout->addWidget(_style, opts.gridRow, 1);
         opts.gridLayout->addWidget(labelWidth, opts.gridRow, 2);
         opts.gridLayout->addWidget(_width, opts.gridRow, 3);
         opts.gridLayout->addWidget(labelColor, opts.gridRow, 4);
-        opts.gridLayout->addWidget(_btnColor, opts.gridRow, 5);
+        opts.gridLayout->addWidget(_color, opts.gridRow, 5);
     }
     else
     {
         Ori::Layouts::LayoutH({
                                   labelStyle,
-                                  _btnStyle,
+                                  _style,
                                   Ori::Layouts::Space(10),
                                   labelWidth,
                                   _width,
                                   Ori::Layouts::Space(10),
                                   labelColor,
-                                  _btnColor,
+                                  _color,
                               }).setMargin(0).useFor(this);
     }
 }
 
 void PenEditorWidget::createPenAction(Qt::PenStyle style, const QString& title)
 {
-    auto sz =_btnStyle->iconSize();
+    auto sz = _style->iconSize();
     int w = sz.width();
     int h = sz.height();
 
@@ -181,39 +203,25 @@ void PenEditorWidget::createPenAction(Qt::PenStyle style, const QString& title)
         p.setPen(pen);
         p.drawLine(0, h/2, w, h/2);
     }
-    _btnStyle->addAction(style, new QAction(pixmap, title, this));
+    _style->addAction(style, new QAction(pixmap, title, this));
 }
 
 void PenEditorWidget::setValue(const QPen& p)
 {
     _pen = p;
-    setColor(p.color());
+    _color->setValue(p.color());
     _width->setValue(p.width());
-    _btnStyle->setSelectedId(p.style() == Qt::CustomDashLine ? Qt::SolidLine : p.style());
+    _style->setSelectedId(p.style() == Qt::CustomDashLine ? Qt::SolidLine : p.style());
 }
 
 QPen PenEditorWidget::value() const
 {
     QPen p(_pen);
-    p.setColor(_color);
+    p.setColor(_color->value());
     p.setWidth(_width->value());
-    p.setStyle(Qt::PenStyle(_btnStyle->selectedId()));
+    p.setStyle(Qt::PenStyle(_style->selectedId()));
     p.setJoinStyle(Qt::MiterJoin);
     return p;
-}
-
-void PenEditorWidget::selectColor()
-{
-    QColorDialog dlg;
-    dlg.setCurrentColor(_color);
-    if (dlg.exec())
-        setColor(dlg.selectedColor());
-}
-
-void PenEditorWidget::setColor(QColor c)
-{
-    _color = c;
-    _btnColor->setIcon(makeSolidColorIcon(c, _btnColor->iconSize()));
 }
 
 } // namespace QCPL

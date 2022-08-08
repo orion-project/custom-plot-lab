@@ -3,6 +3,7 @@
 
 #include <QGroupBox>
 #include <QPen>
+#include <QToolButton>
 
 QT_BEGIN_NAMESPACE
 class QGridLayout;
@@ -32,6 +33,22 @@ private:
     QSpinBox *L, *T, *R, *B;
 };
 
+class ColorButton : public QToolButton
+{
+    Q_OBJECT
+
+public:
+    explicit ColorButton(QWidget* parent = nullptr);
+
+    void setValue(const QColor& c);
+    QColor value() const { return _color; }
+
+private:
+    QColor _color;
+
+    void selectColor();
+};
+
 struct PenEditorWidgetOptions
 {
     QString labelStyle;
@@ -53,14 +70,10 @@ public:
 private:
     QPen _pen;
     QSpinBox *_width;
-    QColor _color;
-    QToolButton *_btnColor;
-    Ori::Widgets::MenuToolButton *_btnStyle;
+    ColorButton *_color;
+    Ori::Widgets::MenuToolButton *_style;
 
     void createPenAction(Qt::PenStyle style, const QString& title);
-
-    void selectColor();
-    void setColor(QColor c);
 };
 
 QWidget* makeLabelSeparator(const QString& title);
