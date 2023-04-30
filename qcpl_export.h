@@ -3,6 +3,10 @@
 
 #include <QVector>
 
+QT_BEGIN_NAMESPACE
+class QTextStream;
+QT_END_NAMESPACE
+
 namespace QCPL {
 
 struct GraphDataExportSettings
@@ -12,6 +16,35 @@ struct GraphDataExportSettings
     bool transposed = false;
     int numberPrecision = 6;
     bool mergePoints = false;
+};
+
+class BaseGraphDataExporter
+{
+public:
+    BaseGraphDataExporter(const GraphDataExportSettings& settings, bool noResult = false);
+    virtual ~BaseGraphDataExporter();
+
+    QString format(const double& v);
+
+    void addValue(const QString& v) { addValue(_stream, v); }
+    void addValue(const double& v) { addValue(_stream, format(v)); }
+    void addSeparator() { addSeparator(_stream); }
+    void addNewline() { addNewline(_stream); }
+
+    virtual QString result() const { return _result; }
+
+    void toClipboard();
+
+protected:
+    bool _quote, _csv;
+    QString _formatted;
+    QTextStream *_formatter;
+    QString _result;
+    QTextStream *_stream = nullptr;
+
+    void addValue(QTextStream* stream, const QString& v);
+    void addSeparator(QTextStream* stream);
+    void addNewline(QTextStream* stream);
 };
 
 class GraphDataExporter

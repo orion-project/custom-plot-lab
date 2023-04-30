@@ -8,74 +8,79 @@
 
 namespace QCPL {
 
-class ExporterImpl
+//------------------------------------------------------------------------------
+//                             BaseGraphDataExporter
+//------------------------------------------------------------------------------
+
+BaseGraphDataExporter::BaseGraphDataExporter(const GraphDataExportSettings& settings, bool noResult)
+{
+    _formatter = new QTextStream(&_formatted);
+    _formatter->setRealNumberNotation(QTextStream::SmartNotation);
+    _formatter->setRealNumberPrecision(settings.numberPrecision);
+    _formatter->setLocale(settings.systemLocale ? QLocale::system() : QLocale::c());
+
+    _quote = settings.csv && _formatter->locale().decimalPoint() == ',';
+    _csv = settings.csv;
+
+    if (!noResult)
+        _stream = new QTextStream(&_result);
+}
+
+BaseGraphDataExporter::~BaseGraphDataExporter()
+{
+    delete _formatter;
+    if (_stream)
+        delete _stream;
+}
+
+QString BaseGraphDataExporter::format(const double& v)
+{
+    _formatted.clear();
+    *_formatter << v;
+    return _formatted;
+}
+
+void BaseGraphDataExporter::addValue(QTextStream* stream, const QString& v)
+{
+    if (_quote)
+        *stream << '"' << v << '"';
+    else *stream << v;
+}
+
+void BaseGraphDataExporter::addSeparator(QTextStream* stream)
+{
+    *stream << (_csv ? ',' : '\t');
+}
+
+void BaseGraphDataExporter::addNewline(QTextStream* stream)
+{
+    *stream << '\n';
+}
+
+void BaseGraphDataExporter::toClipboard()
+{
+    qApp->clipboard()->setText(result());
+}
+
+//------------------------------------------------------------------------------
+//                               ExporterImpl
+//------------------------------------------------------------------------------
+
+class ExporterImpl : public BaseGraphDataExporter
 {
 public:
-    ExporterImpl(const GraphDataExportSettings& settings)
-    {
-        _formatter = new QTextStream(&_formatted);
-        _formatter->setRealNumberNotation(QTextStream::SmartNotation);
-        _formatter->setRealNumberPrecision(settings.numberPrecision);
-        _formatter->setLocale(settings.systemLocale ? QLocale::system() : QLocale::c());
-
-        _quote = settings.csv && _formatter->locale().decimalPoint() == ',';
-        _csv = settings.csv;
-    }
-
-    virtual ~ExporterImpl()
-    {
-        delete _formatter;
-    };
-
+    ExporterImpl(const GraphDataExportSettings& settings, bool noResult) : BaseGraphDataExporter(settings, noResult) {}
     virtual void add(const QString& v) = 0;
     virtual void add(const QString& x, const QString& y) = 0;
-    virtual QString result() const = 0;
-
-    QString format(const double& v)
-    {
-        _formatted.clear();
-        *_formatter << v;
-        return _formatted;
-    }
-
-protected:
-    bool _quote, _csv;
-
-    void addValue(QTextStream* stream, const QString& v)
-    {
-        if (_quote)
-            *stream << '"' << v << '"';
-        else *stream << v;
-    }
-
-    void addSeparator(QTextStream* stream)
-    {
-        *stream << (_csv ? ',' : '\t');
-    }
-
-    void addNewline(QTextStream* stream)
-    {
-        *stream << '\n';
-    }
-private:
-    QString _formatted;
-    QTextStream *_formatter;
 };
+
 
 namespace {
 
 class ColumnExporter : public ExporterImpl
 {
 public:
-    ColumnExporter(const GraphDataExportSettings& settings) : ExporterImpl(settings)
-    {
-        _stream = new QTextStream(&_result);
-    }
-
-    ~ColumnExporter()
-    {
-        delete _stream;
-    }
+    ColumnExporter(const GraphDataExportSettings& settings) : ExporterImpl(settings, false) {}
 
     void add(const QString& v) override
     {
@@ -90,21 +95,13 @@ public:
         addValue(_stream, y);
         addNewline(_stream);
     }
-
-    QString result() const override
-    {
-        return _result;
-    }
-
-private:
-    QString _result;
-    QTextStream *_stream;
 };
+
 
 class RowExporter : public ExporterImpl
 {
 public:
-    RowExporter(const GraphDataExportSettings& settings) : ExporterImpl(settings)
+    RowExporter(const GraphDataExportSettings& settings) : ExporterImpl(settings, true)
     {
         _streamX = new QTextStream(&_resultX);
         _streamY = new QTextStream(&_resultY);
@@ -205,7 +202,7 @@ void GraphDataExporter::add(const QVector<double>& vs)
 
 void GraphDataExporter::toClipboard()
 {
-    qApp->clipboard()->setText(_impl->result());
+    _impl->toClipboard();
 }
 
 } // namespace QCPL
