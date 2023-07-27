@@ -21,6 +21,26 @@ include("custom-plot-lab/custom-plot-lab.pri")
 
 This library also uses [orion-qt](https://github.com/orion-project/orion-qt) helper library so it should be added as submodule to your project too.
 
+### As shared library
+
+Build the library (make sure that `<qt-root>\Tools\mingw*\bin` and `<qt-root>\<qt-version>\mingw*\bin` are in `PATH`):
+
+```bash
+cd qcustomplot
+qmake
+make release
+
+# or for windows
+mingw32-make release
+```
+
+and add the config option `qcustomplotlab_shared` in your main project file before including `custom-plot-lab`:
+
+```c
+CONFIG += qcustomplotlab_shared
+include("custom-plot-lab/custom-plot-lab.pri")
+```
+
 ## Sandbox app
 
 `sandbox.pro` application is used for adding/debugging different features to the library.

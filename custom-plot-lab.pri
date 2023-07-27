@@ -10,7 +10,6 @@ SOURCES += \
     $$PWD/qcpl_format_graph.cpp \
     $$PWD/qcpl_format_legend.cpp \
     $$PWD/qcpl_text_editor.cpp \
-    $$PWD/qcustomplot/qcustomplot.cpp \
     $$PWD/qcpl_plot.cpp \
     $$PWD/qcpl_colors.cpp \
     $$PWD/qcpl_graph.cpp \
@@ -29,7 +28,6 @@ HEADERS  += \
     $$PWD/qcpl_format_graph.h \
     $$PWD/qcpl_format_legend.h \
     $$PWD/qcpl_text_editor.h \
-    $$PWD/qcustomplot/qcustomplot.h \
     $$PWD/qcpl_plot.h \
     $$PWD/qcpl_colors.h \
     $$PWD/qcpl_graph.h \
@@ -39,6 +37,17 @@ HEADERS  += \
     $$PWD/qcpl_format.h \
     $$PWD/qcpl_format_axis.h \
     $$PWD/qcpl_format_plot.h
+
+qcustomplotlab_shared {
+    # Tell the qcustomplot header that it will be used as library:
+    DEFINES += QCUSTOMPLOT_USE_LIBRARY
+    win32:QCPLIB = qcustomplot2
+    else: QCPLIB = qcustomplot
+    LIBS += -L$$PWD/qcustomplot/release -l$$QCPLIB
+} else {
+    SOURCES += $$PWD/qcustomplot/qcustomplot.cpp
+    HEADERS += $$PWD/qcustomplot/qcustomplot.h
+}
 
 RESOURCES += \
     $$PWD/qcpl_images.qrc

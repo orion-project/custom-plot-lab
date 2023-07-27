@@ -1,5 +1,4 @@
 # C++ objects and libs
-
 *.slo
 *.lo
 *.o
@@ -11,9 +10,8 @@
 *.dylib
 
 # Qt-es
-
-/.qmake.cache
-/.qmake.stash
+.qmake.cache
+.qmake.stash
 *.pro.user
 *.pro.user.*
 *.qbs.user
@@ -25,9 +23,9 @@ qrc_*.cpp
 ui_*.h
 Makefile*
 *build-*
+qcustomplot/qcustomplot*_resource.rc
 
 # QtCreator
-
 *.autosave
 
 # QtCtreator Qml
@@ -39,4 +37,6 @@ CMakeLists.txt.user*
 
 # suffixed old versions
 /qcustomplot/qcustomplot-*
+
+# dependencies
 orion
