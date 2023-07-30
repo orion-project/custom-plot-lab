@@ -137,12 +137,22 @@ void CursorPanel::cursorPositionCanged()
         actnCursorFollow->setChecked(false);
 }
 
-QString CursorPanel::formatCursorInfo()
+QString CursorPanel::formatLinkX(const QString& x) const
+{
+    return QStringLiteral("X = <a href='do://set_x'>%1</a>").arg(x);
+}
+
+QString CursorPanel::formatLinkY(const QString& y) const
+{
+    return QStringLiteral("Y = <a href='do://set_y'>%1</a>").arg(y);
+}
+
+QString CursorPanel::formatCursorInfo() const
 {
     auto point = _cursor->position();
-    return QStringLiteral("X = <a href='do://set_x'>%1</a>; Y = <a href='do://set_y'>%2</a>")
-            .arg(QString::number(point.x(), 'g', _numberPrecision))
-            .arg(QString::number(point.y(), 'g', _numberPrecision));
+    return QStringLiteral("%1; %2").arg(
+        formatLinkX(QString::number(point.x(), 'g', _numberPrecision)),
+        formatLinkY(QString::number(point.y(), 'g', _numberPrecision)));
 }
 
 void CursorPanel::update()

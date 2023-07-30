@@ -28,6 +28,8 @@ public:
     void fillMenu(QMenu *menu);
 
     void setNumberPrecision(int value, bool update);
+    QString formatLinkX(const QString& x) const;
+    QString formatLinkY(const QString& y) const;
 
     bool autoUpdateInfo() const { return _autoUpdateInfo; }
     void setAutoUpdateInfo(bool v) { _autoUpdateInfo = v; }
@@ -49,7 +51,7 @@ private:
     int _numberPrecision = 6;
 
     void createActions();
-    QString formatCursorInfo();
+    QString formatCursorInfo() const;
 
 private slots:
     void linkClicked(const class QUrl&);
