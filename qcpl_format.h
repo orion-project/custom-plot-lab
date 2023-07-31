@@ -75,7 +75,8 @@ bool titleFormatDlg(QCPTextElement* title, const TitleFormatDlgProps& props);
 struct LegendFormatDlgProps
 {
     QString title;
-    Plot *plot;
+    QString sampleText;
+    std::function<void()> onApplied;
 };
 
 bool legendFormatDlg(QCPLegend* legend, const LegendFormatDlgProps& props);

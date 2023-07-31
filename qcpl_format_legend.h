@@ -12,21 +12,24 @@ class SelectableTileRadioGroup;
 }}
 
 QT_BEGIN_NAMESPACE
+class QCheckBox;
 class QGridLayout;
 class QSpinBox;
 QT_END_NAMESPACE
 
 namespace QCPL {
 
+class PenEditorWidget;
 class TextEditorWidget;
 class MarginsEditorWidget;
+struct LegendFormatDlgProps;
 
 class LegendFormatWidget : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit LegendFormatWidget(QCPLegend *legend);
+    explicit LegendFormatWidget(QCPLegend *legend, const LegendFormatDlgProps& props);
 
 public slots:
     void apply();
@@ -38,8 +41,9 @@ private:
     TextEditorWidget *_textProps;
     QSpinBox *_iconW, *_iconH, *_iconMargin;
     MarginsEditorWidget *_margins, *_paddings;
-    QPen _borderPen;
-    QAction *_actnBorderFormat;
+    QCheckBox *_visible;
+    PenEditorWidget *_borderPen;
+    std::function<void()> onApplied;
 
     void makeLocationTile(Qt::Alignment align, int row, int col);
     void borderFormat();

@@ -174,11 +174,11 @@ bool titleFormatDlg(QCPTextElement* title, const TitleFormatDlgProps& props)
 
 bool legendFormatDlg(QCPLegend* legend, const LegendFormatDlgProps& props)
 {
-    LegendFormatWidget editor(legend);
+    LegendFormatWidget editor(legend, props);
 
     return Ori::Dlg::Dialog(&editor, false)
             .withTitle(props.title)
-            .withOnApply([&editor, &props]{ editor.apply(); props.plot->replot(); })
+            .withOnApply([&editor, legend]{ editor.apply(); legend->parentPlot()->replot(); })
             .withContentToButtonsSpacingFactor(3)
             .connectOkToContentApply()
             .exec();

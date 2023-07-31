@@ -31,10 +31,16 @@ public:
     {
         QSize iconSize;
         QVector<TextVariable> vars;
+        /// Show text alignment drop-down
         bool showAlignment = false;
+        /// Show background color selector
         bool showBackColor = false;
+        /// Use color with alpha-channel for text
         bool colorAlphaText = false;
+        /// Use color with alpha-channel for background
         bool colorAlphaBack = false;
+        /// Arrange buttons in two narrower panels instead of one long
+        bool narrow = false;
     };
 
     TextEditorWidget(const Options& opts);
@@ -50,7 +56,7 @@ public:
     QColor backColor() const { return _backColor; }
     int textFlags() const;
 
-    void addAction(QAction *actn);
+    void addAction(QAction *actn, bool secondToolbar = false);
 
     QPlainTextEdit* editor() const { return _editor; }
 
@@ -70,7 +76,7 @@ private:
     Ori::Widgets::MenuToolButton* _btnAlign = nullptr;
     QFontComboBox *_comboFont;
     QComboBox *_comboSize;
-    QToolBar *_toolbar;
+    QToolBar *_toolbar1, *_toolbar2;
     int _textFlags = 0;
 
     void selectFont();

@@ -13,6 +13,8 @@
 #include <QToolButton>
 #include <QtMath>
 
+using namespace Ori::Layouts;
+
 namespace QCPL {
 
 //---------------------------------------------------------------------
@@ -45,6 +47,10 @@ MarginsEditorWidget::MarginsEditorWidget(const QString& title) : QGroupBox(title
     T = new QSpinBox;
     R = new QSpinBox;
     B = new QSpinBox;
+    L->setMaximum(999);
+    T->setMaximum(999);
+    R->setMaximum(999);
+    B->setMaximum(999);
 
     auto layout = new QGridLayout(this);
     layout->setSpacing(0);
@@ -139,7 +145,7 @@ void ColorButton::selectColor()
 PenEditorWidget::PenEditorWidget(PenEditorWidgetOptions opts, QWidget *parent) : QWidget(parent)
 {
     _style = new Ori::Widgets::MenuToolButton;
-    _style->setIconSize({50, 16});
+    _style->setIconSize({ opts.narrow || opts.noLabels ? 80 : 50, 16 });
     createPenAction(Qt::NoPen, "No line");
     createPenAction(Qt::SolidLine, "Solid");
     createPenAction(Qt::DashLine, "Dashed"),
@@ -150,13 +156,17 @@ PenEditorWidget::PenEditorWidget(PenEditorWidgetOptions opts, QWidget *parent) :
     _width = new QSpinBox;
 
     _color = new ColorButton;
-    _color->setIconSize({40, 16});
+    _color->setIconSize({ opts.narrow || opts.noLabels ? 60 : 40, 16 });
 
-    auto labelStyle = new QLabel(opts.labelStyle.isEmpty() ? tr("Style:") : opts.labelStyle);
-    auto labelWidth = new QLabel(tr("Width:"));
-    auto labelColor = new QLabel(tr("Color:"));
+    QLabel *labelStyle, *labelWidth, *labelColor;
+    if (!opts.noLabels)
+    {
+        labelStyle = new QLabel(opts.labelStyle.isEmpty() ? tr("Style:") : opts.labelStyle);
+        labelWidth = new QLabel(tr("Width:"));
+        labelColor = new QLabel(tr("Color:"));
+    }
 
-    if (opts.gridLayout)
+    if (opts.gridLayout and !opts.noLabels)
     {
         opts.gridLayout->addWidget(labelStyle, opts.gridRow, 0);
         opts.gridLayout->addWidget(_style, opts.gridRow, 1);
@@ -165,18 +175,30 @@ PenEditorWidget::PenEditorWidget(PenEditorWidgetOptions opts, QWidget *parent) :
         opts.gridLayout->addWidget(labelColor, opts.gridRow, 4);
         opts.gridLayout->addWidget(_color, opts.gridRow, 5);
     }
+    else if (opts.narrow and !opts.noLabels)
+    {
+        LayoutH({
+            LayoutV({ labelStyle, _style }).setSpacing(3).setMargin(0),
+            LayoutV({ labelWidth, _width }).setSpacing(3).setMargin(0),
+            LayoutV({ labelColor, _color }).setSpacing(3).setMargin(0),
+        }).setSpacing(20).setMargin(0).useFor(this);
+    }
+    else if (opts.noLabels)
+    {
+        LayoutH({ _style, _width, _color }).setSpacing(20).setMargin(0).useFor(this);
+    }
     else
     {
-        Ori::Layouts::LayoutH({
-                                  labelStyle,
-                                  _style,
-                                  Ori::Layouts::Space(10),
-                                  labelWidth,
-                                  _width,
-                                  Ori::Layouts::Space(10),
-                                  labelColor,
-                                  _color,
-                              }).setMargin(0).useFor(this);
+        LayoutH({
+            labelStyle,
+            _style,
+            Space(10),
+            labelWidth,
+            _width,
+            Space(10),
+            labelColor,
+            _color,
+        }).setMargin(0).useFor(this);
     }
 }
 
@@ -192,8 +214,7 @@ void PenEditorWidget::createPenAction(Qt::PenStyle style, const QString& title)
 
     if (style == Qt::NoPen)
     {
-        auto p1 = QIcon(":/qcpl_images/style_empty").pixmap(h, h);
-        p.drawPixmap(QRect((w-h)/2, 0, h, h), p1, QRect(0, 0, h, h));
+        QIcon(":/qcpl_images/style_empty").paint(&p, 0, 0, w, h);
     }
     else
     {

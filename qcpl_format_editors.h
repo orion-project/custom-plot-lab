@@ -54,6 +54,8 @@ struct PenEditorWidgetOptions
     QString labelStyle;
     QGridLayout *gridLayout = nullptr;
     int gridRow = 0;
+    bool narrow = false;
+    bool noLabels = false;
 };
 
 class PenEditorWidget : public QWidget

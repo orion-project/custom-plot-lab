@@ -74,6 +74,7 @@ class TextEditor : public QPlainTextEdit
 public:
     std::function<void()> requestAccept;
     QToolButton *varsButton = nullptr;
+    int preferredWidth = 0;
 
     // TODO: default text should be processed separately from vars
     void setVars(const QString& defaultText, const QVector<TextVariable>& vars)
@@ -101,7 +102,10 @@ public:
     QSize sizeHint() const override
     {
         auto sz = QPlainTextEdit::sizeHint();
-        return {sz.width()*2, sz.height()/3};
+        return {
+            preferredWidth > 0 ? preferredWidth : sz.width()*2,
+            sz.height()/3
+        };
     }
 
 
@@ -160,40 +164,56 @@ TextEditorWidget::TextEditorWidget(const Options &opts) : QWidget()
     p.setVerticalStretch(255);
     setSizePolicy(p);
 
-    _toolbar = new QToolBar;
+    _toolbar1 = new QToolBar;
     if (!opts.iconSize.isEmpty())
-        _toolbar->setIconSize(opts.iconSize);
+        _toolbar1->setIconSize(opts.iconSize);
+    _toolbar1->setContentsMargins(0, 0, 0, 0);
+
+    _toolbar2 = new QToolBar;
+    if (!opts.iconSize.isEmpty())
+        _toolbar2->setIconSize(opts.iconSize);
+    _toolbar2->setContentsMargins(0, 0, 0, 0);
+    _toolbar2->setVisible(opts.narrow);
+
+    auto toolbar = [&opts, this](){
+        return opts.narrow ? _toolbar2 : _toolbar1;
+    };
 
     _comboFont = new QFontComboBox;
     _comboFont->setMaxVisibleItems(16);
-    connect(_comboFont, SIGNAL(activated(QString)), this, SLOT(setFontFamily(QString)));
-    _toolbar->addWidget(_comboFont);
-    _toolbar->addWidget(new QLabel(" "));
+    connect(_comboFont, SIGNAL(currentTextChanged(QString)), this, SLOT(setFontFamily(QString)));
+    _toolbar1->addWidget(_comboFont);
+    _toolbar1->addWidget(new QLabel(" "));
 
     _comboSize = new QComboBox;
     _comboSize->setEditable(true);
     _comboSize->setMaxVisibleItems(24);
     QList<int> fontSizes = QFontDatabase::standardSizes();
     foreach(int size, fontSizes) _comboSize->addItem(QString::number(size));
-    connect(_comboSize, SIGNAL(activated(QString)), this, SLOT(setFontSize(QString)));
-    _toolbar->addWidget(_comboSize);
-    _toolbar->addWidget(new QLabel(" "));
+    connect(_comboSize, SIGNAL(currentTextChanged(QString)), this, SLOT(setFontSize(QString)));
+    _toolbar1->addWidget(_comboSize);
+    if (!opts.narrow)
+        _toolbar1->addWidget(new QLabel(" "));
 
-    _actnBold = _toolbar->addAction(QIcon(":/qcpl_images/bold"), tr("Bold"), this, &TextEditorWidget::toggleBold);
-    _actnItalic = _toolbar->addAction(QIcon(":/qcpl_images/italic"), tr("Italic"), this, &TextEditorWidget::toggleItalic);
-    _actnUnderline = _toolbar->addAction(QIcon(":/qcpl_images/underline"), tr("Underline"), this, &TextEditorWidget::toggleUnderline);
+    _actnBold = toolbar()->addAction(QIcon(":/qcpl_images/bold"), tr("Bold"), this, &TextEditorWidget::toggleBold);
+    _actnItalic = toolbar()->addAction(QIcon(":/qcpl_images/italic"), tr("Italic"), this, &TextEditorWidget::toggleItalic);
+    _actnUnderline = toolbar()->addAction(QIcon(":/qcpl_images/underline"), tr("Underline"), this, &TextEditorWidget::toggleUnderline);
     _actnBold->setShortcut(QKeySequence::Bold);
     _actnItalic->setShortcut(QKeySequence::Italic);
     _actnUnderline->setShortcut(QKeySequence::Underline);
     _actnBold->setCheckable(true);
     _actnItalic->setCheckable(true);
     _actnUnderline->setCheckable(true);
+    if (opts.narrow)
+        _toolbar2->addSeparator();
 
-    _actnColor = _toolbar->addAction(tr("Color..."), this, &TextEditorWidget::selectColor);
+    _actnColor = toolbar()->addAction(tr("Color..."), this, &TextEditorWidget::selectColor);
     if (opts.showBackColor)
-        _actnBackColor = _toolbar->addAction(tr("Back Color..."), this, &TextEditorWidget::selectBackColor);
+        _actnBackColor = toolbar()->addAction(tr("Back Color..."), this, &TextEditorWidget::selectBackColor);
+    if (opts.narrow)
+        _toolbar2->addSeparator();
 
-    _toolbar->addAction(QIcon(":/qcpl_images/font_dlg"), tr("Select font via dialog"), this, &TextEditorWidget::selectFont);
+    toolbar()->addAction(QIcon(":/qcpl_images/font_dlg"), tr("Select font via dialog"), this, &TextEditorWidget::selectFont);
 
     if (opts.showAlignment)
     {
@@ -202,20 +222,27 @@ TextEditorWidget::TextEditorWidget(const Options &opts) : QWidget()
         _btnAlign->addAction(Qt::AlignHCenter, tr("Center"), ":/qcpl_images/align_center");
         _btnAlign->addAction(Qt::AlignRight, tr("Right"), ":/qcpl_images/align_right");
         _btnAlign->addAction(Qt::AlignJustify, tr("Justify"), ":/qcpl_images/align_just");
-        _toolbar->addWidget(_btnAlign);
+        toolbar()->addWidget(_btnAlign);
     }
 
     auto editor = new TextEditor;
     editor->requestAccept = [this]{ emit acceptRequested(); };
+    if (opts.narrow)
+    {
+        editor->preferredWidth = 100;
+        auto p = editor->sizePolicy();
+        p.setHorizontalPolicy(QSizePolicy::Minimum);
+        editor->setSizePolicy(p);
+    }
 
     if (!opts.vars.isEmpty())
     {
         editor->setVars(QString(), opts.vars);
-        _toolbar->addWidget(editor->varsButton);
+        _toolbar1->addWidget(editor->varsButton);
     }
 
     _editor = editor;
-    Ori::Layouts::LayoutV({_toolbar, _editor}).setSpacing(0).setMargin(0).useFor(this);
+    Ori::Layouts::LayoutV({_toolbar1, _toolbar2, _editor}).setSpacing(0).setMargin(0).useFor(this);
 }
 
 void TextEditorWidget::setText(const QString& text)
@@ -331,9 +358,9 @@ void TextEditorWidget::toggleUnderline()
     _editor->setFont(font);
 }
 
-void TextEditorWidget::addAction(QAction *actn)
+void TextEditorWidget::addAction(QAction *actn, bool secondToolbar)
 {
-    _toolbar->addAction(actn);
+    (secondToolbar ? _toolbar2 : _toolbar1)->addAction(actn);
 }
 
 //------------------------------------------------------------------------------
