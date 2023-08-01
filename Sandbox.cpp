@@ -17,6 +17,7 @@ PlotWindow::PlotWindow(QWidget *parent) : QMainWindow(parent)
     auto m = menuBar()->addMenu("Data");
     m->addAction("Add random graph", this, &PlotWindow::addRandomSample);
     m->addAction("Save plot format...", this, &PlotWindow::savePlotFormat);
+    m->addAction("Load plot format...", this, &PlotWindow::loadPlotFormat);
 
     m = menuBar()->addMenu("Limits");
     m->addAction("Auto", this, [this]{ _plot->autolimits(); });
@@ -85,13 +86,41 @@ void PlotWindow::savePlotFormat()
     QCPL::writeLegend(root, _plot->legend);
 
     QFile file(fileName);
-    if (!file.open(QFile::WriteOnly | QFile::Text))
-    {
+    if (!file.open(QFile::WriteOnly | QFile::Text)) {
         qDebug() << "Unable to open file for writing" << file.errorString();
         return;
     }
     QJsonDocument doc(root);
     QTextStream stream(&file);
     stream << doc.toJson();
-    file.close();
+}
+
+void PlotWindow::loadPlotFormat()
+{
+    auto fileName = QFileDialog::getOpenFileName(
+        this, "Load Plot Format", recentFormatFile, "JSON files (*.json)\nAll files (*.*)");
+    if (fileName.isEmpty())
+        return;
+    recentFormatFile = fileName;
+
+    QFile file(fileName);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        qDebug() << "Unable to open file for reading" << file.errorString();
+        return;
+    }
+
+    QJsonParseError error;
+    QJsonDocument doc = QJsonDocument::fromJson(file.readAll(), &error);
+    if (doc.isNull())
+    {
+        qDebug() << "Unable to parse file" << error.errorString();
+        return;
+    }
+
+    QJsonObject root = doc.object();
+    auto legendRes = QCPL::readLegend(root, _plot->legend);
+    if (!legendRes.ok())
+        qDebug() << "Failed to read legend" << legendRes.message;
+    _plot->replot();
 }

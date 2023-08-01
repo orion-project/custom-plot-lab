@@ -11,7 +11,18 @@ QT_END_NAMESPACE
 
 namespace QCPL {
 
+struct JsonResult
+{
+    enum { OK, KeyNotFound, BadVersion } code = OK;
+    QString message;
+
+    bool ok() { return code == OK; }
+};
+
 void writeLegend(QJsonObject& root, QCPLegend* legend);
+
+JsonResult readLegend(const QJsonObject &root, QCPLegend* legend);
+JsonResult readLegendObj(const QJsonObject& obj, QCPLegend* legend);
 
 } // namespace QCPL
 

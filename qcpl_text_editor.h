@@ -1,5 +1,5 @@
-#ifndef QCPL_UTILS_H
-#define QCPL_UTILS_H
+#ifndef QCPL_TEXT_EDITOR_H
+#define QCPL_TEXT_EDITOR_H
 
 #include <QWidget>
 
@@ -121,4 +121,4 @@ private:
 
 } // namespace QCPL
 
-#endif // QCPL_UTILS_H
+#endif // QCPL_TEXT_EDITOR_H

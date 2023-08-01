@@ -3,6 +3,8 @@
 
 #include "qcpl_types.h"
 
+#include <QMargins>
+
 class QCPLayoutInset;
 class QCPLegend;
 
@@ -10,7 +12,10 @@ namespace QCPL {
 
 GraphData makeRandomSample(int count = 100, double height = 25);
 
-QCPLayoutInset* legendLayout(QCPLegend* legend);
+Qt::Alignment legendLocation(QCPLegend* legend);
+void setLegendLocation(QCPLegend* legend, Qt::Alignment align);
+QMargins legendMargins(QCPLegend* legend);
+void setLegendMargins(QCPLegend* legend, const QMargins& margins);
 
 } // namespace QCPL
 

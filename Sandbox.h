@@ -22,6 +22,7 @@ private:
 
     void addRandomSample();
     void savePlotFormat();
+    void loadPlotFormat();
 };
 
 #endif // PLOT_WINDOW_H

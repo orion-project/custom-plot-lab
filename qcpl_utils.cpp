@@ -21,9 +21,24 @@ GraphData makeRandomSample(int count, double height)
     return {xs, ys};
 }
 
-QCPLayoutInset* legendLayout(QCPLegend *legend)
+Qt::Alignment legendLocation(QCPLegend* legend)
 {
-    return legend->parentPlot()->axisRect()->insetLayout();
+    return legend->parentPlot()->axisRect()->insetLayout()->insetAlignment(0);
+}
+
+void setLegendLocation(QCPLegend* legend, Qt::Alignment align)
+{
+    legend->parentPlot()->axisRect()->insetLayout()->setInsetAlignment(0, align);
+}
+
+QMargins legendMargins(QCPLegend* legend)
+{
+    return legend->parentPlot()->axisRect()->insetLayout()->margins();
+}
+
+void setLegendMargins(QCPLegend* legend, const QMargins& margins)
+{
+    legend->parentPlot()->axisRect()->insetLayout()->setMargins(margins);
 }
 
 } // namespace QCPL

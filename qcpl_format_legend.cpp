@@ -43,6 +43,9 @@ LegendFormatWidget::LegendFormatWidget(QCPLegend *legend, const LegendFormatDlgP
     _iconW = new QSpinBox;
     _iconH = new QSpinBox;
     _iconMargin = new QSpinBox;
+    _iconW->setMaximum(999);
+    _iconH->setMaximum(999);
+    _iconMargin->setMaximum(999);
 
     auto iconGroup = new QGroupBox(tr("Icon"));
     auto iconLayout = new QFormLayout(iconGroup);
@@ -56,7 +59,8 @@ LegendFormatWidget::LegendFormatWidget(QCPLegend *legend, const LegendFormatDlgP
     _locationGroup = new Ori::Widgets::SelectableTileRadioGroup(this);
     auto locationGroup = new QGroupBox(tr("Location"));
     _locationLayout = new QGridLayout(locationGroup);
-    _locationLayout->setSpacing(0);
+    _locationLayout->setHorizontalSpacing(2);
+    _locationLayout->setVerticalSpacing(2);
     makeLocationTile(Qt::AlignLeft|Qt::AlignTop, 0, 0);
     makeLocationTile(Qt::AlignHCenter|Qt::AlignTop, 0, 1);
     makeLocationTile(Qt::AlignRight|Qt::AlignTop, 0, 2);
@@ -68,7 +72,6 @@ LegendFormatWidget::LegendFormatWidget(QCPLegend *legend, const LegendFormatDlgP
     makeLocationTile(Qt::AlignRight|Qt::AlignBottom, 2, 2);
 
     _visible = new QCheckBox(tr("Visible"));
-    _visible->setChecked(legend->visible());
 
     auto separator = new Ori::Widgets::LabelSeparator;
     separator->flat = true;
@@ -85,6 +88,7 @@ LegendFormatWidget::LegendFormatWidget(QCPLegend *legend, const LegendFormatDlgP
                 Stretch(),
             }).setMargin(0).useFor(this);
 
+    _visible->setChecked(legend->visible());
     _textProps->setFont(legend->font());
     _textProps->setColor(legend->textColor());
     _textProps->setBackColor(legend->brush().color());
@@ -93,8 +97,8 @@ LegendFormatWidget::LegendFormatWidget(QCPLegend *legend, const LegendFormatDlgP
     _iconH->setValue(_legend->iconSize().height());
     _iconMargin->setValue(_legend->iconTextPadding());
     _paddings->setValue(legend->margins());
-    _margins->setValue(legendLayout(_legend)->margins());
-    _locationGroup->selectData(int(legendLayout(_legend)->insetAlignment(0)));
+    _margins->setValue(legendMargins(_legend));
+    _locationGroup->selectData(int(legendLocation(_legend)));
 }
 
 void LegendFormatWidget::makeLocationTile(Qt::Alignment align, int row, int col)
@@ -118,8 +122,8 @@ void LegendFormatWidget::apply()
     _legend->setMargins(_paddings->value());
     // https://www.qcustomplot.com/index.php/tutorials/basicplotting
     // by default, the legend is in the inset layout of the main axis rect. So this is how we access it to change legend placement:
-    legendLayout(_legend)->setInsetAlignment(0, Qt::Alignment(_locationGroup->selectedData().toInt()));
-    legendLayout(_legend)->setMargins(_margins->value());
+    setLegendLocation(_legend, Qt::Alignment(_locationGroup->selectedData().toInt()));
+    setLegendMargins(_legend, _margins->value());
     _legend->setVisible(_visible->isChecked());
     if (onApplied) onApplied();
 }
