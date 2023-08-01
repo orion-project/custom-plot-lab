@@ -87,9 +87,21 @@ QPen readPen(const QJsonObject& obj, const QPen& def)
     return p;
 }
 
-void writeLegend(QJsonObject& root, QCPLegend* legend)
+void readPlot(const QJsonObject& root, QCustomPlot* plot)
 {
-    root["legend"] = QJsonObject({
+    readLegend(root["legend"].toObject(), plot->legend);
+}
+
+QJsonObject writePlot(QCustomPlot* plot)
+{
+    return QJsonObject({
+        { "legend", writeLegend(plot->legend) },
+    });
+}
+
+QJsonObject writeLegend(QCPLegend* legend)
+{
+    return QJsonObject({
         { "version", CURRENT_LEGEND_VERSION },
         { "visible", legend->visible() },
         { "back_color", legend->brush().color().name() },
@@ -104,20 +116,15 @@ void writeLegend(QJsonObject& root, QCPLegend* legend)
     });
 }
 
-JsonResult readLegend(const QJsonObject& root, QCPLegend* legend)
+void readLegend(const QJsonObject& obj, QCPLegend* legend)
 {
-    if (!root.contains("legend"))
-        return { JsonResult::KeyNotFound, QString("Key not found: 'legend'") };
-    auto obj = root["legend"].toObject();
-    return readLegendObj(obj, legend);
-}
-
-JsonResult readLegendObj(const QJsonObject& obj, QCPLegend* legend)
-{
+    if (obj.isEmpty()) return;
     auto ver = obj["version"].toInt();
     if (ver != CURRENT_LEGEND_VERSION)
-        return { JsonResult::BadVersion,
-                QString("Unsupported legend version %1, expected is %2").arg(ver).arg(CURRENT_LEGEND_VERSION) };
+    {
+        qWarning() << "Unsupported legend version" << ver << "expected" << CURRENT_LEGEND_VERSION;
+        return;
+    }
     legend->setVisible(obj["visible"].toBool(legend->visible()));
     QColor backColor(obj["back_color"].toString());
     if (backColor.isValid())
@@ -133,7 +140,6 @@ JsonResult readLegendObj(const QJsonObject& obj, QCPLegend* legend)
     legend->setMargins(readMargins(obj["paddings"].toObject(), legend->margins()));
     setLegendMargins(legend, readMargins(obj["margins"].toObject(), legendMargins(legend)));
     setLegendLocation(legend, Qt::Alignment(obj["location"].toInt(legendLocation(legend))));
-    return JsonResult();
 }
 
 } // namespace QCPL

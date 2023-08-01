@@ -1,14 +1,15 @@
 #ifndef QCPL_PLOT_H
 #define QCPL_PLOT_H
 
-#include "qcustomplot/qcustomplot.h"
 #include "qcpl_types.h"
+#include "qcustomplot/qcustomplot.h"
 
 namespace QCPL {
 
 typedef QCPGraph Graph;
 
 class TextFormatterBase;
+class FormatSaver;
 
 class Plot : public QCustomPlot
 {
@@ -24,6 +25,7 @@ public:
     bool graphAutoColors = true;
     bool useSafeMargins = true;
     bool excludeServiceGraphsFromAutolimiting = true;
+    QSharedPointer<FormatSaver> formatSaver;
 
     QMenu *menuAxisX = nullptr;
     QMenu *menuAxisY = nullptr;

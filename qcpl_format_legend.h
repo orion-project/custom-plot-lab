@@ -41,9 +41,10 @@ private:
     TextEditorWidget *_textProps;
     QSpinBox *_iconW, *_iconH, *_iconMargin;
     MarginsEditorWidget *_margins, *_paddings;
-    QCheckBox *_visible;
+    QCheckBox *_visible, *_saveDefault;
     PenEditorWidget *_borderPen;
     std::function<void()> onApplied;
+    std::function<void()> onSaveDefault;
 
     void makeLocationTile(Qt::Alignment align, int row, int col);
     void borderFormat();

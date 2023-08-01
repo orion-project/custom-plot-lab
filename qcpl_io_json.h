@@ -3,6 +3,7 @@
 
 #include <QString>
 
+class QCustomPlot;
 class QCPLegend;
 
 QT_BEGIN_NAMESPACE
@@ -11,18 +12,11 @@ QT_END_NAMESPACE
 
 namespace QCPL {
 
-struct JsonResult
-{
-    enum { OK, KeyNotFound, BadVersion } code = OK;
-    QString message;
+void readPlot(const QJsonObject& root, QCustomPlot *plot);
+void readLegend(const QJsonObject &obj, QCPLegend* legend);
 
-    bool ok() { return code == OK; }
-};
-
-void writeLegend(QJsonObject& root, QCPLegend* legend);
-
-JsonResult readLegend(const QJsonObject &root, QCPLegend* legend);
-JsonResult readLegendObj(const QJsonObject& obj, QCPLegend* legend);
+QJsonObject writePlot(QCustomPlot *plot);
+QJsonObject writeLegend(QCPLegend* legend);
 
 } // namespace QCPL
 

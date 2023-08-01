@@ -1,9 +1,9 @@
 #include "Sandbox.h"
 
 #include "qcpl_format.h"
-#include "qcpl_io_json.h"
 #include "qcpl_utils.h"
 
+#include "helpers/OriDialogs.h"
 #include "tools/OriPetname.h"
 #include "tools/OriSettings.h"
 
@@ -12,12 +12,14 @@ PlotWindow::PlotWindow(QWidget *parent) : QMainWindow(parent)
     setWindowTitle("custom-plot-lab sandbox");
 
     _plot = new QCPL::Plot;
+    _plot->formatSaver.reset(new QCPL::FormatStorageIni);
     setCentralWidget(_plot);
 
     auto m = menuBar()->addMenu("Data");
     m->addAction("Add random graph", this, &PlotWindow::addRandomSample);
     m->addAction("Save plot format...", this, &PlotWindow::savePlotFormat);
     m->addAction("Load plot format...", this, &PlotWindow::loadPlotFormat);
+    m->addAction("Load default format", this, &PlotWindow::loadDefaultFormat);
 
     m = menuBar()->addMenu("Limits");
     m->addAction("Auto", this, [this]{ _plot->autolimits(); });
@@ -81,18 +83,9 @@ void PlotWindow::savePlotFormat()
     if (fileName.isEmpty())
         return;
     recentFormatFile = fileName;
-
-    QJsonObject root;
-    QCPL::writeLegend(root, _plot->legend);
-
-    QFile file(fileName);
-    if (!file.open(QFile::WriteOnly | QFile::Text)) {
-        qDebug() << "Unable to open file for writing" << file.errorString();
-        return;
-    }
-    QJsonDocument doc(root);
-    QTextStream stream(&file);
-    stream << doc.toJson();
+    QString res = QCPL::saveFormatToFile(fileName, _plot);
+    if (!res.isEmpty())
+        Ori::Dlg::error(res);
 }
 
 void PlotWindow::loadPlotFormat()
@@ -102,25 +95,15 @@ void PlotWindow::loadPlotFormat()
     if (fileName.isEmpty())
         return;
     recentFormatFile = fileName;
+    QString res = QCPL::loadFormatFromFile(fileName, _plot);
+    if (!res.isEmpty())
+        Ori::Dlg::error(res);
+    else
+        _plot->replot();
+}
 
-    QFile file(fileName);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-    {
-        qDebug() << "Unable to open file for reading" << file.errorString();
-        return;
-    }
-
-    QJsonParseError error;
-    QJsonDocument doc = QJsonDocument::fromJson(file.readAll(), &error);
-    if (doc.isNull())
-    {
-        qDebug() << "Unable to parse file" << error.errorString();
-        return;
-    }
-
-    QJsonObject root = doc.object();
-    auto legendRes = QCPL::readLegend(root, _plot->legend);
-    if (!legendRes.ok())
-        qDebug() << "Failed to read legend" << legendRes.message;
+void PlotWindow::loadDefaultFormat()
+{
+    dynamic_cast<QCPL::FormatStorageIni*>(_plot->formatSaver.get())->load(_plot);
     _plot->replot();
 }

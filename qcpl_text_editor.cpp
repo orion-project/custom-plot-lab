@@ -184,6 +184,12 @@ TextEditorWidget::TextEditorWidget(const Options &opts) : QWidget()
     connect(_comboFont, SIGNAL(currentTextChanged(QString)), this, SLOT(setFontFamily(QString)));
     _toolbar1->addWidget(_comboFont);
     _toolbar1->addWidget(new QLabel(" "));
+    if (opts.narrow)
+    {
+        QFontMetrics fm(_comboFont->font());
+        auto r = fm.boundingRect("Time New Roman");
+        _comboFont->setFixedWidth(r.width() * 1.5);
+    }
 
     _comboSize = new QComboBox;
     _comboSize->setEditable(true);

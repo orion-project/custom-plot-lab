@@ -359,6 +359,8 @@ bool Plot::formatDlgLegend()
 {
     LegendFormatDlgProps props;
     props.title = tr("Legend");
+    if (formatSaver)
+        props.onSaveDefault = [this](){ formatSaver->saveLegend(legend); };
 
     if (legendFormatDlg(legend, props))
     {

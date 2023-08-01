@@ -24,6 +24,7 @@ namespace QCPL {
 LegendFormatWidget::LegendFormatWidget(QCPLegend *legend, const LegendFormatDlgProps& props) : QWidget(), _legend(legend)
 {
     onApplied = props.onApplied;
+    onSaveDefault = props.onSaveDefault;
 
     TextEditorWidget::Options textOpts;
     textOpts.showBackColor = true;
@@ -72,12 +73,15 @@ LegendFormatWidget::LegendFormatWidget(QCPLegend *legend, const LegendFormatDlgP
     makeLocationTile(Qt::AlignRight|Qt::AlignBottom, 2, 2);
 
     _visible = new QCheckBox(tr("Visible"));
+    _saveDefault = new QCheckBox(tr("Save as default format"));
+    _saveDefault->setVisible(bool(onSaveDefault));
 
     auto separator = new Ori::Widgets::LabelSeparator;
     separator->flat = true;
 
     LayoutV({
                 _visible,
+                _saveDefault,
                 separator,
                 textGroup,
                 borderGroup,
@@ -126,6 +130,8 @@ void LegendFormatWidget::apply()
     setLegendMargins(_legend, _margins->value());
     _legend->setVisible(_visible->isChecked());
     if (onApplied) onApplied();
+    if (onSaveDefault and _saveDefault->isChecked())
+        onSaveDefault();
 }
 
 } // namespace QCPL
