@@ -9,6 +9,7 @@ SOURCES += \
     $$PWD/qcpl_format_editors.cpp \
     $$PWD/qcpl_format_graph.cpp \
     $$PWD/qcpl_format_legend.cpp \
+    $$PWD/qcpl_io_json.cpp \
     $$PWD/qcpl_text_editor.cpp \
     $$PWD/qcpl_plot.cpp \
     $$PWD/qcpl_colors.cpp \
@@ -27,6 +28,7 @@ HEADERS  += \
     $$PWD/qcpl_format_editors.h \
     $$PWD/qcpl_format_graph.h \
     $$PWD/qcpl_format_legend.h \
+    $$PWD/qcpl_io_json.h \
     $$PWD/qcpl_text_editor.h \
     $$PWD/qcpl_plot.h \
     $$PWD/qcpl_colors.h \

@@ -3,9 +3,14 @@
 
 #include "qcpl_types.h"
 
+class QCPLayoutInset;
+class QCPLegend;
+
 namespace QCPL {
 
 GraphData makeRandomSample(int count = 100, double height = 25);
+
+QCPLayoutInset* legendLayout(QCPLegend* legend);
 
 } // namespace QCPL
 

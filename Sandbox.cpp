@@ -1,6 +1,11 @@
 #include "Sandbox.h"
 
+#include "qcpl_format.h"
+#include "qcpl_io_json.h"
+#include "qcpl_utils.h"
+
 #include "tools/OriPetname.h"
+#include "tools/OriSettings.h"
 
 PlotWindow::PlotWindow(QWidget *parent) : QMainWindow(parent)
 {
@@ -11,6 +16,7 @@ PlotWindow::PlotWindow(QWidget *parent) : QMainWindow(parent)
 
     auto m = menuBar()->addMenu("Data");
     m->addAction("Add random graph", this, &PlotWindow::addRandomSample);
+    m->addAction("Save plot format...", this, &PlotWindow::savePlotFormat);
 
     m = menuBar()->addMenu("Limits");
     m->addAction("Auto", this, [this]{ _plot->autolimits(); });
@@ -22,6 +28,7 @@ PlotWindow::PlotWindow(QWidget *parent) : QMainWindow(parent)
 
     m = menuBar()->addMenu("Format");
     m->addAction("Plot format...", this, [this]{ QCPL::plotFormatDlg(_plot); });
+    m->addAction("Legend format...", this, [this]{ _plot->formatDlgLegend(); });
     m->addAction("X-axis title...", this, [this]{ _plot->titleDlgX(); });
     m->addAction("Y-axis title...", this, [this]{ _plot->titleDlgY(); });
     m->addAction("X-axis format...", this, [this]{ _plot->formatDlgX(); });
@@ -41,10 +48,15 @@ PlotWindow::PlotWindow(QWidget *parent) : QMainWindow(parent)
     _plot->autolimits();
 
     resize(800, 600);
+
+    Ori::Settings s;
+    recentFormatFile = s.value("recentFormatFile").toString();
 }
 
 PlotWindow::~PlotWindow()
 {
+    Ori::Settings s;
+    s.setValue("recentFormatFile", recentFormatFile);
 }
 
 void PlotWindow::addRandomSample()
@@ -59,4 +71,27 @@ void PlotWindow::resizeEvent(QResizeEvent *event)
     // Example of usage of text variables
     _plot->formatter(_plot->xAxis)->format();
     _plot->formatter(_plot->yAxis)->format();
+}
+
+void PlotWindow::savePlotFormat()
+{
+    auto fileName = QFileDialog::getSaveFileName(
+        this, "Save Plot Format", recentFormatFile, "JSON files (*.json)\nAll files (*.*)");
+    if (fileName.isEmpty())
+        return;
+    recentFormatFile = fileName;
+
+    QJsonObject root;
+    QCPL::writeLegend(root, _plot->legend);
+
+    QFile file(fileName);
+    if (!file.open(QFile::WriteOnly | QFile::Text))
+    {
+        qDebug() << "Unable to open file for writing" << file.errorString();
+        return;
+    }
+    QJsonDocument doc(root);
+    QTextStream stream(&file);
+    stream << doc.toJson();
+    file.close();
 }

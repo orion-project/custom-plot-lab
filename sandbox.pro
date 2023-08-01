@@ -5,7 +5,7 @@ include("custom-plot-lab.pri")
 # orion (https://github.com/orion-project/orion-qt)
 include($$_PRO_FILE_PWD_/orion/orion.pri)
 
-CONFIG += c++11
+CONFIG += c++17
 
 SOURCES += \
     main.cpp \

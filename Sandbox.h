@@ -4,8 +4,6 @@
 #include <QMainWindow>
 
 #include "qcpl_plot.h"
-#include "qcpl_utils.h"
-#include "qcpl_format.h"
 
 class PlotWindow : public QMainWindow
 {
@@ -20,8 +18,10 @@ protected:
 
 private:
     QCPL::Plot *_plot;
+    QString recentFormatFile;
 
     void addRandomSample();
+    void savePlotFormat();
 };
 
 #endif // PLOT_WINDOW_H

@@ -1,4 +1,6 @@
-#include "qcpl_utils.h"
+#include "qcpl_types.h"
+
+#include "qcustomplot/qcustomplot.h"
 
 #include <QRandomGenerator>
 
@@ -17,6 +19,11 @@ GraphData makeRandomSample(int count, double height)
         ys[i] = y;
     }
     return {xs, ys};
+}
+
+QCPLayoutInset* legendLayout(QCPLegend *legend)
+{
+    return legend->parentPlot()->axisRect()->insetLayout();
 }
 
 } // namespace QCPL
