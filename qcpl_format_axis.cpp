@@ -1,11 +1,10 @@
 #include "qcpl_format_axis.h"
 
 #include "qcpl_format_editors.h"
-#include "qcpl_plot.h"
 #include "qcpl_text_editor.h"
+#include "qcustomplot/qcustomplot.h"
 
 #include "helpers/OriLayouts.h"
-#include "helpers/OriWidgets.h"
 #include "widgets/OriOptionsGroup.h"
 
 #include <QCheckBox>
@@ -27,56 +26,54 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis) : QTabWidget(), _axis(axis)
     p.setVerticalStretch(255);
     setSizePolicy(p);
 
+    auto hintColor = palette().mid().color().name(QColor::HexRgb);
+
     //-------------------------------------------------------
+    //                    Tab "Axis"
 
     TextEditorWidget::Options titleOpts;
     _titleEditor = new TextEditorWidget(titleOpts);
-    _titleEditor->setText(axis->label());
-    _titleEditor->setFont(axis->labelFont());
-    _titleEditor->setColor(axis->labelColor());
 
-    _innerMargin = new QSpinBox;
-    _innerMargin->setValue(axis->labelPadding());
-
-    _outerMargin = new QSpinBox;
-    _outerMargin->setValue(axis->padding());
+    _innerMargin = makeSpinBox(-1000, 1000);
+    _outerMargin = makeSpinBox(0, 1000);
+    _offset = makeSpinBox(-2000, 2000);
 
     auto titleParams = new QFormLayout;
-    titleParams->addRow(makeParamLabel(tr("Inner margin"), tr("distance between text and value labels")), _innerMargin);
-    titleParams->addRow(makeParamLabel(tr("Outer margin"), tr("distance between text and diagram edge")), _outerMargin);
+    titleParams->addRow(makeParamLabel(
+        tr("Inner margin"), tr("distance between text and value labels"), hintColor), _innerMargin);
+    titleParams->addRow(makeParamLabel(
+        tr("Outer margin"), tr("distance between text and diagram edge"), hintColor), _outerMargin);
+    titleParams->addRow(makeParamLabel(
+        tr("Offset"), tr("displacement of axis line into plotting area"), hintColor), _offset);
 
-    // TODO: move to the second page when it's ready
     _logarithmic = new QCheckBox(tr("Logarithmic"));
-    _logarithmic->setChecked(axis->scaleType() == QCPAxis::stLogarithmic);
-
     _reversed = new QCheckBox(tr("Reversed"));
-    _reversed->setChecked(axis->rangeReversed());
 
     addTab(LayoutV({
-                       makeLabelSeparator(tr("Title")),
-                       _titleEditor,
-                       Space(10),
-                       LayoutH({titleParams, Stretch()}),
-                       Space(10),
-                       makeLabelSeparator(tr("Scale")),
-                       _logarithmic,
-                       _reversed,
-                   }).makeWidget(), tr("Axis"));
+        makeLabelSeparator(tr("Title")),
+        _titleEditor,
+        SpaceV(2),
+        LayoutH({titleParams, Stretch()}),
+        SpaceV(2),
+        makeLabelSeparator(tr("Scale")),
+        _logarithmic,
+        _reversed,
+    }).makeWidget(), tr("Axis"));
 
     //-------------------------------------------------------
+    //                   Tab "Labels"
 
-// TODO
-//    _offset = new QSpinBox;
-//    _offset->setValue(axis->offset());
+    _labelsVisible = new QCheckBox(tr("Show labels"));
+    _labelsInside = new QCheckBox(tr("Inside plotting area"));
 
-//    addTab(LayoutV({
-//                       _logarithmic,
-//                       _reversed,
-//                       LayoutH({paramLabel(tr("Offset"), tr("distance between line and plotting area")), _offset}),
-//                       Stretch(),
-//                   }).makeWidget(), tr("Axis"));
+    _labelsAngle = makeSpinBox(-90, 90);
+    _labelsPadding = makeSpinBox(0, 100);
 
-    //-------------------------------------------------------
+    auto labelsParams = new QFormLayout;
+    labelsParams->addRow(makeParamLabel(
+        tr("Angle"), tr("clockwise from -90° to 90°"), hintColor), _labelsAngle);
+    labelsParams->addRow(makeParamLabel(
+        tr("Margin"), tr("distance between text and axis line"), hintColor), _labelsPadding);
 
     TextEditorWidget::Options labelsOpts;
     _labelsEditor = new TextEditorWidget(labelsOpts);
@@ -85,46 +82,125 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis) : QTabWidget(), _axis(axis)
                 QLocale::system().toString(147098290.0, 'e', 10) + "   " +
                 QLocale::system().toString(365.256363004, 'g', 10)
                 );
-    _labelsEditor->setColor(axis->tickLabelColor());
-    _labelsEditor->setFont(axis->tickLabelFont());
-
-    _labelsAngle = new QSpinBox;
-    _labelsAngle->setRange(-90, 90);
-    _labelsAngle->setValue(axis->tickLabelRotation());
-
-    _labelsPadding = new QSpinBox;
-    _labelsPadding->setValue(axis->tickLabelPadding());
-
-    _labelsVisible = new QCheckBox(tr("Show labels"));
-    _labelsVisible->setChecked(axis->tickLabels());
-
-    _labelsInside = new QCheckBox(tr("Inside plotting area"));
-    _labelsInside->setChecked(axis->tickLabelSide() == QCPAxis::lsInside);
-
-    auto labelsParams = new QFormLayout;
-    labelsParams->addRow(makeParamLabel(tr("Angle"), tr("clockwise from -90° to 90°")), _labelsAngle);
-    labelsParams->addRow(makeParamLabel(tr("Margin"), tr("distance between text and axis line")), _labelsPadding);
 
     QString sampleNum = QLocale::system().toString(1.5);
     _numberFormat = new Ori::Widgets::OptionsGroup(tr("Number format"), true);
-    // TODO: take some color from palette, don't use hardcoded 'gray'
-    _numberFormat->hintFormat = "<span style='color:gray'>(%1)</span>";
+    _numberFormat->hintFormat = "<span style='color:" + hintColor + "'>(%1)</span>";
     _numberFormat->addOption(lnfF, tr("Fixed"), "1500000");
     _numberFormat->addOption(lnfE, tr("Exponential"), sampleNum+"e+06");
     _numberFormat->addOption(lnfG, tr("Automatic"), tr("take shortest"));
 
     _expFormat = new Ori::Widgets::OptionsGroup(tr("Exponent format"), true);
-    // TODO: take some color from palette, don't use hardcoded 'gray'
-    _expFormat->hintFormat = "<span style='color:gray'>(%1)</span>";
+    _expFormat->hintFormat = _numberFormat->hintFormat;
     _expFormat->addOption(lefLowerE, tr("Lowercase e"), sampleNum+"e+06");
     _expFormat->addOption(lefUpperE, tr("Uppercase E"), sampleNum+"E+06");
     _expFormat->addOption(lefDot, tr("Dot mutiplication"), sampleNum+"·10<sup>6</sup>");
     _expFormat->addOption(lefCross, tr("Cross mutiplication"), sampleNum+"×10<sup>6</sup>");
 
-    // default values
-    _numberFormat->setOption(lnfG);
-    _expFormat->setOption(lefDot);
+    _labelsPrecision = makeSpinBox(1, 15);
+    auto precisionHint = new QLabel(QString("<span style='color:%1'>%2</span>").arg(hintColor,
+        tr("For fixed and exponential formats - number of digits after decimal point. "
+            "For automatic format - maximum number of significant digits.")));
+    precisionHint->setWordWrap(true);
 
+    addTab(LayoutV({
+        LayoutH({
+            LayoutV({
+                _labelsVisible,
+                _labelsInside
+            }),
+            Stretch(),
+            labelsParams,
+        }),
+        SpaceV(2),
+        LayoutH({
+            _numberFormat,
+            _expFormat,
+            LayoutV({_labelsPrecision, precisionHint}).makeGroupBox(tr("Number precision")),
+            Stretch(),
+        }),
+        SpaceV(2),
+        _labelsEditor,
+        Stretch(),
+    }).makeWidget(), tr("Labels"));
+
+    //-------------------------------------------------------
+    //                   Tab "Lines"
+
+    PenEditorWidgetOptions penOpts;
+    penOpts.noLabels = true;
+    _axisPen = new PenEditorWidget(penOpts);
+    _tickPen = new PenEditorWidget(penOpts);
+    _tickLengthIn = makeSpinBox(0, 100);
+    _tickLengthOut = makeSpinBox(0, 100);
+    _subTickPen = new PenEditorWidget(penOpts);
+    _subTickLengthIn = makeSpinBox(0, 100);
+    _subTickLengthOut = makeSpinBox(0, 100);
+    _gridPen = new PenEditorWidget(penOpts);
+    _zeroPen = new PenEditorWidget(penOpts);
+    _subGridPen = new PenEditorWidget(penOpts);
+
+    _axisGroup = LayoutV({_axisPen}).makeGroupBox(tr("Axis"));
+    _axisGroup->setCheckable(true);
+
+    _gridGroup = LayoutV({_gridPen}).makeGroupBox(tr("Primary Grid"));
+    _gridGroup->setCheckable(true);
+
+    _groupSubGrid = LayoutV({_subGridPen}).makeGroupBox(tr("Additional Grid"));
+    _groupSubGrid->setCheckable(true);
+
+    auto tickLen = new QFormLayout;
+    tickLen->addRow(new QLabel(tr("Inner length:")), _tickLengthIn);
+    tickLen->addRow(new QLabel(tr("Outer length:")), _tickLengthOut);
+    _groupTicks = LayoutV({
+        _tickPen,
+        SpaceV(),
+        LayoutH({tickLen, Stretch()}),
+    }).makeGroupBox(tr("Primary ticks"));
+    _groupTicks->setCheckable(true);
+
+    auto subTickLen = new QFormLayout;
+    subTickLen->addRow(new QLabel(tr("Inner length:")), _subTickLengthIn);
+    subTickLen->addRow(new QLabel(tr("Outer length:")), _subTickLengthOut);
+    _groupSubTicks = LayoutV({
+        _subTickPen,
+        SpaceV(),
+        LayoutH({subTickLen, Stretch()}),
+    }).makeGroupBox(tr("Additional ticks"));
+    _groupSubTicks->setCheckable(true);
+
+    addTab(LayoutH({
+        LayoutV({
+            _axisGroup,
+            _gridGroup,
+            _groupTicks,
+        }).setDefSpacing(2),
+        LayoutV({
+            LayoutV({_zeroPen}).makeGroupBox(tr("Zero Line")),
+            _groupSubGrid,
+            _groupSubTicks,
+        }).setDefSpacing(2),
+    }).setDefSpacing(2).makeWidget(), tr("Lines"));
+
+    //-------------------------------------------------------
+
+    _titleEditor->setText(axis->label());
+    _titleEditor->setFont(axis->labelFont());
+    _titleEditor->setColor(axis->labelColor());
+    _innerMargin->setValue(axis->labelPadding());
+    _outerMargin->setValue(axis->padding());
+    _offset->setValue(-axis->offset());
+    _logarithmic->setChecked(axis->scaleType() == QCPAxis::stLogarithmic);
+    _reversed->setChecked(axis->rangeReversed());
+    _labelsVisible->setChecked(axis->tickLabels());
+    _labelsInside->setChecked(axis->tickLabelSide() == QCPAxis::lsInside);
+    _labelsAngle->setValue(axis->tickLabelRotation());
+    _labelsPadding->setValue(axis->tickLabelPadding());
+    _labelsEditor->setColor(axis->tickLabelColor());
+    _labelsEditor->setFont(axis->tickLabelFont());
+
+    _numberFormat->setOption(lnfG); // default value
+    _expFormat->setOption(lefDot); // default value
     QString fmt = axis->numberFormat();
     if (fmt.size() > 0) {
         if (fmt.at(0) == 'f') {
@@ -151,38 +227,23 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis) : QTabWidget(), _axis(axis)
         }
     }
 
-    _labelsPrecision = new QSpinBox;
     _labelsPrecision->setValue(axis->numberPrecision());
-    auto precisionHint = new QLabel(tr("<span style='color:gray'>"
-       "For fixed and exponential formats, a number of digits after decimal point. "
-       "For automatic format, maximum number of significant digits.</span>"));
-    precisionHint->setWordWrap(true);
-
-    addTab(LayoutV({
-                       LayoutH({LayoutV({
-                                    _labelsVisible,
-                                    _labelsInside
-                                }),
-                                Stretch(),
-                                labelsParams,
-                       }),
-                       Space(10),
-                       LayoutH({
-                           _numberFormat,
-                           _expFormat,
-                           Ori::Gui::groupV(tr("Number precision"), {_labelsPrecision, precisionHint}),
-                           Stretch(),
-                       }),
-                       Space(10),
-                       _labelsEditor,
-                       Stretch(),
-                   }).makeWidget(), tr("Labels"));
-
-    //-------------------------------------------------------
-
-    //addTab(LayoutV({}).makeWidget(), tr("Grid"));
-
-    //-------------------------------------------------------
+    _axisGroup->setChecked(axis->visible());
+    _axisPen->setValue(axis->basePen());
+    _groupTicks->setChecked(axis->ticks());
+    _tickPen->setValue(axis->tickPen());
+    _tickLengthIn->setValue(axis->tickLengthIn());
+    _tickLengthOut->setValue(axis->tickLengthOut());
+    _groupTicks->setChecked(axis->subTicks());
+    _subTickPen->setValue(axis->subTickPen());
+    _subTickLengthIn->setValue(axis->subTickLengthIn());
+    _subTickLengthOut->setValue(axis->subTickLengthOut());
+    auto grid = axis->grid();
+    _gridGroup->setChecked(grid->visible());
+    _gridPen->setValue(grid->pen());
+    _zeroPen->setValue(grid->zeroLinePen());
+    _groupSubGrid->setChecked(grid->subGridVisible());
+    _subGridPen->setValue(grid->subGridPen());
 
     setCurrentIndex(__tabIndex);
 }
@@ -195,11 +256,10 @@ void AxisFormatWidget::apply()
     _axis->setLabelColor(_titleEditor->color());
     _axis->setLabelPadding(_innerMargin->value());
     _axis->setPadding(_outerMargin->value());
-   // _axis->setOffset(_offset->value());
+    _axis->setOffset(-_offset->value());
     _axis->setScaleType(_logarithmic->isChecked() ? QCPAxis::stLogarithmic : QCPAxis::stLinear);
     _axis->setRangeReversed(_reversed->isChecked());
     _axis->setTickLabels(_labelsVisible->isChecked());
-    // TODO: take some contrast color if the blue choosen as the base
     _axis->setTickLabelColor(_labelsEditor->color());
     _axis->setTickLabelFont(_labelsEditor->font());
     _axis->setSelectedTickLabelFont(_labelsEditor->font());
@@ -223,6 +283,22 @@ void AxisFormatWidget::apply()
         fmt[2] = 'c';
     }
     _axis->setNumberFormat(QString::fromLatin1(fmt));
+    _axis->setVisible(_axisGroup->isChecked());
+    _axis->setBasePen(_axisPen->value());
+    _axis->setTicks(_groupTicks->isChecked());
+    _axis->setTickPen(_tickPen->value());
+    _axis->setTickLengthIn(_tickLengthIn->value());
+    _axis->setTickLengthOut(_tickLengthOut->value());
+    _axis->setSubTicks(_groupTicks->isChecked());
+    _axis->setSubTickPen(_subTickPen->value());
+    _axis->setSubTickLengthIn(_subTickLengthIn->value());
+    _axis->setSubTickLengthOut(_subTickLengthOut->value());
+    auto grid = _axis->grid();
+    grid->setVisible(_gridGroup->isChecked());
+    grid->setPen(_gridPen->value());
+    grid->setZeroLinePen(_zeroPen->value());
+    grid->setSubGridVisible(_groupSubGrid->isChecked());
+    grid->setSubGridPen(_subGridPen->value());
 
     __tabIndex = currentIndex();
 }

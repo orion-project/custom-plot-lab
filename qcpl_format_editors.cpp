@@ -21,6 +21,13 @@ namespace QCPL {
 //                         Helpers
 //---------------------------------------------------------------------
 
+QSpinBox* makeSpinBox(int min, int max)
+{
+    auto sb = new QSpinBox;
+    sb->setRange(min, max);
+    return sb;
+}
+
 QWidget* makeLabelSeparator(const QString& title)
 {
     auto s = new Ori::Widgets::LabelSeparator(title);
@@ -31,10 +38,9 @@ QWidget* makeLabelSeparator(const QString& title)
     return s;
 }
 
-QWidget* makeParamLabel(const QString& name, const QString& hint)
+QWidget* makeParamLabel(const QString& name, const QString& hint, const QString& hintColor)
 {
-    // TODO: take some color from palette, don't use hardcoded 'gray'
-    return new QLabel(QStringLiteral("%1 <span style='color:gray'>(%2)</span>  ").arg(name, hint));
+    return new QLabel(QString("%1 <span style='color:%3'>(%2)</span>   ").arg(name, hint, hintColor));
 }
 
 //---------------------------------------------------------------------
@@ -43,14 +49,10 @@ QWidget* makeParamLabel(const QString& name, const QString& hint)
 
 MarginsEditorWidget::MarginsEditorWidget(const QString& title) : QGroupBox(title)
 {
-    L = new QSpinBox;
-    T = new QSpinBox;
-    R = new QSpinBox;
-    B = new QSpinBox;
-    L->setMaximum(999);
-    T->setMaximum(999);
-    R->setMaximum(999);
-    B->setMaximum(999);
+    L = makeSpinBox(0, 1000);
+    T = makeSpinBox(0, 1000);
+    R = makeSpinBox(0, 1000);
+    B = makeSpinBox(0, 1000);
 
     auto layout = new QGridLayout(this);
     layout->setSpacing(0);

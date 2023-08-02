@@ -75,6 +75,7 @@ public:
     std::function<void()> requestAccept;
     QToolButton *varsButton = nullptr;
     int preferredWidth = 0;
+    int preferredHeight = 0;
 
     // TODO: default text should be processed separately from vars
     void setVars(const QString& defaultText, const QVector<TextVariable>& vars)
@@ -104,7 +105,7 @@ public:
         auto sz = QPlainTextEdit::sizeHint();
         return {
             preferredWidth > 0 ? preferredWidth : sz.width()*2,
-            sz.height()/3
+            preferredHeight > 0 ? preferredHeight : sz.height()/3
         };
     }
 

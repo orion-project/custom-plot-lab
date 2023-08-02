@@ -32,21 +32,14 @@ LegendFormatWidget::LegendFormatWidget(QCPLegend *legend, const LegendFormatDlgP
     textOpts.narrow = true;
     _textProps = new TextEditorWidget(textOpts);
     _textProps->setText(props.sampleText.isEmpty() ? QString("spectrum1.txt\nprofile3.dat [1;2]\nClipboard 3 [3;4]") : props.sampleText);
-    auto textGroup = new QGroupBox(tr("Font"));
-    LayoutV({_textProps}).useFor(textGroup);
 
     PenEditorWidgetOptions penOpts;
     penOpts.noLabels = true;
     _borderPen = new PenEditorWidget(penOpts);
-    auto borderGroup = new QGroupBox(tr("Border"));
-    LayoutV({_borderPen}).useFor(borderGroup);
 
-    _iconW = new QSpinBox;
-    _iconH = new QSpinBox;
-    _iconMargin = new QSpinBox;
-    _iconW->setMaximum(999);
-    _iconH->setMaximum(999);
-    _iconMargin->setMaximum(999);
+    _iconW = makeSpinBox(0, 500);
+    _iconH = makeSpinBox(0, 500);
+    _iconMargin = makeSpinBox(0, 500);
 
     auto iconGroup = new QGroupBox(tr("Icon"));
     auto iconLayout = new QFormLayout(iconGroup);
@@ -80,17 +73,17 @@ LegendFormatWidget::LegendFormatWidget(QCPLegend *legend, const LegendFormatDlgP
     separator->flat = true;
 
     LayoutV({
-                _visible,
-                _saveDefault,
-                separator,
-                textGroup,
-                borderGroup,
-                LayoutV({
-                    LayoutH({iconGroup, _paddings}),
-                    LayoutH({locationGroup, _margins}),
-                }),
-                Stretch(),
-            }).setMargin(0).useFor(this);
+        _visible,
+        _saveDefault,
+        separator,
+        LayoutV({_textProps}).makeGroupBox(tr("Font")),
+        LayoutV({_borderPen}).makeGroupBox(tr("Border")),
+        LayoutV({
+            LayoutH({ iconGroup, SpaceH(), _paddings }),
+            LayoutH({ locationGroup, SpaceH(), _margins }),
+        }),
+        Stretch(),
+    }).setMargin(0).useFor(this);
 
     _visible->setChecked(legend->visible());
     _textProps->setFont(legend->font());
@@ -124,8 +117,6 @@ void LegendFormatWidget::apply()
     _legend->setIconSize({_iconW->value(), _iconH->value()});
     _legend->setIconTextPadding(_iconMargin->value());
     _legend->setMargins(_paddings->value());
-    // https://www.qcustomplot.com/index.php/tutorials/basicplotting
-    // by default, the legend is in the inset layout of the main axis rect. So this is how we access it to change legend placement:
     setLegendLocation(_legend, Qt::Alignment(_locationGroup->selectedData().toInt()));
     setLegendMargins(_legend, _margins->value());
     _legend->setVisible(_visible->isChecked());

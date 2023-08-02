@@ -78,8 +78,9 @@ private:
     void createPenAction(Qt::PenStyle style, const QString& title);
 };
 
+QSpinBox* makeSpinBox(int min, int max);
 QWidget* makeLabelSeparator(const QString& title);
-QWidget* makeParamLabel(const QString& name, const QString& hint);
+QWidget* makeParamLabel(const QString& name, const QString& hint, const QString &hintColor);
 QPixmap makeSolidColorIcon(const QBrush &b, const QSize &sz = QSize());
 QPixmap makePenIcon(const QPen& pen, const QSize& sz = QSize());
 

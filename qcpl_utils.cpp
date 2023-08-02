@@ -23,6 +23,9 @@ GraphData makeRandomSample(int count, double height)
 
 Qt::Alignment legendLocation(QCPLegend* legend)
 {
+    // https://www.qcustomplot.com/index.php/tutorials/basicplotting
+    // by default, the legend is in the inset layout of the main axis rect.
+    // So this is how we access it to change legend placement:
     return legend->parentPlot()->axisRect()->insetLayout()->insetAlignment(0);
 }
 
