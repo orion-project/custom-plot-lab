@@ -24,6 +24,7 @@ private:
     void savePlotFormat();
     void loadPlotFormat();
     void loadDefaultFormat();
+    void pasteLegendFormat();
 };
 
 #endif // PLOT_WINDOW_H

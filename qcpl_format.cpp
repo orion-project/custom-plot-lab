@@ -4,13 +4,11 @@
 #include "qcpl_format_graph.h"
 #include "qcpl_format_legend.h"
 #include "qcpl_format_plot.h"
-#include "qcpl_io_json.h"
 #include "qcpl_plot.h"
 #include "qcpl_text_editor.h"
 
 #include "helpers/OriDialogs.h"
 #include "helpers/OriWidgets.h"
-#include "tools/OriSettings.h"
 #include "widgets/OriValueEdit.h"
 
 namespace QCPL {
@@ -257,63 +255,6 @@ AxisTitleFormatter::AxisTitleFormatter(QCPAxis* axis): _axis(axis)
 void AxisTitleFormatter::format()
 {
     _axis->setLabel(_processor.process(_text).trimmed());
-}
-
-//------------------------------------------------------------------------------
-//                          QCPL::FormatStorageIni
-//------------------------------------------------------------------------------
-
-static QString jsonToStr(const QJsonObject& obj)
-{
-    return QJsonDocument(obj).toJson(QJsonDocument::Compact);
-}
-
-static QJsonObject varToJson(const QVariant& data)
-{
-    QString str = data.toString();
-    if (str.isEmpty()) return QJsonObject();
-    QJsonDocument doc = QJsonDocument::fromJson(str.toUtf8());
-    return doc.isNull() ? QJsonObject() : doc.object();
-}
-
-void FormatStorageIni::load(QCustomPlot* plot)
-{
-    Ori::Settings s;
-    s.beginGroup("DefaultPlotFormat");
-    QCPL::readLegend(varToJson(s.value("legend")), plot->legend);
-}
-
-void FormatStorageIni::saveLegend(QCPLegend* legend)
-{
-    Ori::Settings s;
-    s.beginGroup("DefaultPlotFormat");
-    s.setValue("legend", jsonToStr(QCPL::writeLegend(legend)));
-}
-
-//------------------------------------------------------------------------------
-
-QString loadFormatFromFile(const QString& fileName, QCustomPlot* plot)
-{
-    QFile file(fileName);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-        return "Unable to open file for reading: " + file.errorString();
-
-    QJsonParseError error;
-    QJsonDocument doc = QJsonDocument::fromJson(file.readAll(), &error);
-    if (doc.isNull())
-        return "Unable to parse json file: " + error.errorString();
-
-    readPlot(doc.object(), plot);
-    return QString();
-}
-
-QString saveFormatToFile(const QString& fileName, QCustomPlot* plot)
-{
-    QFile file(fileName);
-    if (!file.open(QFile::WriteOnly | QFile::Text))
-        return "Unable to open file for writing: " + file.errorString();
-    QTextStream(&file) << QJsonDocument(writePlot(plot)).toJson();
-    return QString();
 }
 
 } // namespace QCPL

@@ -149,34 +149,6 @@ private:
     QCPAxis *_axis;
 };
 
-//---------------------------------------------------------------------
-
-/**
-    Allows a plot to store default view format of its elements.
-    The view format is fonts and colors of axes, of legend, etc.
-    Make an object of derived class and assign to the Plot::formatSaver field.
-*/
-class FormatSaver
-{
-public:
-    virtual ~FormatSaver() {}
-    virtual void saveLegend(QCPLegend* legend) = 0;
-};
-
-/**
-    Default implementation of FormatSaver that stores plot format
-    in local INI settings as JSON strings.
-*/
-class FormatStorageIni: public FormatSaver
-{
-public:
-    void load(QCustomPlot* plot);
-    void saveLegend(QCPLegend* legend) override;
-};
-
-QString loadFormatFromFile(const QString& fileName, QCustomPlot* plot);
-QString saveFormatToFile(const QString& fileName, QCustomPlot* plot);
-
 } // namespace QCPL
 
 #endif // QCPL_FORMAT_H

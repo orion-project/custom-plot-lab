@@ -1,6 +1,7 @@
 #include "Sandbox.h"
 
 #include "qcpl_format.h"
+#include "qcpl_io_json.h"
 #include "qcpl_utils.h"
 
 #include "helpers/OriDialogs.h"
@@ -13,6 +14,7 @@ PlotWindow::PlotWindow(QWidget *parent) : QMainWindow(parent)
 
     _plot = new QCPL::Plot;
     _plot->formatSaver.reset(new QCPL::FormatStorageIni);
+    _plot->legend->setSelectableParts(QCPLegend::spLegendBox);
     setCentralWidget(_plot);
 
     auto m = menuBar()->addMenu("Data");
@@ -46,6 +48,12 @@ PlotWindow::PlotWindow(QWidget *parent) : QMainWindow(parent)
     _plot->addTextVar(_plot->xAxis, "{wndH}", "Main window height", getWndH);
     _plot->addTextVar(_plot->yAxis, "{wndW}", "Main window width", getWndW);
     _plot->addTextVar(_plot->yAxis, "{wndH}", "Main window height", getWndH);
+
+    _plot->menuLegend = new QMenu(this);
+    _plot->menuLegend->addAction("Format...", this, [this]{ _plot->formatDlgLegend(); });
+    _plot->menuLegend->addAction("Copy format", this, [this](){ QCPL::copyLegendFormat(_plot->legend); });
+    _plot->menuLegend->addAction("Paste format", this, &PlotWindow::pasteLegendFormat);
+    _plot->menuLegend->addAction("Hide", this, [this](){ _plot->legend->setVisible(false); _plot->replot(); });
 
     addRandomSample();
     _plot->autolimits();
@@ -83,9 +91,9 @@ void PlotWindow::savePlotFormat()
     if (fileName.isEmpty())
         return;
     recentFormatFile = fileName;
-    QString res = QCPL::saveFormatToFile(fileName, _plot);
-    if (!res.isEmpty())
-        Ori::Dlg::error(res);
+    QString err = QCPL::saveFormatToFile(fileName, _plot);
+    if (!err.isEmpty())
+        Ori::Dlg::error(err);
 }
 
 void PlotWindow::loadPlotFormat()
@@ -95,15 +103,44 @@ void PlotWindow::loadPlotFormat()
     if (fileName.isEmpty())
         return;
     recentFormatFile = fileName;
-    QString res = QCPL::loadFormatFromFile(fileName, _plot);
-    if (!res.isEmpty())
-        Ori::Dlg::error(res);
-    else
-        _plot->replot();
+
+    QCPL::JsonReport report;
+    auto err = QCPL::loadFormatFromFile(fileName, _plot, &report);
+    if (!err.isEmpty())
+    {
+        // The plot definitely has not been changed
+        Ori::Dlg::error(err);
+        return;
+    }
+
+    // The plot probably has not been changed, this can be clarified by examining the report
+    _plot->replot();
+
+    // In real app these messages could be shown in app log window, for example
+    foreach (auto err, report)
+        qDebug() << err.message;
 }
 
 void PlotWindow::loadDefaultFormat()
 {
-    dynamic_cast<QCPL::FormatStorageIni*>(_plot->formatSaver.get())->load(_plot);
+    QCPL::JsonReport report;
+    dynamic_cast<QCPL::FormatStorageIni*>(_plot->formatSaver.get())->load(_plot, &report);
+
+    // The plot probably has not been changed, this can be clarified by examining the report
     _plot->replot();
+
+    // In real app these messages could be shown in app log window, for example
+    foreach (auto err, report)
+        qDebug() << err.message;
+}
+
+void PlotWindow::pasteLegendFormat()
+{
+    auto err = QCPL::pasteLegendFormat(_plot->legend);
+    if (err.isEmpty())
+    {
+        qDebug() << "Legend format pasted";
+        _plot->replot();
+    }
+    else Ori::Dlg::error(err);
 }

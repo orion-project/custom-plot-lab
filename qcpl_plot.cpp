@@ -1,7 +1,9 @@
 #include "qcpl_plot.h"
+
 #include "qcpl_colors.h"
 #include "qcpl_graph.h"
 #include "qcpl_format.h"
+#include "qcpl_io_json.h"
 
 /// Returns true when range is corrected, false when it's unchanged.
 static bool correctZeroRange(QCPRange& range, double safeMargin)
@@ -147,7 +149,9 @@ void Plot::contextMenuEvent(QContextMenuEvent *event)
 {
     QMenu* menu = nullptr;
     QPointF pos(event->x(), event->y());
-    if (xAxis->getPartAt(pos) != QCPAxis::spNone)
+    if (legend->selectTest(pos, true) >= 0)
+        menu = menuLegend;
+    else if (xAxis->getPartAt(pos) != QCPAxis::spNone)
         menu = menuAxisX;
     else if (yAxis->getPartAt(pos) != QCPAxis::spNone)
         menu = menuAxisY;

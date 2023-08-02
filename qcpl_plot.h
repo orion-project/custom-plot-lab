@@ -27,10 +27,12 @@ public:
     bool excludeServiceGraphsFromAutolimiting = true;
     QSharedPointer<FormatSaver> formatSaver;
 
+    // Plot doesn't take ownership on context menus
     QMenu *menuAxisX = nullptr;
     QMenu *menuAxisY = nullptr;
     QMenu *menuGraph = nullptr;
     QMenu *menuPlot = nullptr;
+    QMenu *menuLegend = nullptr;
 
     /// The callback used to get axis units for showing in the axis limits dialog.
     std::function<QString(QCPAxis*)> getAxisUnitString;
