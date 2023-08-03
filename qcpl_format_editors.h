@@ -24,7 +24,12 @@ class MarginsEditorWidget : public QGroupBox
     Q_OBJECT
 
 public:
-    explicit MarginsEditorWidget(const QString& title);
+    struct Options
+    {
+        bool layoutInLine = false;
+    };
+
+    explicit MarginsEditorWidget(const QString& title, const Options& opts);
 
     void setValue(const QMargins& m);
     QMargins value() const;

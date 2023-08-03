@@ -59,6 +59,20 @@ Plot::Plot(QWidget *parent) : QCustomPlot(parent),
         LineGraph::setSharedSelectionDecorator(decorator);
     }
 
+    _title = new QCPTextElement(this);
+    _title->setMargins({10, 10, 10, 10});
+    _title->setSelectable(true);
+    _title->setVisible(false);
+
+    plotLayout()->insertRow(0);
+    plotLayout()->setRowSpacing(0),
+    plotLayout()->setRowStretchFactor(0, 0.01);
+    connect(_title, &QCPTextElement::doubleClicked, this, [this](){ emit editTitleRequest(); });
+
+    _backupLayout = new QCPLayoutGrid;
+    _backupLayout->setVisible(false);
+    _backupLayout->addElement(0, 0, _title);
+
     legend->setVisible(true);
 
     setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables |
@@ -83,6 +97,7 @@ Plot::Plot(QWidget *parent) : QCustomPlot(parent),
 
 Plot::~Plot()
 {
+    delete _backupLayout;
     auto it = _formatters.constBegin();
     while (it != _formatters.constEnd())
     {
@@ -330,7 +345,6 @@ bool Plot::formatDlg(QCPAxis* axis)
 {
     AxisFormatDlgProps props;
     props.title = tr("%1 Format").arg(getAxisIdent(axis));
-    props.plot = this;
     if (axisFormatDlg(axis, props))
     {
         replot();
@@ -339,23 +353,17 @@ bool Plot::formatDlg(QCPAxis* axis)
     return false;
 }
 
-bool Plot::formatDlg0()
+bool Plot::formatDlgTitle()
 {
     TitleFormatDlgProps props;
     props.title = tr("Diagram title");
-    props.plot = this;
-
-    bool oldVisible = _title;
-    if (!oldVisible)
-        setTitleVisible(true);
-
+    if (formatSaver)
+        props.onSaveDefault = [this](){ formatSaver->saveLegend(legend); };
     if (titleFormatDlg(_title, props))
     {
         replot();
         return true;
     }
-
-    if (!oldVisible) setTitleVisible(false);
     return false;
 }
 
@@ -365,7 +373,6 @@ bool Plot::formatDlgLegend()
     props.title = tr("Legend");
     if (formatSaver)
         props.onSaveDefault = [this](){ formatSaver->saveLegend(legend); };
-
     if (legendFormatDlg(legend, props))
     {
         replot();
@@ -433,46 +440,6 @@ QColor Plot::nextGraphColor()
     return defaultColorSet().at(_nextColorIndex++);
 }
 
-void Plot::setTitleVisible(bool on)
-{
-    if (_title && on) return;
-    if (on)
-    {
-        _title = new QCPTextElement(this);
-        _title->setMargins({10, 10, 10, 0});
-        _title->setSelectable(true);
-
-        // Restore settings
-        if (_backup.contains("title_color"))
-            _title->setTextColor(_backup["title_color"].toString());
-        if (_backup.contains("title_text"))
-            _title->setText(_backup["title_text"].toString());
-        QFont f = defaultTitleFont();
-        if (_backup.contains("title_font"))
-            f.fromString(_backup["title_font"].toString());
-        _title->setFont(f);
-        _title->setSelectedFont(f);
-        if (_backup.contains("title_flags"))
-            _title->setTextFlags(_backup["title_flags"].toInt());
-
-        plotLayout()->insertRow(0);
-        plotLayout()->addElement(0, 0, _title);
-        connect(_title, &QCPTextElement::doubleClicked, this, [this](){ emit editTitleRequest(); });
-    }
-    else
-    {
-        // Store settings
-        _backup["title_text"] = _title->text();
-        _backup["title_color"] = _title->textColor().name();
-        _backup["title_font"] = _title->font().toString();
-        _backup["title_flags"] = _title->textFlags();
-
-        plotLayout()->remove(_title);
-        plotLayout()->simplify();
-        _title = nullptr;
-    }
-}
-
 Graph* Plot::selectedGraph() const
 {
     auto graphs = selectedGraphs();
@@ -534,6 +501,28 @@ QString Plot::formatterText(void* target) const
 {
     auto fmt = formatter(target);
     return fmt ? fmt->text() : QString();
+}
+
+void Plot::updateTitleVisibility()
+{
+    // We can't just hide the title, because the layout will still respect it's size.
+    // We can't just extract the title from layout because it will be deleted.
+    // So we have to move it into another layout instead.
+    if (!_title->visible())
+    {
+        // it's ok to get element without checking, but a console warning is printed then
+        if (_backupLayout->hasElement(0, 0) and _backupLayout->element(0, 0) == _title)
+            return;
+        _backupLayout->addElement(0, 0, _title);
+    }
+    else
+    {
+        auto mainLayout = plotLayout();
+        auto p = titleRC();
+        if (mainLayout->hasElement(p.row, p.col) and mainLayout->element(p.row, p.col) == _title)
+            return;
+        mainLayout->addElement(p.row, p.col, _title);
+    }
 }
 
 } // namespace QCPL

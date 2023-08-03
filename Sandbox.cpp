@@ -33,6 +33,7 @@ PlotWindow::PlotWindow(QWidget *parent) : QMainWindow(parent)
 
     m = menuBar()->addMenu("Format");
     m->addAction("Plot format...", this, [this]{ QCPL::plotFormatDlg(_plot); });
+    m->addAction("Title format...", this, [this]{ _plot->formatDlgTitle(); });
     m->addAction("Legend format...", this, [this]{ _plot->formatDlgLegend(); });
     m->addAction("X-axis title...", this, [this]{ _plot->titleDlgX(); });
     m->addAction("Y-axis title...", this, [this]{ _plot->titleDlgY(); });

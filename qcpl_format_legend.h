@@ -43,11 +43,10 @@ private:
     MarginsEditorWidget *_margins, *_paddings;
     QCheckBox *_visible, *_saveDefault;
     PenEditorWidget *_borderPen;
-    std::function<void()> onApplied;
-    std::function<void()> onSaveDefault;
+    std::function<void()> _onApplied;
+    std::function<void()> _onSaveDefault;
 
     void makeLocationTile(Qt::Alignment align, int row, int col);
-    void borderFormat();
 };
 
 } // namespace QCPL

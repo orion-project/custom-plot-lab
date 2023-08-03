@@ -47,19 +47,31 @@ QWidget* makeParamLabel(const QString& name, const QString& hint, const QString&
 //                         MarginsEditorWidget
 //---------------------------------------------------------------------
 
-MarginsEditorWidget::MarginsEditorWidget(const QString& title) : QGroupBox(title)
+MarginsEditorWidget::MarginsEditorWidget(const QString& title, const Options &opts) : QGroupBox(title)
 {
     L = makeSpinBox(0, 1000);
     T = makeSpinBox(0, 1000);
     R = makeSpinBox(0, 1000);
     B = makeSpinBox(0, 1000);
 
-    auto layout = new QGridLayout(this);
-    layout->setSpacing(0);
-    layout->addWidget(T, 0, 1);
-    layout->addWidget(L, 1, 0);
-    layout->addWidget(R, 1, 2);
-    layout->addWidget(B, 2, 1);
+    if (opts.layoutInLine)
+    {
+        LayoutH({
+            new QLabel("Left:"), L, Space(10),
+            new QLabel("Top:"), T, Space(10),
+            new QLabel("Right:"), R, Space(10),
+            new QLabel("Bottom:"), B, Stretch(),
+        }).useFor(this);
+    }
+    else
+    {
+        auto layout = new QGridLayout(this);
+        layout->setSpacing(0);
+        layout->addWidget(T, 0, 1);
+        layout->addWidget(L, 1, 0);
+        layout->addWidget(R, 1, 2);
+        layout->addWidget(B, 2, 1);
+    }
 }
 
 void MarginsEditorWidget::setValue(const QMargins& m)

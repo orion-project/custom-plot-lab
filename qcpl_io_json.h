@@ -5,6 +5,7 @@
 
 class QCustomPlot;
 class QCPLegend;
+class QCPTextElement;
 
 QT_BEGIN_NAMESPACE
 class QJsonObject;
@@ -38,6 +39,7 @@ class FormatSaver
 public:
     virtual ~FormatSaver() {}
     virtual void saveLegend(QCPLegend* legend) = 0;
+    virtual void saveTitle(QCPTextElement* title) = 0;
 };
 
 /**
@@ -49,6 +51,7 @@ class FormatStorageIni: public FormatSaver
 public:
     void load(QCustomPlot* plot, JsonReport *report);
     void saveLegend(QCPLegend* legend) override;
+    void saveTitle(QCPTextElement* title) override;
 };
 
 /// Loads plot format settings from file and returns empty string when succeeded.

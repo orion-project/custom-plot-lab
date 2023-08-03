@@ -23,8 +23,8 @@ namespace QCPL {
 
 LegendFormatWidget::LegendFormatWidget(QCPLegend *legend, const LegendFormatDlgProps& props) : QWidget(), _legend(legend)
 {
-    onApplied = props.onApplied;
-    onSaveDefault = props.onSaveDefault;
+    _onApplied = props.onApplied;
+    _onSaveDefault = props.onSaveDefault;
 
     TextEditorWidget::Options textOpts;
     textOpts.showBackColor = true;
@@ -47,8 +47,8 @@ LegendFormatWidget::LegendFormatWidget(QCPLegend *legend, const LegendFormatDlgP
     iconLayout->addRow(tr("Height"), _iconH);
     iconLayout->addRow(tr("Margin"), _iconMargin);
 
-    _paddings = new MarginsEditorWidget(tr("Paddings"));
-    _margins = new MarginsEditorWidget(tr("Margins"));
+    _paddings = new MarginsEditorWidget(tr("Paddings"), {});
+    _margins = new MarginsEditorWidget(tr("Margins"), {});
 
     _locationGroup = new Ori::Widgets::SelectableTileRadioGroup(this);
     auto locationGroup = new QGroupBox(tr("Location"));
@@ -67,7 +67,7 @@ LegendFormatWidget::LegendFormatWidget(QCPLegend *legend, const LegendFormatDlgP
 
     _visible = new QCheckBox(tr("Visible"));
     _saveDefault = new QCheckBox(tr("Save as default format"));
-    _saveDefault->setVisible(bool(onSaveDefault));
+    _saveDefault->setVisible(bool(_onSaveDefault));
 
     auto separator = new Ori::Widgets::LabelSeparator;
     separator->flat = true;
@@ -120,9 +120,9 @@ void LegendFormatWidget::apply()
     setLegendLocation(_legend, Qt::Alignment(_locationGroup->selectedData().toInt()));
     setLegendMargins(_legend, _margins->value());
     _legend->setVisible(_visible->isChecked());
-    if (onApplied) onApplied();
-    if (onSaveDefault and _saveDefault->isChecked())
-        onSaveDefault();
+    if (_onApplied) _onApplied();
+    if (_onSaveDefault and _saveDefault->isChecked())
+        _onSaveDefault();
 }
 
 } // namespace QCPL

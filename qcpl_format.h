@@ -27,6 +27,7 @@ struct AxisTitleDlgProps
     TextFormatterBase *formatter = nullptr;
 };
 
+/// Title dialog with font and color selectors.
 bool axisTitleDlg(QCPAxis* axis, const AxisTitleDlgProps& props);
 
 //---------------------------------------------------------------------
@@ -38,6 +39,7 @@ struct AxisTitleDlgPropsV2
     TextFormatterBase *formatter = nullptr;
 };
 
+/// Simplified title dialog having only text field and variables button.
 bool axisTitleDlgV2(QCPAxis* axis, const AxisTitleDlgPropsV2& props);
 
 //---------------------------------------------------------------------
@@ -56,7 +58,6 @@ bool axisLimitsDlg(QCPRange& range, const AxisLimitsDlgProps& props);
 struct AxisFormatDlgProps
 {
     QString title;
-    Plot *plot;
 };
 
 bool axisFormatDlg(QCPAxis* axis, const AxisFormatDlgProps& props);
@@ -66,7 +67,7 @@ bool axisFormatDlg(QCPAxis* axis, const AxisFormatDlgProps& props);
 struct TitleFormatDlgProps
 {
     QString title;
-    Plot *plot;
+    std::function<void()> onSaveDefault;
 };
 
 bool titleFormatDlg(QCPTextElement* title, const TitleFormatDlgProps& props);

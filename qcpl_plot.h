@@ -11,6 +11,12 @@ typedef QCPGraph Graph;
 class TextFormatterBase;
 class FormatSaver;
 
+struct LayoutCell
+{
+    int row;
+    int col;
+};
+
 class Plot : public QCustomPlot
 {
     Q_OBJECT
@@ -25,6 +31,9 @@ public:
     bool graphAutoColors = true;
     bool useSafeMargins = true;
     bool excludeServiceGraphsFromAutolimiting = true;
+
+    /// Used for saving format settings of plot elements that can be used as 'default' setting.
+    /// It is up to application when to load these stored default settings.
     QSharedPointer<FormatSaver> formatSaver;
 
     // Plot doesn't take ownership on context menus
@@ -41,8 +50,15 @@ public:
     Graph* makeNewGraph(const QString &title, const GraphData &data, bool replot = true);
     void updateGraph(Graph* graph, const GraphData &data, bool replot = true);
 
+    /// Returns plot title. The plot has one predefined default title object.
     QCPTextElement* title() { return _title; }
-    void setTitleVisible(bool on);
+
+    /// Puts the visible title into the main plot, and removes it from there if it's hidden.
+    /// This is because QCustomPlot can't caclulate layout row height properly when an element is not visible.
+    /// Even when the title is not visible, its height is accounted and layout row height ajusted accordingly.
+    /// So we see an empty space above the plot instead of non visible title.
+    /// This is undesired behaviour, so we need to remove the title from the main layout when it's hidden.
+    void updateTitleVisibility();
 
     bool isFrameVisible() const;
     void setFrameVisible(bool on);
@@ -63,9 +79,13 @@ public:
     enum class PlotPart { None, AxisX, AxisY };
     PlotPart selectedPart() const;
 
-    // TODO: should be a row below the title, it can be 0 or 1, depending on if title is visible
-    int axisRectRow() const { return 0; }
-    int axisRectCol() const { return 0; }
+    /// Initial layout row and column where the axis rect is placed.
+    /// It's the row 1 because the row 0 is occupied by the plot title.
+    /// Can be used for calculation of placement of additional elements, e.g. color scale of 2D plots.
+    constexpr LayoutCell axisRectRC() const { return { 1, 0}; }
+
+    /// Layout row and column when the title is placed.
+    constexpr LayoutCell titleRC() const { return { 0, 0 }; }
 
     void addTextVar(void* target, const QString& name, const QString& descr, TextVarGetter getter);
     void addTextVar(const QString& name, const QString& descr, TextVarGetter getter) { addTextVar(_title, name, descr, getter); }
@@ -116,7 +136,7 @@ public slots:
     bool titleDlgY() { return titleDlg(yAxis); }
     bool formatDlgX() { return formatDlg(xAxis); }
     bool formatDlgY() { return formatDlg(yAxis); }
-    bool formatDlg0();
+    bool formatDlgTitle();
     bool formatDlgLegend();
 
 signals:
@@ -150,7 +170,7 @@ private:
     const int _numberPrecision;
     QMap<void*, TextFormatterBase*> _formatters;
     QMap<void*, QString> _defaultTitles;
-    QMap<QString, QVariant> _backup;
+    QCPLayoutGrid *_backupLayout;
 
     bool isService(Graph* g) const { return _serviceGraphs.contains(g); }
 

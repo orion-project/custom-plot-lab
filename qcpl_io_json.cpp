@@ -183,6 +183,11 @@ void FormatStorageIni::saveLegend(QCPLegend* legend)
     s.setValue("legend", jsonToStr(QCPL::writeLegend(legend)));
 }
 
+void FormatStorageIni::saveTitle(QCPTextElement* title)
+{
+    // TODO
+}
+
 //------------------------------------------------------------------------------
 //                              Load / Save
 //------------------------------------------------------------------------------
