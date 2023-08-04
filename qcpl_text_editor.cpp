@@ -77,8 +77,7 @@ public:
     int preferredWidth = 0;
     int preferredHeight = 0;
 
-    // TODO: default text should be processed separately from vars
-    void setVars(const QString& defaultText, const QVector<TextVariable>& vars)
+    void initVarsMenu(const QString& defaultText, const QVector<TextVariable>& vars)
     {
         auto highlighter = new TextEditorHighlighter(document());
         auto varsMenu = new QMenu(this);
@@ -244,7 +243,7 @@ TextEditorWidget::TextEditorWidget(const Options &opts) : QWidget()
 
     if (!opts.vars.isEmpty())
     {
-        editor->setVars(QString(), opts.vars);
+        editor->initVarsMenu(QString(), opts.vars);
         _toolbar1->addWidget(editor->varsButton);
     }
 
@@ -371,10 +370,10 @@ void TextEditorWidget::addAction(QAction *actn, bool secondToolbar)
 }
 
 //------------------------------------------------------------------------------
-//                            TextEditorWidgetV2
+//                            TextOnlyEditorWidget
 //------------------------------------------------------------------------------
 
-TextEditorWidgetV2::TextEditorWidgetV2(const Options &opts) : QWidget()
+TextOnlyEditorWidget::TextOnlyEditorWidget(const Options &opts) : QWidget()
 {
     auto p = sizePolicy();
     p.setVerticalStretch(255);
@@ -386,10 +385,10 @@ TextEditorWidgetV2::TextEditorWidgetV2(const Options &opts) : QWidget()
 
     if (!opts.vars.isEmpty())
     {
-        editor->setVars(opts.defaultText, opts.vars);
-        // TODO: get sizes from style?
-        editor->varsButton->setIconSize({24, 24});
-        editor->varsButton->resize(32, 32);
+        editor->initVarsMenu(opts.defaultText, opts.vars);
+        int iconSize = qApp->style()->pixelMetric(QStyle::PM_ToolBarIconSize);
+        editor->varsButton->setIconSize({iconSize, iconSize});
+        editor->varsButton->resize(iconSize*5/4, iconSize*5/4);
     }
 
     _editor = editor;
@@ -399,17 +398,17 @@ TextEditorWidgetV2::TextEditorWidgetV2(const Options &opts) : QWidget()
         editor->varsButton->setParent(this);
 }
 
-void TextEditorWidgetV2::setText(const QString& text)
+void TextOnlyEditorWidget::setText(const QString& text)
 {
     _editor->setPlainText(text);
 }
 
-QString TextEditorWidgetV2::text() const
+QString TextOnlyEditorWidget::text() const
 {
     return _editor->toPlainText().trimmed();
 }
 
-void TextEditorWidgetV2::resizeEvent(QResizeEvent *event)
+void TextOnlyEditorWidget::resizeEvent(QResizeEvent *event)
 {
     QWidget::resizeEvent(event);
     auto button = ((TextEditor*)_editor)->varsButton;

@@ -20,30 +20,6 @@ class TextFormatterBase;
 
 //---------------------------------------------------------------------
 
-struct AxisTitleDlgProps
-{
-    QString title;
-    QSize iconSize;
-    TextFormatterBase *formatter = nullptr;
-};
-
-/// Title dialog with font and color selectors.
-bool axisTitleDlg(QCPAxis* axis, const AxisTitleDlgProps& props);
-
-//---------------------------------------------------------------------
-
-struct AxisTitleDlgPropsV2
-{
-    QString title;
-    QString defaultTitle;
-    TextFormatterBase *formatter = nullptr;
-};
-
-/// Simplified title dialog having only text field and variables button.
-bool axisTitleDlgV2(QCPAxis* axis, const AxisTitleDlgPropsV2& props);
-
-//---------------------------------------------------------------------
-
 struct AxisLimitsDlgProps
 {
     QString title;
@@ -55,9 +31,22 @@ bool axisLimitsDlg(QCPRange& range, const AxisLimitsDlgProps& props);
 
 //---------------------------------------------------------------------
 
+struct AxisTextDlgProps
+{
+    QString title;
+    QString defaultTitle;
+    TextFormatterBase *formatter = nullptr;
+};
+
+bool axisTextDlg(QCPAxis* axis, const AxisTextDlgProps& props);
+
+//---------------------------------------------------------------------
+
 struct AxisFormatDlgProps
 {
     QString title;
+    QString defaultTitle;
+    TextFormatterBase *formatter = nullptr;
 };
 
 bool axisFormatDlg(QCPAxis* axis, const AxisFormatDlgProps& props);

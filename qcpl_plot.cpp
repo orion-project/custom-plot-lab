@@ -210,7 +210,7 @@ void Plot::rawGraphClicked(QCPAbstractPlottable *plottable)
 void Plot::axisDoubleClicked(QCPAxis *axis, QCPAxis::SelectablePart part)
 {
     if (part == QCPAxis::spAxisLabel)
-        titleDlg(axis);
+        axisTextDlg(axis);
     else
         limitsDlg(axis);
 }
@@ -328,13 +328,13 @@ bool Plot::limitsDlgXY()
     return false;
 }
 
-bool Plot::titleDlg(QCPAxis* axis)
+bool Plot::axisTextDlg(QCPAxis* axis)
 {
-    AxisTitleDlgPropsV2 props;
+    AxisTextDlgProps props;
     props.title = tr("%1 Title").arg(getAxisIdent(axis));
     props.formatter = _formatters.contains(axis) ? _formatters[axis] : nullptr;
     props.defaultTitle = defaultTitle(axis);
-    if (axisTitleDlgV2(axis, props))
+    if (QCPL::axisTextDlg(axis, props))
     {
         replot();
         emit modified(QStringLiteral("%1 changed").arg(props.title));
@@ -343,11 +343,11 @@ bool Plot::titleDlg(QCPAxis* axis)
     return false;
 }
 
-bool Plot::formatDlg(QCPAxis* axis)
+bool Plot::axisFormatDlg(QCPAxis* axis)
 {
     AxisFormatDlgProps props;
     props.title = tr("%1 Format").arg(getAxisIdent(axis));
-    if (axisFormatDlg(axis, props))
+    if (QCPL::axisFormatDlg(axis, props))
     {
         replot();
         return true;
@@ -355,13 +355,13 @@ bool Plot::formatDlg(QCPAxis* axis)
     return false;
 }
 
-bool Plot::formatDlgTitle()
+bool Plot::titleFormatDlg()
 {
     TitleFormatDlgProps props;
     props.title = tr("Diagram title");
     if (formatSaver)
         props.onSaveDefault = [this](){ formatSaver->saveTitle(_title); };
-    if (titleFormatDlg(_title, props))
+    if (QCPL::titleFormatDlg(_title, props))
     {
         replot();
         return true;
@@ -369,13 +369,13 @@ bool Plot::formatDlgTitle()
     return false;
 }
 
-bool Plot::formatDlgLegend()
+bool Plot::legendFormatDlg()
 {
     LegendFormatDlgProps props;
     props.title = tr("Legend");
     if (formatSaver)
         props.onSaveDefault = [this](){ formatSaver->saveLegend(legend); };
-    if (legendFormatDlg(legend, props))
+    if (QCPL::legendFormatDlg(legend, props))
     {
         replot();
         return true;

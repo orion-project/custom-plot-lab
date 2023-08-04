@@ -133,12 +133,12 @@ public slots:
     void zoomInY() { extendLimitsY(-_zoomStepY); }
     void zoomOutY() { extendLimitsY(_zoomStepY); }
     void copyPlotImage();
-    bool titleDlgX() { return titleDlg(xAxis); }
-    bool titleDlgY() { return titleDlg(yAxis); }
-    bool formatDlgX() { return formatDlg(xAxis); }
-    bool formatDlgY() { return formatDlg(yAxis); }
-    bool formatDlgTitle();
-    bool formatDlgLegend();
+    bool axisTextDlgX() { return axisTextDlg(xAxis); }
+    bool axisTextDlgY() { return axisTextDlg(yAxis); }
+    bool axisFormatDlgX() { return axisFormatDlg(xAxis); }
+    bool axisFormatDlgY() { return axisFormatDlg(yAxis); }
+    bool titleFormatDlg();
+    bool legendFormatDlg();
 
 signals:
     void graphClicked(Graph*);
@@ -178,8 +178,8 @@ private:
     QColor nextGraphColor();
 
     bool limitsDlg(QCPAxis* axis);
-    bool titleDlg(QCPAxis* axis);
-    bool formatDlg(QCPAxis* axis);
+    bool axisTextDlg(QCPAxis* axis);
+    bool axisFormatDlg(QCPAxis* axis);
     void autolimits(QCPAxis* axis, bool replot);
     void extendLimits(QCPAxis* axis, double factor, bool replot);
     void setAxisRange(QCPAxis* axis, const QCPRange &range);

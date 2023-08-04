@@ -89,7 +89,7 @@ private:
 };
 
 /// Simplified text editor having only text field and variables button
-class TextEditorWidgetV2 : public QWidget
+class TextOnlyEditorWidget : public QWidget
 {
     Q_OBJECT
 
@@ -100,7 +100,7 @@ public:
         QVector<TextVariable> vars;
     };
 
-    TextEditorWidgetV2(const Options& opts);
+    TextOnlyEditorWidget(const Options& opts);
 
     void setText(const QString& text);
     QString text() const;

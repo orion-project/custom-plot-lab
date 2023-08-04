@@ -21,7 +21,7 @@ PlotWindow::PlotWindow(QWidget *parent) : QMainWindow(parent)
     m->addAction("Add random graph", this, &PlotWindow::addRandomSample);
     m->addAction("Save plot format...", this, &PlotWindow::savePlotFormat);
     m->addAction("Load plot format...", this, &PlotWindow::loadPlotFormat);
-    m->addAction("Load default format", this, &PlotWindow::loadDefaultFormat);
+    m->addAction("Load default plot format", this, &PlotWindow::loadDefaultFormat);
 
     m = menuBar()->addMenu("Limits");
     m->addAction("Auto", this, [this]{ _plot->autolimits(); });
@@ -33,12 +33,12 @@ PlotWindow::PlotWindow(QWidget *parent) : QMainWindow(parent)
 
     m = menuBar()->addMenu("Format");
     m->addAction("Plot format...", this, [this]{ QCPL::plotFormatDlg(_plot); });
-    m->addAction("Title format...", this, [this]{ _plot->formatDlgTitle(); });
-    m->addAction("Legend format...", this, [this]{ _plot->formatDlgLegend(); });
-    m->addAction("X-axis title...", this, [this]{ _plot->titleDlgX(); });
-    m->addAction("Y-axis title...", this, [this]{ _plot->titleDlgY(); });
-    m->addAction("X-axis format...", this, [this]{ _plot->formatDlgX(); });
-    m->addAction("Y-axis format...", this, [this]{ _plot->formatDlgY(); });
+    m->addAction("Title format...", this, [this]{ _plot->titleFormatDlg(); });
+    m->addAction("Legend format...", this, [this]{ _plot->legendFormatDlg(); });
+    m->addAction("X-axis format...", this, [this]{ _plot->axisFormatDlgX(); });
+    m->addAction("Y-axis format...", this, [this]{ _plot->axisFormatDlgY(); });
+    m->addAction("X-axis text...", this, [this]{ _plot->axisTextDlgX(); });
+    m->addAction("Y-axis text...", this, [this]{ _plot->axisTextDlgY(); });
 
     // Example of usage of text variables
     _plot->addTextVar(_plot->xAxis, "{var1}", "Short var 1", []{ return "Galenium overloader"; });
@@ -51,21 +51,21 @@ PlotWindow::PlotWindow(QWidget *parent) : QMainWindow(parent)
     _plot->addTextVar(_plot->yAxis, "{wndH}", "Main window height", getWndH);
 
     _plot->menuLegend = new QMenu(this);
-    _plot->menuLegend->addAction("Format...", this, [this]{ _plot->formatDlgLegend(); });
+    _plot->menuLegend->addAction("Format...", this, [this]{ _plot->legendFormatDlg(); });
     _plot->menuLegend->addAction("Copy format", this, [this](){ QCPL::copyLegendFormat(_plot->legend); });
     _plot->menuLegend->addAction("Paste format", this, &PlotWindow::pasteLegendFormat);
     _plot->menuLegend->addAction("Hide", this, [this](){ _plot->legend->setVisible(false); _plot->replot(); });
     _plot->menuTitle = new QMenu(this);
-    _plot->menuTitle->addAction("Format...", this, [this]{ _plot->formatDlgTitle(); });
+    _plot->menuTitle->addAction("Format...", this, [this]{ _plot->titleFormatDlg(); });
     _plot->menuTitle->addAction("Copy format", this, [this](){ QCPL::copyTitleFormat(_plot->title()); });
     _plot->menuTitle->addAction("Paste format", this, &PlotWindow::pasteTitleFormat);
     _plot->menuTitle->addAction("Hide", this, [this](){ _plot->title()->setVisible(false); _plot->updateTitleVisibility(); _plot->replot(); });
     _plot->menuAxisX = new QMenu(this);
-    _plot->menuAxisX->addAction("Format...", this, [this]{ _plot->formatDlgX(); });
+    _plot->menuAxisX->addAction("Format...", this, [this]{ _plot->axisFormatDlgX(); });
     _plot->menuAxisX->addAction("Copy format", this, [this](){ QCPL::copyAxisFormat(_plot->xAxis); });
     _plot->menuAxisX->addAction("Paste format", this, [this](){ pasteAxisFormat(_plot->xAxis); });
     _plot->menuAxisY = new QMenu(this);
-    _plot->menuAxisY->addAction("Format...", this, [this]{ _plot->formatDlgY(); });
+    _plot->menuAxisY->addAction("Format...", this, [this]{ _plot->axisFormatDlgY(); });
     _plot->menuAxisY->addAction("Copy format", this, [this](){ QCPL::copyAxisFormat(_plot->yAxis); });
     _plot->menuAxisY->addAction("Paste format", this, [this](){ pasteAxisFormat(_plot->yAxis); });
 

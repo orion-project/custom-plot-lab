@@ -61,7 +61,6 @@ public:
 class FormatStorageIni: public FormatSaver
 {
 public:
-    /// Loads default plot format from local INI settings.
     void load(Plot* plot, JsonReport *report);
 
     void saveLegend(QCPLegend* legend) override;
