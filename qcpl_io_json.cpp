@@ -8,8 +8,11 @@
 
 #define CURRENT_LEGEND_VERSION 1
 #define CURRENT_TITLE_VERSION 1
+#define CURRENT_AXIS_VERSION 1
 
 namespace QCPL {
+
+namespace {
 
 QJsonObject writeFont(const QFont& font)
 {
@@ -91,14 +94,6 @@ QPen readPen(const QJsonObject& obj, const QPen& def)
     return p;
 }
 
-QJsonObject writePlot(Plot* plot, const JsonOptions& opts)
-{
-    return QJsonObject({
-        { "legend", writeLegend(plot->legend) },
-        { "title", writeTitle(plot->title(), opts) },
-    });
-}
-
 QJsonValue colorToJson(const QColor& color)
 {
     return color.name();
@@ -108,6 +103,21 @@ QColor jsonToColor(const QJsonValue& val, const QColor& def)
 {
     QColor color(val.toString());
     return color.isValid() ? color : def;
+}
+
+} // namespace
+
+//------------------------------------------------------------------------------
+//                             Qrite to JSON
+
+QJsonObject writePlot(Plot* plot, const JsonOptions& opts)
+{
+    return QJsonObject({
+        { "legend", writeLegend(plot->legend) },
+        { "title", writeTitle(plot->title(), opts) },
+        { "axis_x", writeAxis(plot->xAxis, opts) },
+        { "axis_y", writeAxis(plot->yAxis, opts) },
+    });
 }
 
 QJsonObject writeLegend(QCPLegend* legend)
@@ -137,19 +147,71 @@ QJsonObject writeTitle(QCPTextElement* title, const JsonOptions& opts)
         { "text_flags", title->textFlags() },
         { "margins", writeMargins(title->margins()) },
     });
-    if (opts.saveTextContent)
+    if (opts.allowTextContent)
         obj["text"] = title->text();
     return obj;
 }
 
-void readPlot(const QJsonObject& root, Plot *plot, JsonReport *report)
+QJsonObject writeAxis(QCPAxis *axis, const JsonOptions& opts)
+{
+    auto grid = axis->grid();
+    auto obj = QJsonObject({
+        { "version", CURRENT_AXIS_VERSION },
+        { "visible", axis->visible() },
+        { "title_font", writeFont(axis->labelFont()) },
+        { "title_color", colorToJson(axis->labelColor()) },
+        { "title_margin_in", axis->labelPadding() },
+        { "title_margin_out", axis->padding() },
+        { "offset", axis->offset() },
+        { "scale_log", axis->scaleType() == QCPAxis::stLogarithmic },
+        { "reversed", axis->rangeReversed() },
+        { "labels_visible", axis->tickLabels() },
+        { "labels_inside", axis->tickLabelSide() == QCPAxis::lsInside },
+        { "labels_rotation", axis->tickLabelRotation() },
+        { "labels_margin", axis->tickLabelPadding() },
+        { "labels_color", colorToJson(axis->tickLabelColor()) },
+        { "labels_font", writeFont(axis->tickLabelFont()) },
+        { "number_format", axis->numberFormat() },
+        { "number_precision", axis->numberPrecision() },
+        { "pen", writePen(axis->basePen()) },
+        { "tick_visible", axis->ticks() },
+        { "tick_pen", writePen(axis->tickPen()) },
+        { "tick_len_in", axis->tickLengthIn() },
+        { "tick_len_out", axis->tickLengthOut() },
+        { "subtick_visible", axis->subTicks() },
+        { "subtick_pen", writePen(axis->subTickPen()) },
+        { "subtick_len_in", axis->subTickLengthIn() },
+        { "subtick_len_out", axis->subTickLengthOut() },
+        { "grid_visible", grid->visible() },
+        { "grid_pen", writePen(grid->pen()) },
+        { "zero_pen", writePen(grid->zeroLinePen()) },
+        { "subgrid_visible", grid->subGridVisible() },
+        { "subgrid_pen", writePen(grid->subGridPen()) },
+    });
+    if (opts.allowTextContent)
+        obj["title"] = axis->label();
+    return obj;
+}
+
+//------------------------------------------------------------------------------
+//                             Read from JSON
+
+void readPlot(const QJsonObject& root, Plot *plot, const JsonOptions &opts, JsonReport *report)
 {
     {
         auto err = readLegend(root["legend"].toObject(), plot->legend);
         if (report and !err.ok()) report->append(err);
     }
     {
-        auto err = readTitle(root["title"].toObject(), plot->title());
+        auto err = readTitle(root["title"].toObject(), plot->title(), opts);
+        if (report and !err.ok()) report->append(err);
+    }
+    {
+        auto err = readAxis(root["axis_x"].toObject(), plot->xAxis, opts);
+        if (report and !err.ok()) report->append(err);
+    }
+    {
+        auto err = readAxis(root["axis_y"].toObject(), plot->yAxis, opts);
         if (report and !err.ok()) report->append(err);
     }
     plot->updateTitleVisibility();
@@ -178,7 +240,7 @@ JsonError readLegend(const QJsonObject& obj, QCPLegend* legend)
     return {};
 }
 
-JsonError readTitle(const QJsonObject &obj, QCPTextElement* title)
+JsonError readTitle(const QJsonObject &obj, QCPTextElement* title, const JsonOptions& opts)
 {
     if (obj.isEmpty())
         return { JsonError::NoData, "Title object is empty" };
@@ -193,8 +255,54 @@ JsonError readTitle(const QJsonObject &obj, QCPTextElement* title)
     title->setTextColor(jsonToColor(obj["text_color"], title->textColor()));
     title->setTextFlags(obj["text_flags"].toInt(title->textFlags()));
     title->setMargins(readMargins(obj["margins"].toObject(), title->margins()));
-    if (obj.contains("text"))
+    if (obj.contains("text") and opts.allowTextContent)
         title->setText(obj["text"].toString(title->text()));
+    return {};
+}
+
+JsonError readAxis(const QJsonObject &obj, QCPAxis* axis, const JsonOptions& opts)
+{
+    if (obj.isEmpty())
+        return { JsonError::NoData, "Axis object is empty" };
+    auto ver = obj["version"].toInt();
+    if (ver != CURRENT_AXIS_VERSION)
+        return {
+                JsonError::BadVersion,
+                QString("Unsupported axis version %1, expected %2").arg(ver, CURRENT_AXIS_VERSION) };
+    axis->setVisible(obj["visible"].toBool(axis->visible()));
+    axis->setLabelFont(readFont(obj["title_font"].toObject(), axis->labelFont()));
+    axis->setSelectedLabelFont(axis->labelFont());
+    axis->setLabelColor(jsonToColor(obj["title_color"], axis->labelColor()));
+    axis->setLabelPadding(obj["title_margin_in"].toInt(axis->labelPadding()));
+    axis->setPadding(obj["title_margin_out"].toInt(axis->padding()));
+    axis->setOffset(obj["offset"].toInt(axis->offset()));
+    axis->setScaleType(obj["scale_log"].toBool(axis->scaleType() == QCPAxis::stLogarithmic) ? QCPAxis::stLogarithmic : QCPAxis::stLinear);
+    axis->setRangeReversed(obj["reversed"].toBool(axis->rangeReversed()));
+    axis->setTickLabels(obj["labels_visible"].toBool(axis->tickLabels()));
+    axis->setTickLabelSide(obj["labels_inside"].toBool(axis->tickLabelSide() == QCPAxis::lsInside) ? QCPAxis::lsInside : QCPAxis::lsOutside);
+    axis->setTickLabelRotation(obj["labels_rotation"].toDouble(axis->tickLabelRotation()));
+    axis->setTickLabelPadding(obj["labels_margin"].toInt(axis->tickLabelPadding()));
+    axis->setTickLabelColor(jsonToColor(obj["labels_color"], axis->tickLabelColor()));
+    axis->setTickLabelFont(readFont(obj["labels_font"].toObject(), axis->tickLabelFont()));
+    axis->setNumberFormat(obj["number_format"].toString(axis->numberFormat()));
+    axis->setNumberPrecision(obj["number_precision"].toInt(axis->numberPrecision()));
+    axis->setBasePen(readPen(obj["pen"].toObject(), axis->basePen()));
+    axis->setTicks(obj["tick_visible"].toBool(axis->ticks()));
+    axis->setTickPen(readPen(obj["tick_pen"].toObject(), axis->tickPen()));
+    axis->setTickLengthIn(obj["tick_len_in"].toInt(axis->tickLengthIn()));
+    axis->setTickLengthOut(obj["tick_len_out"].toInt(axis->tickLengthOut()));
+    axis->setSubTicks(obj["subtick_visible"].toInt(axis->subTicks()));
+    axis->setSubTickPen(readPen(obj["subtick_pen"].toObject(), axis->subTickPen()));
+    axis->setSubTickLengthIn(obj["subtick_len_in"].toInt(axis->subTickLengthIn()));
+    axis->setSubTickLengthOut(obj["subtick_len_out"].toInt(axis->subTickLengthOut()));
+    auto grid = axis->grid();
+    grid->setVisible(obj["grid_visible"].toBool(grid->visible()));
+    grid->setPen(readPen(obj["grid_pen"].toObject(), grid->pen()));
+    grid->setZeroLinePen(readPen(obj["zero_pen"].toObject(), grid->zeroLinePen()));
+    grid->setSubGridVisible(obj["subgrid_visible"].toBool(grid->subGridVisible()));
+    grid->setSubGridPen(readPen(obj["subgrid_pen"].toObject(), grid->subGridPen()));
+    if (obj.contains("title") and opts.allowTextContent)
+        axis->setLabel(obj["title"].toString(axis->label()));
     return {};
 }
 
@@ -217,8 +325,19 @@ static QJsonObject varToJson(const QVariant& data)
     return doc.isNull() ? QJsonObject() : doc.object();
 }
 
+static QString makeAxisKey(QCPAxis* axis)
+{
+    auto plot = axis->parentPlot();
+    if (axis == plot->xAxis) return "axis_x";
+    if (axis == plot->yAxis) return "axis_y";
+    return "axis";
+}
+
 void FormatStorageIni::load(Plot *plot, JsonReport* report)
 {
+    JsonOptions opts;
+    opts.allowTextContent = false;
+
     Ori::Settings s;
     s.beginGroup("DefaultPlotFormat");
     // Non existent settings keys can be safely read too, they result in empty json objects
@@ -228,7 +347,15 @@ void FormatStorageIni::load(Plot *plot, JsonReport* report)
         if (report and !err.ok()) report->append(err);
     }
     {
-        auto err = readTitle(varToJson(s.value("title")), plot->title());
+        auto err = readTitle(varToJson(s.value("title")), plot->title(), opts);
+        if (report and !err.ok()) report->append(err);
+    }
+    {
+        auto err = readAxis(varToJson(s.value(makeAxisKey(plot->xAxis))), plot->xAxis, opts);
+        if (report and !err.ok()) report->append(err);
+    }
+    {
+        auto err = readAxis(varToJson(s.value(makeAxisKey(plot->yAxis))), plot->yAxis, opts);
         if (report and !err.ok()) report->append(err);
     }
     plot->updateTitleVisibility();
@@ -242,8 +369,15 @@ void FormatStorageIni::saveLegend(QCPLegend* legend)
 void FormatStorageIni::saveTitle(QCPTextElement* title)
 {
     JsonOptions opts;
-    opts.saveTextContent = false;
+    opts.allowTextContent = false;
     savePlotFormatIni("title", writeTitle(title, opts));
+}
+
+void FormatStorageIni::saveAxis(QCPAxis* axis)
+{
+    JsonOptions opts;
+    opts.allowTextContent = false;
+    savePlotFormatIni(makeAxisKey(axis), writeAxis(axis, opts));
 }
 
 //------------------------------------------------------------------------------
@@ -261,7 +395,9 @@ QString loadFormatFromFile(const QString& fileName, Plot* plot, JsonReport *repo
     if (doc.isNull())
         return "Unable to parse json file: " + error.errorString();
 
-    readPlot(doc.object(), plot, report);
+    JsonOptions opts;
+    opts.allowTextContent = false;
+    readPlot(doc.object(), plot, opts, report);
     return {};
 }
 
@@ -271,7 +407,7 @@ QString saveFormatToFile(const QString& fileName, Plot* plot)
     if (!file.open(QFile::WriteOnly | QFile::Text))
         return "Unable to open file for writing: " + file.errorString();
     JsonOptions opts;
-    opts.saveTextContent = false;
+    opts.allowTextContent = false;
     QTextStream(&file) << QJsonDocument(writePlot(plot, opts)).toJson();
     return QString();
 }
@@ -314,8 +450,15 @@ void copyLegendFormat(QCPLegend* legend)
 void copyTitleFormat(QCPTextElement* title)
 {
     JsonOptions opts;
-    opts.saveTextContent = false;
+    opts.allowTextContent = false;
     setClipboardData(writeTitle(title, opts), "title");
+}
+
+void copyAxisFormat(QCPAxis* axis)
+{
+    JsonOptions opts;
+    opts.allowTextContent = false;
+    setClipboardData(writeAxis(axis, opts), "axis");
 }
 
 QString pasteLegendFormat(QCPLegend* legend)
@@ -323,10 +466,16 @@ QString pasteLegendFormat(QCPLegend* legend)
     auto res = getClipboradData("legend");
     if (!res.ok()) return res.error();
 
+    // This is mostly for context menu commands and hence should be invoked on visible elements.
+    // It's not expected that element gets hidden when its format pasted, so the function doesn't
+    // change visibility
+    bool oldVisible = legend->visible();
+
     auto err = readLegend(res.result(), legend);
     if (err.code == JsonError::BadVersion)
         return err.message;
 
+    legend->setVisible(oldVisible);
     return {};
 }
 
@@ -335,12 +484,38 @@ QString pasteTitleFormat(QCPTextElement* title)
     auto res = getClipboradData("title");
     if (!res.ok()) return res.error();
 
+    // This is mostly for context menu commands and hence should be invoked on visible elements.
+    // It's not expected that element gets hidden when its format pasted, so the function doesn't
+    // change visibility and there is not need to call `Plot::updateTitleVisibility()` after.
     bool oldVisible = title->visible();
-    auto err = readTitle(res.result(), title);
+
+    JsonOptions opts;
+    opts.allowTextContent = false;
+    auto err = readTitle(res.result(), title, opts);
     if (err.code == JsonError::BadVersion)
         return err.message;
 
     title->setVisible(oldVisible);
+    return {};
+}
+
+QString pasteAxisFormat(QCPAxis* axis)
+{
+    auto res = getClipboradData("axis");
+    if (!res.ok()) return res.error();
+
+    // This is mostly for context menu commands and hence should be invoked on visible elements.
+    // It's not expected that element gets hidden when its format pasted, so the function doesn't
+    // change visibility
+    bool oldVisible = axis->visible();
+
+    JsonOptions opts;
+    opts.allowTextContent = false;
+    auto err = readAxis(res.result(), axis, opts);
+    if (err.code == JsonError::BadVersion)
+        return err.message;
+
+    axis->setVisible(oldVisible);
     return {};
 }
 

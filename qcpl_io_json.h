@@ -3,6 +3,7 @@
 
 #include <QString>
 
+class QCPAxis;
 class QCPLegend;
 class QCPTextElement;
 
@@ -26,16 +27,18 @@ using JsonReport = QVector<JsonError>;
 
 struct JsonOptions
 {
-    bool saveTextContent = true;
+    bool allowTextContent = true;
 };
 
 QJsonObject writePlot(Plot *plot, const JsonOptions& opts);
 QJsonObject writeLegend(QCPLegend* legend);
 QJsonObject writeTitle(QCPTextElement* title, const JsonOptions& opts);
+QJsonObject writeAxis(QCPAxis *axis, const JsonOptions& opts);
 
-void readPlot(const QJsonObject& root, Plot *plot, JsonReport* report);
+void readPlot(const QJsonObject& root, Plot *plot, const JsonOptions& opts, JsonReport* report);
 JsonError readLegend(const QJsonObject &obj, QCPLegend* legend);
-JsonError readTitle(const QJsonObject &obj, QCPTextElement* title);
+JsonError readTitle(const QJsonObject &obj, QCPTextElement* title, const JsonOptions& opts);
+JsonError readAxis(const QJsonObject &obj, QCPAxis* axis, const JsonOptions& opts);
 
 /**
     Allows a plot to store default view format of its elements.
@@ -48,6 +51,7 @@ public:
     virtual ~FormatSaver() {}
     virtual void saveLegend(QCPLegend* legend) = 0;
     virtual void saveTitle(QCPTextElement* title) = 0;
+    virtual void saveAxis(QCPAxis* axis) = 0;
 };
 
 /**
@@ -62,6 +66,7 @@ public:
 
     void saveLegend(QCPLegend* legend) override;
     void saveTitle(QCPTextElement* title) override;
+    void saveAxis(QCPAxis* axis) override;
 };
 
 /**
@@ -80,22 +85,12 @@ QString loadFormatFromFile(const QString& fileName, Plot *plot, JsonReport* repo
 */
 QString saveFormatToFile(const QString& fileName, Plot *plot);
 
-/// Copies legend format settings into Clipboard as JSON text.
 void copyLegendFormat(QCPLegend* legend);
-
-/// Copies title format settings into Clipboard as JSON text.
 void copyTitleFormat(QCPTextElement* title);
-
-/// Tries to parse a text from Clipboard into JSON object and load legend format settings from there.
+void copyAxisFormat(QCPAxis* axis);
 QString pasteLegendFormat(QCPLegend* legend);
-
-/**
-    Tries to parse a text from Clipboard into JSON object and load title format settings from there.
-    This is mostly for context menu commands and hence should be invoked on visible elements.
-    It's not expected that element gets hidden when its format pasted, so the function doesn't
-    change visibility and there is not need to call `Plot::updateTitleVisibility()` after.
-*/
 QString pasteTitleFormat(QCPTextElement* title);
+QString pasteAxisFormat(QCPAxis* axis);
 
 } // namespace QCPL
 

@@ -26,6 +26,7 @@ private:
     void loadDefaultFormat();
     void pasteLegendFormat();
     void pasteTitleFormat();
+    void pasteAxisFormat(QCPAxis *axis);
 };
 
 #endif // PLOT_WINDOW_H
