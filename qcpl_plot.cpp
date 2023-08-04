@@ -164,6 +164,8 @@ void Plot::contextMenuEvent(QContextMenuEvent *event)
 {
     QMenu* menu = nullptr;
     QPointF pos(event->x(), event->y());
+    if (_title->selectTest(pos, true) >= 0)
+        menu = menuTitle;
     if (legend->selectTest(pos, true) >= 0)
         menu = menuLegend;
     else if (xAxis->getPartAt(pos) != QCPAxis::spNone)
@@ -358,7 +360,7 @@ bool Plot::formatDlgTitle()
     TitleFormatDlgProps props;
     props.title = tr("Diagram title");
     if (formatSaver)
-        props.onSaveDefault = [this](){ formatSaver->saveLegend(legend); };
+        props.onSaveDefault = [this](){ formatSaver->saveTitle(_title); };
     if (titleFormatDlg(_title, props))
     {
         replot();

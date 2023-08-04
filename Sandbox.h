@@ -25,6 +25,7 @@ private:
     void loadPlotFormat();
     void loadDefaultFormat();
     void pasteLegendFormat();
+    void pasteTitleFormat();
 };
 
 #endif // PLOT_WINDOW_H

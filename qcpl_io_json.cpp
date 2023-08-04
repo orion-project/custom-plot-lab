@@ -1,12 +1,13 @@
 #include "qcpl_io_json.h"
 
+#include "qcpl_plot.h"
 #include "qcpl_utils.h"
-#include "qcustomplot/qcustomplot.h"
 
 #include "core/OriResult.h"
 #include "tools/OriSettings.h"
 
 #define CURRENT_LEGEND_VERSION 1
+#define CURRENT_TITLE_VERSION 1
 
 namespace QCPL {
 
@@ -90,19 +91,23 @@ QPen readPen(const QJsonObject& obj, const QPen& def)
     return p;
 }
 
-QJsonObject writePlot(QCustomPlot* plot)
+QJsonObject writePlot(Plot* plot, const JsonOptions& opts)
 {
     return QJsonObject({
         { "legend", writeLegend(plot->legend) },
+        { "title", writeTitle(plot->title(), opts) },
     });
 }
 
-void readPlot(const QJsonObject& root, QCustomPlot* plot, JsonReport *report)
+QJsonValue colorToJson(const QColor& color)
 {
-    {
-        auto err = readLegend(root["legend"].toObject(), plot->legend);
-        if (report and !err.ok()) report->append(err);
-    }
+    return color.name();
+}
+
+QColor jsonToColor(const QJsonValue& val, const QColor& def)
+{
+    QColor color(val.toString());
+    return color.isValid() ? color : def;
 }
 
 QJsonObject writeLegend(QCPLegend* legend)
@@ -122,6 +127,34 @@ QJsonObject writeLegend(QCPLegend* legend)
     });
 }
 
+QJsonObject writeTitle(QCPTextElement* title, const JsonOptions& opts)
+{
+    auto obj = QJsonObject({
+        { "version", CURRENT_TITLE_VERSION },
+        { "visible", title->visible() },
+        { "font", writeFont(title->font()) },
+        { "text_color", colorToJson(title->textColor()) },
+        { "text_flags", title->textFlags() },
+        { "margins", writeMargins(title->margins()) },
+    });
+    if (opts.saveTextContent)
+        obj["text"] = title->text();
+    return obj;
+}
+
+void readPlot(const QJsonObject& root, Plot *plot, JsonReport *report)
+{
+    {
+        auto err = readLegend(root["legend"].toObject(), plot->legend);
+        if (report and !err.ok()) report->append(err);
+    }
+    {
+        auto err = readTitle(root["title"].toObject(), plot->title());
+        if (report and !err.ok()) report->append(err);
+    }
+    plot->updateTitleVisibility();
+}
+
 JsonError readLegend(const QJsonObject& obj, QCPLegend* legend)
 {
     if (obj.isEmpty())
@@ -132,12 +165,8 @@ JsonError readLegend(const QJsonObject& obj, QCPLegend* legend)
             JsonError::BadVersion,
             QString("Unsupported legend version %1, expected %2").arg(ver, CURRENT_LEGEND_VERSION) };
     legend->setVisible(obj["visible"].toBool(legend->visible()));
-    QColor backColor(obj["back_color"].toString());
-    if (backColor.isValid())
-        legend->setBrush(backColor);
-    QColor textColor(obj["text_color"].toString());
-    if (textColor.isValid())
-        legend->setTextColor(textColor);
+    legend->setBrush(jsonToColor(obj["back_color"], legend->brush().color()));
+    legend->setTextColor(jsonToColor(obj["text_color"], legend->textColor()));
     legend->setFont(readFont(obj["font"].toObject(), legend->font()));
     legend->setSelectedFont(legend->font());
     legend->setIconSize(readSize(obj["icon_size"].toObject(), legend->iconSize()));
@@ -149,13 +178,35 @@ JsonError readLegend(const QJsonObject& obj, QCPLegend* legend)
     return {};
 }
 
+JsonError readTitle(const QJsonObject &obj, QCPTextElement* title)
+{
+    if (obj.isEmpty())
+        return { JsonError::NoData, "Title object is empty" };
+    auto ver = obj["version"].toInt();
+    if (ver != CURRENT_TITLE_VERSION)
+        return {
+                JsonError::BadVersion,
+                QString("Unsupported title version %1, expected %2").arg(ver, CURRENT_TITLE_VERSION) };
+    title->setVisible(obj["visible"].toBool(title->visible()));
+    title->setFont(readFont(obj["font"].toObject(), title->font()));
+    title->setSelectedFont(title->font());
+    title->setTextColor(jsonToColor(obj["text_color"], title->textColor()));
+    title->setTextFlags(obj["text_flags"].toInt(title->textFlags()));
+    title->setMargins(readMargins(obj["margins"].toObject(), title->margins()));
+    if (obj.contains("text"))
+        title->setText(obj["text"].toString(title->text()));
+    return {};
+}
+
 //------------------------------------------------------------------------------
 //                          QCPL::FormatStorageIni
 //------------------------------------------------------------------------------
 
-static QString jsonToStr(const QJsonObject& obj)
+static void savePlotFormatIni(const QString& key, const QJsonObject& obj)
 {
-    return QJsonDocument(obj).toJson(QJsonDocument::Compact);
+    Ori::Settings s;
+    s.beginGroup("DefaultPlotFormat");
+    s.setValue(key, QJsonDocument(obj).toJson(QJsonDocument::Compact));
 }
 
 static QJsonObject varToJson(const QVariant& data)
@@ -166,33 +217,40 @@ static QJsonObject varToJson(const QVariant& data)
     return doc.isNull() ? QJsonObject() : doc.object();
 }
 
-void FormatStorageIni::load(QCustomPlot* plot, JsonReport* report)
+void FormatStorageIni::load(Plot *plot, JsonReport* report)
 {
     Ori::Settings s;
     s.beginGroup("DefaultPlotFormat");
+    // Non existent settings keys can be safely read too, they result in empty json objects
+    // and read functons should skip empty objects without substituting default values for every prop.
     {
-        auto err = QCPL::readLegend(varToJson(s.value("legend")), plot->legend);
+        auto err = readLegend(varToJson(s.value("legend")), plot->legend);
         if (report and !err.ok()) report->append(err);
     }
+    {
+        auto err = readTitle(varToJson(s.value("title")), plot->title());
+        if (report and !err.ok()) report->append(err);
+    }
+    plot->updateTitleVisibility();
 }
 
 void FormatStorageIni::saveLegend(QCPLegend* legend)
 {
-    Ori::Settings s;
-    s.beginGroup("DefaultPlotFormat");
-    s.setValue("legend", jsonToStr(QCPL::writeLegend(legend)));
+    savePlotFormatIni("legend", writeLegend(legend));
 }
 
 void FormatStorageIni::saveTitle(QCPTextElement* title)
 {
-    // TODO
+    JsonOptions opts;
+    opts.saveTextContent = false;
+    savePlotFormatIni("title", writeTitle(title, opts));
 }
 
 //------------------------------------------------------------------------------
 //                              Load / Save
 //------------------------------------------------------------------------------
 
-QString loadFormatFromFile(const QString& fileName, QCustomPlot* plot, JsonReport *report)
+QString loadFormatFromFile(const QString& fileName, Plot* plot, JsonReport *report)
 {
     QFile file(fileName);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
@@ -207,12 +265,14 @@ QString loadFormatFromFile(const QString& fileName, QCustomPlot* plot, JsonRepor
     return {};
 }
 
-QString saveFormatToFile(const QString& fileName, QCustomPlot* plot)
+QString saveFormatToFile(const QString& fileName, Plot* plot)
 {
     QFile file(fileName);
     if (!file.open(QFile::WriteOnly | QFile::Text))
         return "Unable to open file for writing: " + file.errorString();
-    QTextStream(&file) << QJsonDocument(writePlot(plot)).toJson();
+    JsonOptions opts;
+    opts.saveTextContent = false;
+    QTextStream(&file) << QJsonDocument(writePlot(plot, opts)).toJson();
     return QString();
 }
 
@@ -251,6 +311,13 @@ void copyLegendFormat(QCPLegend* legend)
     setClipboardData(writeLegend(legend), "legend");
 }
 
+void copyTitleFormat(QCPTextElement* title)
+{
+    JsonOptions opts;
+    opts.saveTextContent = false;
+    setClipboardData(writeTitle(title, opts), "title");
+}
+
 QString pasteLegendFormat(QCPLegend* legend)
 {
     auto res = getClipboradData("legend");
@@ -260,6 +327,20 @@ QString pasteLegendFormat(QCPLegend* legend)
     if (err.code == JsonError::BadVersion)
         return err.message;
 
+    return {};
+}
+
+QString pasteTitleFormat(QCPTextElement* title)
+{
+    auto res = getClipboradData("title");
+    if (!res.ok()) return res.error();
+
+    bool oldVisible = title->visible();
+    auto err = readTitle(res.result(), title);
+    if (err.code == JsonError::BadVersion)
+        return err.message;
+
+    title->setVisible(oldVisible);
     return {};
 }
 

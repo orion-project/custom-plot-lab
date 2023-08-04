@@ -55,6 +55,11 @@ PlotWindow::PlotWindow(QWidget *parent) : QMainWindow(parent)
     _plot->menuLegend->addAction("Copy format", this, [this](){ QCPL::copyLegendFormat(_plot->legend); });
     _plot->menuLegend->addAction("Paste format", this, &PlotWindow::pasteLegendFormat);
     _plot->menuLegend->addAction("Hide", this, [this](){ _plot->legend->setVisible(false); _plot->replot(); });
+    _plot->menuTitle = new QMenu(this);
+    _plot->menuTitle->addAction("Format...", this, [this]{ _plot->formatDlgTitle(); });
+    _plot->menuTitle->addAction("Copy format", this, [this](){ QCPL::copyTitleFormat(_plot->title()); });
+    _plot->menuTitle->addAction("Paste format", this, &PlotWindow::pasteTitleFormat);
+    _plot->menuTitle->addAction("Hide", this, [this](){ _plot->title()->setVisible(false); _plot->updateTitleVisibility(); _plot->replot(); });
 
     addRandomSample();
     _plot->autolimits();
@@ -141,6 +146,21 @@ void PlotWindow::pasteLegendFormat()
     if (err.isEmpty())
     {
         qDebug() << "Legend format pasted";
+        _plot->replot();
+    }
+    else Ori::Dlg::error(err);
+}
+
+void PlotWindow::pasteTitleFormat()
+{
+    auto err = QCPL::pasteTitleFormat(_plot->title());
+    if (err.isEmpty())
+    {
+        qDebug() << "Title format pasted";
+        // This is a context menu command and it's done on visible element.
+        // It's not expected that element gets hidden when its format pasted.
+        // So the `QCPL::pasteTitleFormat()` doesn't change visibility
+        // and there is not need to call `Plot::updateTitleVisibility()`
         _plot->replot();
     }
     else Ori::Dlg::error(err);

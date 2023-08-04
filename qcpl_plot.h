@@ -42,6 +42,7 @@ public:
     QMenu *menuGraph = nullptr;
     QMenu *menuPlot = nullptr;
     QMenu *menuLegend = nullptr;
+    QMenu *menuTitle = nullptr;
 
     /// The callback used to get axis units for showing in the axis limits dialog.
     std::function<QString(QCPAxis*)> getAxisUnitString;
@@ -161,7 +162,7 @@ private slots:
 private:
     QVector<Graph*> _serviceGraphs;
     QCP::SelectionType _selectionType = QCP::stWhole;
-    QCPTextElement *_title = nullptr;
+    QCPTextElement *_title;
     int _nextColorIndex = 0;
     const double _safeMarginsX;
     const double _safeMarginsY;
