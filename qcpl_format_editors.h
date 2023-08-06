@@ -84,7 +84,9 @@ private:
 };
 
 QSpinBox* makeSpinBox(int min, int max);
+QWidget* makeSeparator();
 QWidget* makeLabelSeparator(const QString& title);
+QWidget* makeDialogHeader();
 QWidget* makeParamLabel(const QString& name, const QString& hint, const QString &hintColor);
 QPixmap makeSolidColorIcon(const QBrush &b, const QSize &sz = QSize());
 QPixmap makePenIcon(const QPen& pen, const QSize& sz = QSize());

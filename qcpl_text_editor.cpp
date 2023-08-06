@@ -10,6 +10,7 @@
 #include <QFontComboBox>
 #include <QFontDialog>
 #include <QLabel>
+#include <QLineEdit>
 #include <QMenu>
 #include <QPainter>
 #include <QPlainTextEdit>
@@ -231,34 +232,49 @@ TextEditorWidget::TextEditorWidget(const Options &opts) : QWidget()
         toolbar()->addWidget(_btnAlign);
     }
 
-    auto editor = new TextEditor;
-    editor->requestAccept = [this]{ emit acceptRequested(); };
-    if (opts.narrow)
+    if (opts.singleLine)
     {
-        editor->preferredWidth = 100;
-        auto p = editor->sizePolicy();
-        p.setHorizontalPolicy(QSizePolicy::Minimum);
-        editor->setSizePolicy(p);
+        _lineEditor = new QLineEdit;
+        _lineEditor->setReadOnly(opts.readOnly);
+    }
+    else
+    {
+        auto editor = new TextEditor;
+        editor->requestAccept = [this]{ emit acceptRequested(); };
+        editor->setReadOnly(opts.readOnly);
+        if (!opts.vars.isEmpty())
+        {
+            editor->initVarsMenu(QString(), opts.vars);
+            _toolbar1->addWidget(editor->varsButton);
+        }
+        if (opts.narrow)
+        {
+            editor->preferredWidth = 100;
+            auto p = editor->sizePolicy();
+            p.setHorizontalPolicy(QSizePolicy::Minimum);
+            editor->setSizePolicy(p);
+        }
+        _textEditor = editor;
     }
 
-    if (!opts.vars.isEmpty())
-    {
-        editor->initVarsMenu(QString(), opts.vars);
-        _toolbar1->addWidget(editor->varsButton);
-    }
+    Ori::Layouts::LayoutV({_toolbar1, _toolbar2, editorWidget()}).setSpacing(0).setMargin(0).useFor(this);
+}
 
-    _editor = editor;
-    Ori::Layouts::LayoutV({_toolbar1, _toolbar2, _editor}).setSpacing(0).setMargin(0).useFor(this);
+QWidget* TextEditorWidget::editorWidget()
+{
+    return _textEditor ? qobject_cast<QWidget*>(_textEditor) : qobject_cast<QWidget*>(_lineEditor);
 }
 
 void TextEditorWidget::setText(const QString& text)
 {
-    _editor->setPlainText(text);
+    if (_textEditor)
+        _textEditor->setPlainText(text);
+    else _lineEditor->setText(text);
 }
 
 void TextEditorWidget::setFont(const QFont& font)
 {
-    _editor->setFont(font);
+    setCurrentFont(font);
     _comboFont->setCurrentFont(font);
     _comboSize->setCurrentIndex(_comboSize->findText(QString::number(font.pointSize())));
     _actnBold->setChecked(font.bold());
@@ -288,28 +304,30 @@ void TextEditorWidget::setTextFlags(int flags)
 
 QString TextEditorWidget::text() const
 {
-    return _editor->toPlainText().trimmed();
+    if (_lineEditor)
+        return _lineEditor->text().trimmed();
+    return _textEditor->toPlainText().trimmed();
 }
 
 QFont TextEditorWidget::font() const
 {
-    return _editor->font();
+    return currentFont();
 }
 
 void TextEditorWidget::setFontFamily(const QString& family)
 {
-    auto font = _editor->font();
+    auto font = currentFont();
     font.setFamily(family);
-    _editor->setFont(font);
+    setCurrentFont(font);
 }
 
 void TextEditorWidget::setFontSize(const QString& size)
 {
     qreal pointSize = size.toFloat();
     if (pointSize <= 0) return;
-    auto font = _editor->font();
+    auto font = currentFont();
     font.setPointSize(pointSize);
-    _editor->setFont(font);
+    setCurrentFont(font);
 }
 
 void TextEditorWidget::selectColor()
@@ -338,30 +356,42 @@ int TextEditorWidget::textFlags() const
 void TextEditorWidget::selectFont()
 {
     bool ok;
-    QFont f = QFontDialog::getFont(&ok, _editor->font(), this);
+    QFont f = QFontDialog::getFont(&ok, currentFont(), this);
     if (!ok) return;
     setFont(f);
 }
 
 void TextEditorWidget::toggleBold()
 {
-    auto font = _editor->font();
+    auto font = currentFont();
     font.setBold(_actnBold->isChecked());
-    _editor->setFont(font);
+    setCurrentFont(font);
 }
 
 void TextEditorWidget::toggleItalic()
 {
-    auto font = _editor->font();
+    auto font = currentFont();
     font.setItalic(_actnItalic->isChecked());
-    _editor->setFont(font);
+    setCurrentFont(font);
 }
 
 void TextEditorWidget::toggleUnderline()
 {
-    auto font = _editor->font();
+    auto font = currentFont();
     font.setUnderline(_actnUnderline->isChecked());
-    _editor->setFont(font);
+    setCurrentFont(font);
+}
+
+QFont TextEditorWidget::currentFont() const
+{
+    return _textEditor ? _textEditor->font() : _lineEditor->font();
+}
+
+void TextEditorWidget::setCurrentFont(const QFont& font)
+{
+    if (_textEditor)
+        _textEditor->setFont(font);
+    else _lineEditor->setFont(font);
 }
 
 void TextEditorWidget::addAction(QAction *actn, bool secondToolbar)

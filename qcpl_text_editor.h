@@ -9,6 +9,8 @@ QT_BEGIN_NAMESPACE
 class QAction;
 class QComboBox;
 class QFontComboBox;
+class QLabel;
+class QLineEdit;
 class QPlainTextEdit;
 class QToolBar;
 class QToolButton;
@@ -31,6 +33,8 @@ public:
     {
         QSize iconSize;
         QVector<TextVariable> vars;
+        bool readOnly = false;
+        bool singleLine = false;
         /// Show text alignment drop-down
         bool showAlignment = false;
         /// Show background color selector
@@ -58,7 +62,8 @@ public:
 
     void addAction(QAction *actn, bool secondToolbar = false);
 
-    QPlainTextEdit* editor() const { return _editor; }
+    QPlainTextEdit* multiLineEditor() const { return _textEditor; }
+    QLineEdit* singleLineEditor() const { return _lineEditor; }
 
 signals:
     void acceptRequested();
@@ -69,7 +74,8 @@ private slots:
 
 private:
     Options _opts;
-    QPlainTextEdit *_editor;
+    QPlainTextEdit *_textEditor = nullptr;
+    QLineEdit *_lineEditor = nullptr;
     QColor _color, _backColor;
     QAction *_actnBold, *_actnItalic, *_actnUnderline, *_actnColor;
     QAction *_actnBackColor = nullptr;
@@ -78,6 +84,10 @@ private:
     QComboBox *_comboSize;
     QToolBar *_toolbar1, *_toolbar2;
     int _textFlags = 0;
+
+    QWidget* editorWidget();
+    QFont currentFont() const;
+    void setCurrentFont(const QFont& font);
 
     void selectFont();
     void toggleBold();

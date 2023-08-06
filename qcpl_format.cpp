@@ -9,8 +9,11 @@
 #include "qcpl_text_editor.h"
 
 #include "helpers/OriDialogs.h"
+#include "helpers/OriLayouts.h"
 #include "helpers/OriWidgets.h"
 #include "widgets/OriValueEdit.h"
+
+using namespace Ori::Layouts;
 
 namespace QCPL {
 
@@ -27,7 +30,6 @@ bool axisLimitsDlg(QCPRange& range, const AxisLimitsDlgProps& props)
     editorMin->selectAll();
 
     QWidget w;
-
     auto layout = new QFormLayout(&w);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->addRow(new QLabel(props.unit.isEmpty() ? QString("Min") : QString("Min (%1)").arg(props.unit)), editorMin);
@@ -84,16 +86,41 @@ bool axisTextDlg(QCPAxis* axis, const AxisTextDlgProps& props)
     return false;
 }
 
+template <class TEditor, class TProps>
+bool genericFormatDlg(TEditor *editor, const TProps& props)
+{
+    QDialog dlg(qApp->activeWindow());
+    dlg.setWindowTitle(props.title);
+
+    auto style = qApp->style();
+    auto buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    buttons->layout()->setContentsMargins(
+        style->pixelMetric(QStyle::PM_LayoutLeftMargin),
+        style->pixelMetric(QStyle::PM_LayoutTopMargin),
+        style->pixelMetric(QStyle::PM_LayoutRightMargin),
+        style->pixelMetric(QStyle::PM_LayoutBottomMargin));
+    buttons->connect(buttons, &QDialogButtonBox::accepted, &dlg, [&dlg, editor, props](){
+        editor->apply();
+        if (props.onSaveDefault)
+            props.onSaveDefault();
+        dlg.accept();
+    });
+    buttons->connect(buttons, &QDialogButtonBox::rejected, &dlg, [&dlg, editor](){
+        editor->restore();
+        dlg.reject();
+    });
+    auto previewBtn = buttons->addButton(dlg.tr("Preview"), QDialogButtonBox::ApplyRole);
+    previewBtn->connect(previewBtn, &QPushButton::pressed, editor, [editor](){
+        editor->apply();
+    });
+
+    LayoutV({editor, buttons}).setMargin(0).useFor(&dlg);
+    return dlg.exec() == QDialog::Accepted;
+}
+
 bool axisFormatDlg(QCPAxis* axis, const AxisFormatDlgProps& props)
 {
-    AxisFormatWidget editor(axis);
-
-    return Ori::Dlg::Dialog(&editor, false)
-            .withTitle(props.title)
-            .withOnApply([&editor, axis]{ editor.apply(); axis->parentPlot()->replot(); })
-            .withPersistenceId("axis-format")
-            .connectOkToContentApply()
-            .exec();
+    return genericFormatDlg(new AxisFormatWidget(axis), props);
 }
 
 bool titleFormatDlg(QCPTextElement* title, const TitleFormatDlgProps& props)

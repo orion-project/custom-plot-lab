@@ -1,6 +1,7 @@
 #include "qcpl_format_axis.h"
 
 #include "qcpl_format_editors.h"
+#include "qcpl_io_json.h"
 #include "qcpl_text_editor.h"
 #include "qcustomplot/qcustomplot.h"
 
@@ -20,8 +21,10 @@ static int __tabIndex = 0;
 
 namespace QCPL {
 
-AxisFormatWidget::AxisFormatWidget(QCPAxis* axis) : QTabWidget(), _axis(axis)
+AxisFormatWidget::AxisFormatWidget(QCPAxis* axis) : QWidget(), _axis(axis)
 {
+    _backup = writeAxis(axis, JsonOptions());
+
     auto p = sizePolicy();
     p.setVerticalStretch(255);
     setSizePolicy(p);
@@ -38,27 +41,26 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis) : QTabWidget(), _axis(axis)
     _outerMargin = makeSpinBox(0, 1000);
     _offset = makeSpinBox(-2000, 2000);
 
-    auto titleParams = new QFormLayout;
-    titleParams->addRow(makeParamLabel(
+    auto offsets = new QFormLayout;
+    offsets->addRow(makeParamLabel(
         tr("Inner margin"), tr("distance between text and value labels"), hintColor), _innerMargin);
-    titleParams->addRow(makeParamLabel(
+    offsets->addRow(makeParamLabel(
         tr("Outer margin"), tr("distance between text and diagram edge"), hintColor), _outerMargin);
-    titleParams->addRow(makeParamLabel(
-        tr("Offset"), tr("displacement of axis line into plotting area"), hintColor), _offset);
+    offsets->addRow(makeParamLabel(
+        tr("Axis offset"), tr("displacement of axis line into plotting area"), hintColor), _offset);
 
     _logarithmic = new QCheckBox(tr("Logarithmic"));
     _reversed = new QCheckBox(tr("Reversed"));
 
-    addTab(LayoutV({
-        makeLabelSeparator(tr("Title")),
-        _titleEditor,
-        SpaceV(2),
-        LayoutH({titleParams, Stretch()}),
-        SpaceV(2),
-        makeLabelSeparator(tr("Scale")),
-        _logarithmic,
-        _reversed,
-    }).makeWidget(), tr("Axis"));
+    auto layoutPages = new QStackedLayout;
+
+    layoutPages->addWidget(LayoutV({
+        LayoutV({ _titleEditor }).makeGroupBox(tr("Title")),
+        LayoutH({
+            LayoutV({ offsets }).makeGroupBox(tr("Offsets")),
+            LayoutV({ _logarithmic, _reversed }).makeGroupBox(tr("Scale")),
+        })
+    }).makeWidget());
 
     //-------------------------------------------------------
     //                   Tab "Labels"
@@ -76,12 +78,16 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis) : QTabWidget(), _axis(axis)
         tr("Margin"), tr("distance between text and axis line"), hintColor), _labelsPadding);
 
     TextEditorWidget::Options labelsOpts;
+    labelsOpts.readOnly = true;
+    labelsOpts.singleLine = true;
     _labelsEditor = new TextEditorWidget(labelsOpts);
     _labelsEditor->setText(
                 QLocale::system().toString(3.141592653589793, 'f', 10) + "   " +
                 QLocale::system().toString(147098290.0, 'e', 10) + "   " +
                 QLocale::system().toString(365.256363004, 'g', 10)
                 );
+    _labelsEditor->singleLineEditor()->setAlignment(Qt::AlignCenter);
+    _labelsEditor->singleLineEditor()->setTextMargins(6, 6, 6, 6);
 
     QString sampleNum = QLocale::system().toString(1.5);
     _numberFormat = new Ori::Widgets::OptionsGroup(tr("Number format"), true);
@@ -103,7 +109,7 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis) : QTabWidget(), _axis(axis)
             "For automatic format - maximum number of significant digits.")));
     precisionHint->setWordWrap(true);
 
-    addTab(LayoutV({
+    layoutPages->addWidget(LayoutV({
         LayoutH({
             LayoutV({
                 _labelsVisible,
@@ -122,7 +128,7 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis) : QTabWidget(), _axis(axis)
         SpaceV(2),
         _labelsEditor,
         Stretch(),
-    }).makeWidget(), tr("Labels"));
+    }).makeWidget());
 
     //-------------------------------------------------------
     //                   Tab "Lines"
@@ -139,13 +145,9 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis) : QTabWidget(), _axis(axis)
     _gridPen = new PenEditorWidget(penOpts);
     _zeroPen = new PenEditorWidget(penOpts);
     _subGridPen = new PenEditorWidget(penOpts);
-
     _axisGroup = LayoutV({_axisPen}).makeGroupBox(tr("Axis"));
-    _axisGroup->setCheckable(true);
-
     _gridGroup = LayoutV({_gridPen}).makeGroupBox(tr("Primary Grid"));
     _gridGroup->setCheckable(true);
-
     _groupSubGrid = LayoutV({_subGridPen}).makeGroupBox(tr("Additional Grid"));
     _groupSubGrid->setCheckable(true);
 
@@ -169,7 +171,7 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis) : QTabWidget(), _axis(axis)
     }).makeGroupBox(tr("Additional ticks"));
     _groupSubTicks->setCheckable(true);
 
-    addTab(LayoutH({
+    layoutPages->addWidget(LayoutH({
         LayoutV({
             _axisGroup,
             _gridGroup,
@@ -180,10 +182,35 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis) : QTabWidget(), _axis(axis)
             _groupSubGrid,
             _groupSubTicks,
         }).setDefSpacing(2),
-    }).setDefSpacing(2).makeWidget(), tr("Lines"));
+    }).setDefSpacing(2).makeWidget());
+
+    _tabs = new QTabBar;
+    _tabs->addTab("Axis");
+    _tabs->addTab("Labels");
+    _tabs->addTab("Lines");
+    _tabs->setShape(QTabBar::TriangularNorth);
+    connect(_tabs, &QTabBar::currentChanged, layoutPages, &QStackedLayout::setCurrentIndex);
+
+    _visible = new QCheckBox("Visible");
+    _saveDefault = new QCheckBox("Save as default");
+
+    auto header = makeDialogHeader();
+    LayoutH({
+        SpaceH(),
+        LayoutV({ Stretch(), _visible, _saveDefault }).setMargin(6),
+        LayoutV({ Stretch(), _tabs }).setMargin(0),
+        SpaceH(2),
+    }).setMargin(0).useFor(header);
+
+    LayoutV({
+                header,
+                makeSeparator(),
+                layoutPages,
+            }).setSpacing(0).setMargin(0).useFor(this);
 
     //-------------------------------------------------------
 
+    _visible->setChecked(axis->visible());
     _titleEditor->setText(axis->label());
     _titleEditor->setFont(axis->labelFont());
     _titleEditor->setColor(axis->labelColor());
@@ -228,7 +255,6 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis) : QTabWidget(), _axis(axis)
     }
 
     _labelsPrecision->setValue(axis->numberPrecision());
-    _axisGroup->setChecked(axis->visible());
     _axisPen->setValue(axis->basePen());
     _groupTicks->setChecked(axis->ticks());
     _tickPen->setValue(axis->tickPen());
@@ -245,11 +271,24 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis) : QTabWidget(), _axis(axis)
     _groupSubGrid->setChecked(grid->subGridVisible());
     _subGridPen->setValue(grid->subGridPen());
 
-    setCurrentIndex(__tabIndex);
+    _tabs->setCurrentIndex(__tabIndex);
+    layoutPages->setCurrentIndex(__tabIndex);
+}
+
+AxisFormatWidget::~AxisFormatWidget()
+{
+    __tabIndex = _tabs->currentIndex();
+}
+
+void AxisFormatWidget::restore()
+{
+    readAxis(_backup, _axis, JsonOptions());
+    _axis->parentPlot()->replot();
 }
 
 void AxisFormatWidget::apply()
 {
+    _axis->setVisible(_visible->isChecked());
     _axis->setLabel(_titleEditor->text());
     _axis->setLabelFont(_titleEditor->font());
     _axis->setSelectedLabelFont(_titleEditor->font());
@@ -283,7 +322,6 @@ void AxisFormatWidget::apply()
         fmt[2] = 'c';
     }
     _axis->setNumberFormat(QString::fromLatin1(fmt));
-    _axis->setVisible(_axisGroup->isChecked());
     _axis->setBasePen(_axisPen->value());
     _axis->setTicks(_groupTicks->isChecked());
     _axis->setTickPen(_tickPen->value());
@@ -300,7 +338,7 @@ void AxisFormatWidget::apply()
     grid->setSubGridVisible(_groupSubGrid->isChecked());
     grid->setSubGridPen(_subGridPen->value());
 
-    __tabIndex = currentIndex();
+    _axis->parentPlot()->replot();
 }
 
 } // namespace QCPL

@@ -47,6 +47,7 @@ struct AxisFormatDlgProps
     QString title;
     QString defaultTitle;
     TextFormatterBase *formatter = nullptr;
+    std::function<void()> onSaveDefault;
 };
 
 bool axisFormatDlg(QCPAxis* axis, const AxisFormatDlgProps& props);

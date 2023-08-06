@@ -347,18 +347,15 @@ bool Plot::axisFormatDlg(QCPAxis* axis)
 {
     AxisFormatDlgProps props;
     props.title = tr("%1 Format").arg(getAxisIdent(axis));
-    if (QCPL::axisFormatDlg(axis, props))
-    {
-        replot();
-        return true;
-    }
-    return false;
+    if (formatSaver)
+        props.onSaveDefault = [this, axis ](){ formatSaver->saveAxis(axis); };
+    return QCPL::axisFormatDlg(axis, props);
 }
 
 bool Plot::titleFormatDlg()
 {
     TitleFormatDlgProps props;
-    props.title = tr("Diagram title");
+    props.title = tr("Title Format");
     if (formatSaver)
         props.onSaveDefault = [this](){ formatSaver->saveTitle(_title); };
     if (QCPL::titleFormatDlg(_title, props))
@@ -372,7 +369,7 @@ bool Plot::titleFormatDlg()
 bool Plot::legendFormatDlg()
 {
     LegendFormatDlgProps props;
-    props.title = tr("Legend");
+    props.title = tr("Legend Format");
     if (formatSaver)
         props.onSaveDefault = [this](){ formatSaver->saveLegend(legend); };
     if (QCPL::legendFormatDlg(legend, props))

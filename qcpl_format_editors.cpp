@@ -28,6 +28,15 @@ QSpinBox* makeSpinBox(int min, int max)
     return sb;
 }
 
+QWidget* makeSeparator()
+{
+    auto s = new QFrame();
+    s->setFrameShape(QFrame::HLine);
+    s->setLineWidth(0);
+    s->setFixedHeight(1);
+    return s;
+}
+
 QWidget* makeLabelSeparator(const QString& title)
 {
     auto s = new Ori::Widgets::LabelSeparator(title);
@@ -36,6 +45,14 @@ QWidget* makeLabelSeparator(const QString& title)
     s->flat = true;
     s->setFont(f);
     return s;
+}
+
+QWidget* makeDialogHeader()
+{
+    auto header = new QFrame();
+    header->setBackgroundRole(QPalette::Light);
+    header->setAutoFillBackground(true);
+    return header;
 }
 
 QWidget* makeParamLabel(const QString& name, const QString& hint, const QString& hintColor)
