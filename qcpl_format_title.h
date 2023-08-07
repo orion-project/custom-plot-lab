@@ -14,6 +14,7 @@ namespace QCPL {
 
 class MarginsEditorWidget;
 class TextEditorWidget;
+class TextFormatterBase;
 struct TitleFormatDlgProps;
 
 class TitleFormatWidget : public QWidget
@@ -23,6 +24,8 @@ class TitleFormatWidget : public QWidget
 public:
     TitleFormatWidget(QCPTextElement* title, const TitleFormatDlgProps& props);
 
+    bool needSaveDefault() const;
+
 public slots:
     void apply();
     void restore();
@@ -30,6 +33,7 @@ public slots:
 private:
     QCPTextElement *_title;
     QJsonObject _backup;
+    TextFormatterBase *_formatter = nullptr;
     TextEditorWidget *_textProps;
     QCheckBox *_visible, *_saveDefault;
     MarginsEditorWidget *_margins;

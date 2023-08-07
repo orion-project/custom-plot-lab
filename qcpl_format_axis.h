@@ -23,6 +23,7 @@ namespace QCPL {
 class AxisFormatDlgProps;
 class PenEditorWidget;
 class TextEditorWidget;
+class TextFormatterBase;
 
 class AxisFormatWidget : public QWidget
 {
@@ -31,6 +32,8 @@ class AxisFormatWidget : public QWidget
 public:
     AxisFormatWidget(QCPAxis* axis, const AxisFormatDlgProps &props);
     ~AxisFormatWidget();
+
+    bool needSaveDefault() const;
 
 public slots:
     void apply();
@@ -42,6 +45,7 @@ private:
 
     QCPAxis *_axis;
     QJsonObject _backup;
+    TextFormatterBase *_formatter = nullptr;
     QTabBar *_tabs;
     TextEditorWidget *_titleEditor, *_labelsEditor;
     QSpinBox *_outerMargin, *_innerMargin, *_offset, *_labelsAngle, *_labelsPadding,

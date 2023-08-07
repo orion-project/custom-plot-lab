@@ -48,19 +48,24 @@ bool axisLimitsDlg(QCPRange& range, const AxisLimitsDlgProps& props)
     return false;
 }
 
-bool axisTextDlg(QCPAxis* axis, const AxisTextDlgProps& props)
+template <class TProps>
+bool genericTextDlg(const TProps& props,
+                    std::function<QString()> getText,
+                    std::function<void(const QString&)> setText)
 {
-    auto style = qApp->style();
-
     TextOnlyEditorWidget::Options opts;
-    opts.defaultText = props.defaultTitle;
     if (props.formatter)
+    {
+        opts.defaultText = props.defaultText;
         opts.vars = props.formatter->vars();
+    }
     TextOnlyEditorWidget editor(opts);
     if (props.formatter)
         editor.setText(props.formatter->text());
     else
-        editor.setText(axis->label());
+        editor.setText(getText());
+
+    auto style = qApp->style();
     editor.setContentsMargins(style->pixelMetric(QStyle::PM_LayoutLeftMargin)/2,
                               style->pixelMetric(QStyle::PM_LayoutTopMargin)/2,
                               style->pixelMetric(QStyle::PM_LayoutRightMargin)/2, 0);
@@ -69,7 +74,6 @@ bool axisTextDlg(QCPAxis* axis, const AxisTextDlgProps& props)
             .withTitle(props.title)
             .withSkipContentMargins()
             .withContentToButtonsSpacingFactor(2)
-            .withPersistenceId("axis-text")
             .withAcceptSignal(SIGNAL(acceptRequested()))
             .withActiveWidget(editor.editor())
             .exec())
@@ -80,8 +84,32 @@ bool axisTextDlg(QCPAxis* axis, const AxisTextDlgProps& props)
             props.formatter->format();
         }
         else
-            axis->setLabel(editor.text());
+            setText(editor.text());
+        return true;
+    }
+    return false;
+}
+
+
+bool axisTextDlg(QCPAxis* axis, const AxisFormatDlgProps& props)
+{
+    if (genericTextDlg(props,
+            [axis](){ return axis->label(); },
+            [axis](const QString& text){ axis->setLabel(text); }))
+    {
         axis->parentPlot()->replot();
+        return true;
+    }
+    return false;
+}
+
+bool titleTextDlg(QCPTextElement* title, const TitleFormatDlgProps& props)
+{
+    if (genericTextDlg(props,
+            [title](){ return title->text(); },
+            [title](const QString& text){ title->setText(text); }))
+    {
+        title->parentPlot()->replot();
         return true;
     }
     return false;
@@ -102,7 +130,7 @@ bool genericFormatDlg(TEditor *editor, const TProps& props)
         style->pixelMetric(QStyle::PM_LayoutBottomMargin));
     buttons->connect(buttons, &QDialogButtonBox::accepted, &dlg, [&dlg, editor, props](){
         editor->apply();
-        if (props.onSaveDefault)
+        if (props.onSaveDefault and editor->needSaveDefault())
             props.onSaveDefault();
         dlg.accept();
     });
@@ -198,13 +226,18 @@ void TextFormatterBase::addVar(const QString& name, const QString& descr, TextVa
 //                          QCPL::AxisTitleFormatter
 //------------------------------------------------------------------------------
 
-AxisTitleFormatter::AxisTitleFormatter(QCPAxis* axis): _axis(axis)
-{
-}
-
-void AxisTitleFormatter::format()
+void AxisTextFormatter::format()
 {
     _axis->setLabel(_processor.process(_text).trimmed());
+}
+
+//------------------------------------------------------------------------------
+//                          QCPL::TitleTextFormatter
+//------------------------------------------------------------------------------
+
+void TitleTextFormatter::format()
+{
+    _title->setText(_processor.process(_text).trimmed());
 }
 
 } // namespace QCPL

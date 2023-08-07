@@ -132,4 +132,9 @@ void LegendFormatWidget::apply()
     _legend->parentPlot()->replot();
 }
 
+bool LegendFormatWidget::needSaveDefault() const
+{
+    return _saveDefault->isChecked();
+}
+
 } // namespace QCPL

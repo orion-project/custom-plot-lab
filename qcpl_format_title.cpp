@@ -25,6 +25,13 @@ TitleFormatWidget::TitleFormatWidget(QCPTextElement* title, const TitleFormatDlg
 
     TextEditorWidget::Options textOpts;
     textOpts.showAlignment = true;
+    if (props.formatter)
+    {
+        _formatter = props.formatter;
+        textOpts.defaultText = props.defaultText;
+        textOpts.vars = _formatter->vars();
+        _backup["formatter_text"] = _formatter->text();
+    }
     _textProps = new TextEditorWidget(textOpts);
 
     _visible = new QCheckBox(tr("Visible"));
@@ -51,7 +58,10 @@ TitleFormatWidget::TitleFormatWidget(QCPTextElement* title, const TitleFormatDlg
     }).setSpacing(0).setMargin(0).useFor(this);
 
     _visible->setChecked(title->visible());
-    _textProps->setText(title->text());
+    if (props.formatter)
+        _textProps->setText(props.formatter->text());
+    else
+        _textProps->setText(title->text());
     _textProps->setFont(title->font());
     _textProps->setColor(title->textColor());
     _textProps->setTextFlags(title->textFlags());
@@ -61,6 +71,8 @@ TitleFormatWidget::TitleFormatWidget(QCPTextElement* title, const TitleFormatDlg
 void TitleFormatWidget::restore()
 {
     readTitle(_backup, _title, JsonOptions());
+    if (_formatter)
+        _formatter->setText(_backup["formatter_text"].toString());
     auto plot = qobject_cast<Plot*>(_title->parentPlot());
     if (plot) plot->updateTitleVisibility();
     _title->parentPlot()->replot();
@@ -68,7 +80,12 @@ void TitleFormatWidget::restore()
 
 void TitleFormatWidget::apply()
 {
-    _title->setText(_textProps->text());
+    if (_formatter)
+    {
+        _formatter->setText(_textProps->text());
+        _formatter->format();
+    }
+    else _title->setText(_textProps->text());
     _title->setFont(_textProps->font());
     _title->setSelectedFont(_textProps->font());
     _title->setTextColor(_textProps->color());
@@ -80,5 +97,9 @@ void TitleFormatWidget::apply()
     _title->parentPlot()->replot();
 }
 
+bool TitleFormatWidget::needSaveDefault() const
+{
+    return _saveDefault->isChecked();
+}
 
 } // namespace QCPL

@@ -31,25 +31,15 @@ bool axisLimitsDlg(QCPRange& range, const AxisLimitsDlgProps& props);
 
 //---------------------------------------------------------------------
 
-struct AxisTextDlgProps
-{
-    QString title;
-    QString defaultTitle;
-    TextFormatterBase *formatter = nullptr;
-};
-
-bool axisTextDlg(QCPAxis* axis, const AxisTextDlgProps& props);
-
-//---------------------------------------------------------------------
-
 struct AxisFormatDlgProps
 {
     QString title;
-    QString defaultTitle;
+    QString defaultText;
     TextFormatterBase *formatter = nullptr;
     std::function<void()> onSaveDefault;
 };
 
+bool axisTextDlg(QCPAxis* axis, const AxisFormatDlgProps& props);
 bool axisFormatDlg(QCPAxis* axis, const AxisFormatDlgProps& props);
 
 //---------------------------------------------------------------------
@@ -57,9 +47,12 @@ bool axisFormatDlg(QCPAxis* axis, const AxisFormatDlgProps& props);
 struct TitleFormatDlgProps
 {
     QString title;
+    QString defaultText;
+    TextFormatterBase *formatter = nullptr;
     std::function<void()> onSaveDefault;
 };
 
+bool titleTextDlg(QCPTextElement* title, const TitleFormatDlgProps& props);
 bool titleFormatDlg(QCPTextElement* title, const TitleFormatDlgProps& props);
 
 //---------------------------------------------------------------------
@@ -68,7 +61,6 @@ struct LegendFormatDlgProps
 {
     QString title;
     QString sampleText;
-    std::function<void()> onApplied;
     std::function<void()> onSaveDefault;
 };
 
@@ -114,6 +106,9 @@ private:
 
 //---------------------------------------------------------------------
 
+/**
+    Wrapper around @ref TextProcessor that knows a target object for text and can set text to it.
+*/
 class TextFormatterBase
 {
 public:
@@ -131,13 +126,24 @@ protected:
 
 //---------------------------------------------------------------------
 
-class AxisTitleFormatter : public TextFormatterBase
+class AxisTextFormatter : public TextFormatterBase
 {
 public:
-    AxisTitleFormatter(QCPAxis* axis);
+    AxisTextFormatter(QCPAxis* axis) : _axis(axis) {}
     void format() override;
 private:
     QCPAxis *_axis;
+};
+
+//---------------------------------------------------------------------
+
+class TitleTextFormatter : public TextFormatterBase
+{
+public:
+    TitleTextFormatter(QCPTextElement* title) : _title(title) {}
+    void format() override;
+private:
+    QCPTextElement *_title;
 };
 
 } // namespace QCPL

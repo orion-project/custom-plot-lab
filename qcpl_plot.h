@@ -104,20 +104,20 @@ public:
     QString formatterTextX() const { return formatterText(xAxis); }
     QString formatterTextY() const { return formatterText(yAxis); }
 
-    void updateTitles();
-    void updateTitle(void* target);
-    void updateTitle() { updateTitle(_title); }
-    void updateTitleX() { updateTitle(yAxis); }
-    void updateTitleY() { updateTitle(xAxis); }
+    void updateTexts();
+    void updateText(void* target);
+    void updateTitleText() { updateText(_title); }
+    void updateAxisTextX() { updateText(yAxis); }
+    void updateAxisTextY() { updateText(xAxis); }
 
-    QString defaultTitle(void* target) const { return _defaultTitles.contains(target) ? _defaultTitles[target] : QString(); }
-    QString defaultTitle() const { return defaultTitle(_title); }
-    QString defaultTitleX() const { return defaultTitle(xAxis); }
-    QString defaultTitleY() const { return defaultTitle(yAxis); }
-    void setDefaultTitle(void* target, const QString& text) { _defaultTitles[target] = text; }
-    void setDefaultTitle(const QString& text) { setDefaultTitle(_title, text); }
-    void setDefaultTitleX(const QString& text) { setDefaultTitle(xAxis, text); }
-    void setDefaultTitleY(const QString& text) { setDefaultTitle(yAxis, text); }
+    QString defaultText(void* target) const { return _defaultTexts.contains(target) ? _defaultTexts[target] : QString(); }
+    QString defaultTitleText() const { return defaultText(_title); }
+    QString defaultAxisTextX() const { return defaultText(xAxis); }
+    QString defaultAxisTextY() const { return defaultText(yAxis); }
+    void setDefaultText(void* target, const QString& text) { _defaultTexts[target] = text; }
+    void setDefaultTitleText(const QString& text) { setDefaultText(_title, text); }
+    void setDefaultAxisTextX(const QString& text) { setDefaultText(xAxis, text); }
+    void setDefaultAxisTextY(const QString& text) { setDefaultText(yAxis, text); }
 
 public slots:
     void autolimits(bool replot = true) { autolimits(xAxis, false); autolimits(yAxis, replot); }
@@ -137,13 +137,13 @@ public slots:
     bool axisTextDlgY() { return axisTextDlg(yAxis); }
     bool axisFormatDlgX() { return axisFormatDlg(xAxis); }
     bool axisFormatDlgY() { return axisFormatDlg(yAxis); }
+    bool titleTextDlg();
     bool titleFormatDlg();
     bool legendFormatDlg();
 
 signals:
     void graphClicked(Graph*);
     void emptySpaceDoubleClicked(QMouseEvent *event);
-    void editTitleRequest();
     void resized(const QSize& oldSize, const QSize& newSize);
     void modified(const QString& reason);
 
@@ -170,7 +170,7 @@ private:
     const double _zoomStepY;
     const int _numberPrecision;
     QMap<void*, TextFormatterBase*> _formatters;
-    QMap<void*, QString> _defaultTitles;
+    QMap<void*, QString> _defaultTexts;
     QCPLayoutGrid *_backupLayout;
 
     bool isService(Graph* g) const { return _serviceGraphs.contains(g); }

@@ -31,19 +31,37 @@ class TextEditorWidget : public QWidget
 public:
     struct Options
     {
+        /// If non zero, it will override the default icon size for text toolbar.
         QSize iconSize;
+
+        /// A list of variables that can be inserted into text via special menu.
+        /// Or one just can type variable names and they will be highlighted in the text
+        /// as having special meannig.
         QVector<TextVariable> vars;
+
+        /// If provided, a command added to vars menu to reset the editor text to this value.
+        QString defaultText;
+
         bool readOnly = false;
+
+        /// Use line editor instead of text editor.
+        /// If provided, @ref multiLineEditor() returns null.
+        /// Vars menu doesn't work in this mode.
         bool singleLine = false;
+
         /// Show text alignment drop-down
         bool showAlignment = false;
-        /// Show background color selector
+
+        /// Show background color selector button in teh toolbar
         bool showBackColor = false;
+
         /// Use color with alpha-channel for text
         bool colorAlphaText = false;
+
         /// Use color with alpha-channel for background
         bool colorAlphaBack = false;
-        /// Arrange buttons in two narrower panels instead of one long
+
+        /// Arrange buttons in two narrower tool bars instead of one longer
         bool narrow = false;
     };
 
@@ -106,7 +124,12 @@ class TextOnlyEditorWidget : public QWidget
 public:
     struct Options
     {
+        /// If provided, a command added to vars menu to reset editot text to this value
         QString defaultText;
+
+        /// A list of variables that can be inserted into text via special menu.
+        /// Or one just can type variable names and they will be highlighted in the text
+        /// as having special meannig
         QVector<TextVariable> vars;
     };
 

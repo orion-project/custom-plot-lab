@@ -284,6 +284,7 @@ JsonError readAxis(const QJsonObject &obj, QCPAxis* axis, const JsonOptions& opt
     axis->setTickLabelPadding(obj["labels_margin"].toInt(axis->tickLabelPadding()));
     axis->setTickLabelColor(jsonToColor(obj["labels_color"], axis->tickLabelColor()));
     axis->setTickLabelFont(readFont(obj["labels_font"].toObject(), axis->tickLabelFont()));
+    axis->setSelectedTickLabelFont(axis->tickLabelFont());
     axis->setNumberFormat(obj["number_format"].toString(axis->numberFormat()));
     axis->setNumberPrecision(obj["number_precision"].toInt(axis->numberPrecision()));
     axis->setBasePen(readPen(obj["pen"].toObject(), axis->basePen()));

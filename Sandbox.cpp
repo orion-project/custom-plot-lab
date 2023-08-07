@@ -33,22 +33,43 @@ PlotWindow::PlotWindow(QWidget *parent) : QMainWindow(parent)
 
     m = menuBar()->addMenu("Format");
     m->addAction("Plot format...", this, [this]{ QCPL::plotFormatDlg(_plot); });
-    m->addAction("Title format...", this, [this]{ _plot->titleFormatDlg(); });
     m->addAction("Legend format...", this, [this]{ _plot->legendFormatDlg(); });
+    m->addSeparator();
+    m->addAction("Title format...", this, [this]{ _plot->titleFormatDlg(); });
+    m->addAction("Title text...", this, [this]{ _plot->titleTextDlg(); });
+    m->addSeparator();
     m->addAction("X-axis format...", this, [this]{ _plot->axisFormatDlgX(); });
-    m->addAction("Y-axis format...", this, [this]{ _plot->axisFormatDlgY(); });
     m->addAction("X-axis text...", this, [this]{ _plot->axisTextDlgX(); });
+    m->addSeparator();
+    m->addAction("Y-axis format...", this, [this]{ _plot->axisFormatDlgY(); });
     m->addAction("Y-axis text...", this, [this]{ _plot->axisTextDlgY(); });
 
     // Example of usage of text variables
-    _plot->addTextVar(_plot->xAxis, "{var1}", "Short var 1", []{ return "Galenium overloader"; });
-    _plot->addTextVar(_plot->xAxis, "{var2}", "Longer variable name 2", []{ return "mm"; });
+    // Variable getters provide values for variables.
+    // They are called when one calls `format()` on partucular TextFormatter object
     auto getWndW = [this]{ return QString::number(width()); };
     auto getWndH = [this]{ return QString::number(height()); };
-    _plot->addTextVar(_plot->xAxis, "{wndW}", "Main window width", getWndW);
-    _plot->addTextVar(_plot->xAxis, "{wndH}", "Main window height", getWndH);
-    _plot->addTextVar(_plot->yAxis, "{wndW}", "Main window width", getWndW);
-    _plot->addTextVar(_plot->yAxis, "{wndH}", "Main window height", getWndH);
+    _plot->addTextVar("{text_var}", "Text var 3", []{ return "Hallo World"; });
+    _plot->addTextVar("{unit_1}", "Unit of measurement 1", []{ return "mm"; });
+    _plot->addTextVar("{unit_2}", "Unit of measurement 2", []{ return "kg"; });
+    _plot->addTextVar("{wndW}", "Main window width", getWndW);
+    _plot->addTextVar("{wndH}", "Main window height", getWndH);
+
+    _plot->addTextVarX("{some_text}", "Text var 1", []{ return "Galenium overloader"; });
+    _plot->addTextVarX("{unit_1}", "Unit of measurement 1", []{ return "mm"; });
+    _plot->addTextVarX("{unit_2}", "Unit of measurement 2", []{ return "kg"; });
+    _plot->addTextVarX("{wndW}", "Main window width", getWndW);
+    _plot->addTextVarX("{wndH}", "Main window height", getWndH);
+
+    _plot->addTextVarY("{text_var}", "Text var 2", []{ return "Lorem ipsum"; });
+    _plot->addTextVarY("{unit_1}", "Unit of measurement 1", []{ return "mm"; });
+    _plot->addTextVarY("{unit_2}", "Unit of measurement 2", []{ return "kg"; });
+    _plot->addTextVarY("{wndW}", "Main window width", getWndW);
+    _plot->addTextVarY("{wndH}", "Main window height", getWndH);
+
+    _plot->setDefaultTitleText("Plot title");
+    _plot->setDefaultAxisTextX("Axis X title");
+    _plot->setDefaultAxisTextY("Axis Y title");
 
     _plot->menuLegend = new QMenu(this);
     _plot->menuLegend->addAction("Format...", this, [this]{ _plot->legendFormatDlg(); });
@@ -57,15 +78,18 @@ PlotWindow::PlotWindow(QWidget *parent) : QMainWindow(parent)
     _plot->menuLegend->addAction("Hide", this, [this](){ _plot->legend->setVisible(false); _plot->replot(); });
     _plot->menuTitle = new QMenu(this);
     _plot->menuTitle->addAction("Format...", this, [this]{ _plot->titleFormatDlg(); });
+    _plot->menuTitle->addAction("Text...", this, [this]{ _plot->titleTextDlg(); });
     _plot->menuTitle->addAction("Copy format", this, [this](){ QCPL::copyTitleFormat(_plot->title()); });
     _plot->menuTitle->addAction("Paste format", this, &PlotWindow::pasteTitleFormat);
     _plot->menuTitle->addAction("Hide", this, [this](){ _plot->title()->setVisible(false); _plot->updateTitleVisibility(); _plot->replot(); });
     _plot->menuAxisX = new QMenu(this);
     _plot->menuAxisX->addAction("Format...", this, [this]{ _plot->axisFormatDlgX(); });
+    _plot->menuAxisX->addAction("Text...", this, [this]{ _plot->axisTextDlgX(); });
     _plot->menuAxisX->addAction("Copy format", this, [this](){ QCPL::copyAxisFormat(_plot->xAxis); });
     _plot->menuAxisX->addAction("Paste format", this, [this](){ pasteAxisFormat(_plot->xAxis); });
     _plot->menuAxisY = new QMenu(this);
     _plot->menuAxisY->addAction("Format...", this, [this]{ _plot->axisFormatDlgY(); });
+    _plot->menuAxisY->addAction("Text...", this, [this]{ _plot->axisTextDlgY(); });
     _plot->menuAxisY->addAction("Copy format", this, [this](){ QCPL::copyAxisFormat(_plot->yAxis); });
     _plot->menuAxisY->addAction("Paste format", this, [this](){ pasteAxisFormat(_plot->yAxis); });
 
@@ -94,8 +118,9 @@ void PlotWindow::resizeEvent(QResizeEvent *event)
     QMainWindow::resizeEvent(event);
 
     // Example of usage of text variables
-    _plot->formatter(_plot->xAxis)->format();
-    _plot->formatter(_plot->yAxis)->format();
+    // Update texts if they use variable referring some
+    // dynamically changed objects (the window size in this example)
+    _plot->updateTexts();
 }
 
 void PlotWindow::savePlotFormat()

@@ -36,6 +36,13 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis, const AxisFormatDlgProps& prop
     //                    Tab "Axis"
 
     TextEditorWidget::Options titleOpts;
+    if (props.formatter)
+    {
+        _formatter = props.formatter;
+        titleOpts.defaultText = props.defaultText;
+        titleOpts.vars = _formatter->vars();
+        _backup["formatter_text"] = _formatter->text();
+    }
     _titleEditor = new TextEditorWidget(titleOpts);
 
     _innerMargin = makeSpinBox(-1000, 1000);
@@ -213,7 +220,10 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis, const AxisFormatDlgProps& prop
     //-------------------------------------------------------
 
     _visible->setChecked(axis->visible());
-    _titleEditor->setText(axis->label());
+    if (props.formatter)
+        _titleEditor->setText(props.formatter->text());
+    else
+        _titleEditor->setText(axis->label());
     _titleEditor->setFont(axis->labelFont());
     _titleEditor->setColor(axis->labelColor());
     _innerMargin->setValue(axis->labelPadding());
@@ -285,13 +295,20 @@ AxisFormatWidget::~AxisFormatWidget()
 void AxisFormatWidget::restore()
 {
     readAxis(_backup, _axis, JsonOptions());
+    if (_formatter)
+        _formatter->setText(_backup["formatter_text"].toString());
     _axis->parentPlot()->replot();
 }
 
 void AxisFormatWidget::apply()
 {
     _axis->setVisible(_visible->isChecked());
-    _axis->setLabel(_titleEditor->text());
+    if (_formatter)
+    {
+        _formatter->setText(_titleEditor->text());
+        _formatter->format();
+    }
+    else _axis->setLabel(_titleEditor->text());
     _axis->setLabelFont(_titleEditor->font());
     _axis->setSelectedLabelFont(_titleEditor->font());
     _axis->setLabelColor(_titleEditor->color());
@@ -341,6 +358,11 @@ void AxisFormatWidget::apply()
     grid->setSubGridPen(_subGridPen->value());
 
     _axis->parentPlot()->replot();
+}
+
+bool AxisFormatWidget::needSaveDefault() const
+{
+    return _saveDefault->isChecked();
 }
 
 } // namespace QCPL

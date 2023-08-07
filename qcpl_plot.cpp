@@ -63,11 +63,10 @@ Plot::Plot(QWidget *parent) : QCustomPlot(parent),
     _title->setMargins({10, 10, 10, 10});
     _title->setSelectable(true);
     _title->setVisible(false);
-
     plotLayout()->insertRow(0);
     plotLayout()->setRowSpacing(0),
     plotLayout()->setRowStretchFactor(0, 0.01);
-    connect(_title, &QCPTextElement::doubleClicked, this, [this](){ emit editTitleRequest(); });
+    connect(_title, &QCPTextElement::doubleClicked, this, [this](){ titleTextDlg(); });
 
     _backupLayout = new QCPLayoutGrid;
     _backupLayout->setVisible(false);
@@ -330,10 +329,10 @@ bool Plot::limitsDlgXY()
 
 bool Plot::axisTextDlg(QCPAxis* axis)
 {
-    AxisTextDlgProps props;
+    AxisFormatDlgProps props;
     props.title = tr("%1 Title").arg(getAxisIdent(axis));
-    props.formatter = _formatters.contains(axis) ? _formatters[axis] : nullptr;
-    props.defaultTitle = defaultTitle(axis);
+    props.formatter = formatter(axis);
+    props.defaultText = defaultText(axis);
     if (QCPL::axisTextDlg(axis, props))
     {
         emit modified("Plot::axisTextDlg");
@@ -346,6 +345,8 @@ bool Plot::axisFormatDlg(QCPAxis* axis)
 {
     AxisFormatDlgProps props;
     props.title = tr("%1 Format").arg(getAxisIdent(axis));
+    props.formatter = formatter(axis);
+    props.defaultText = defaultText(axis);
     if (formatSaver)
         props.onSaveDefault = [this, axis ](){ formatSaver->saveAxis(axis); };
     if (QCPL::axisFormatDlg(axis, props))
@@ -356,10 +357,26 @@ bool Plot::axisFormatDlg(QCPAxis* axis)
     return false;
 }
 
+bool Plot::titleTextDlg()
+{
+    TitleFormatDlgProps props;
+    props.title = tr("Title Text");
+    props.formatter = formatter(_title);
+    props.defaultText = defaultText(_title);
+    if (QCPL::titleTextDlg(_title, props))
+    {
+        emit modified("Plot::titleTextDlg");
+        return true;
+    }
+    return false;
+}
+
 bool Plot::titleFormatDlg()
 {
     TitleFormatDlgProps props;
     props.title = tr("Title Format");
+    props.formatter = formatter(_title);
+    props.defaultText = defaultText(_title);
     if (formatSaver)
         props.onSaveDefault = [this](){ formatSaver->saveTitle(_title); };
     if (QCPL::titleFormatDlg(_title, props))
@@ -469,16 +486,18 @@ void Plot::addTextVar(void* target, const QString& name, const QString& descr, T
     if (!_formatters.contains(target))
     {
         if (target == xAxis)
-            _formatters[target] = new AxisTitleFormatter(xAxis);
+            _formatters[target] = new AxisTextFormatter(xAxis);
         else if (target == yAxis)
-            _formatters[target] = new AxisTitleFormatter(yAxis);
+            _formatters[target] = new AxisTextFormatter(yAxis);
+        else if (target == _title)
+            _formatters[target] = new TitleTextFormatter(_title);
         else
             return;
     }
     _formatters[target]->addVar(name, descr, getter);
 }
 
-void Plot::updateTitles()
+void Plot::updateTexts()
 {
     auto it = _formatters.constBegin();
     while (it != _formatters.constEnd())
@@ -488,7 +507,7 @@ void Plot::updateTitles()
     }
 }
 
-void Plot::updateTitle(void* target)
+void Plot::updateText(void* target)
 {
     auto fmt = formatter(target);
     if (fmt) fmt->format();

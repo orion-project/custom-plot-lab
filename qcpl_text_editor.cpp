@@ -84,7 +84,7 @@ public:
         auto varsMenu = new QMenu(this);
         if (!defaultText.isEmpty())
         {
-            varsMenu->addAction(tr("Reset to default"), [this, &defaultText]{ setPlainText(defaultText); });
+            varsMenu->addAction(tr("Reset to default"), [this, defaultText]{ setPlainText(defaultText); });
             varsMenu->addSeparator();
         }
         foreach (const auto& var, vars)
@@ -109,7 +109,6 @@ public:
         };
     }
 
-
 protected:
     void keyPressEvent(QKeyEvent *event) override
     {
@@ -117,7 +116,6 @@ protected:
             requestAccept();
         else QPlainTextEdit::keyPressEvent(event);
     }
-
 
 private:
     void insertVar()
@@ -244,7 +242,7 @@ TextEditorWidget::TextEditorWidget(const Options &opts) : QWidget()
         editor->setReadOnly(opts.readOnly);
         if (!opts.vars.isEmpty())
         {
-            editor->initVarsMenu(QString(), opts.vars);
+            editor->initVarsMenu(opts.defaultText, opts.vars);
             _toolbar1->addWidget(editor->varsButton);
         }
         if (opts.narrow)
@@ -417,15 +415,13 @@ TextOnlyEditorWidget::TextOnlyEditorWidget(const Options &opts) : QWidget()
     {
         editor->initVarsMenu(opts.defaultText, opts.vars);
         int iconSize = qApp->style()->pixelMetric(QStyle::PM_ToolBarIconSize);
+        editor->varsButton->setParent(editor);
         editor->varsButton->setIconSize({iconSize, iconSize});
         editor->varsButton->resize(iconSize*5/4, iconSize*5/4);
     }
 
     _editor = editor;
     Ori::Layouts::LayoutV({_editor}).setSpacing(0).setMargin(0).useFor(this);
-
-    if (editor->varsButton)
-        editor->varsButton->setParent(this);
 }
 
 void TextOnlyEditorWidget::setText(const QString& text)
@@ -446,7 +442,7 @@ void TextOnlyEditorWidget::resizeEvent(QResizeEvent *event)
     {
         auto r = _editor->geometry();
         auto m = qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing);
-        button->move(r.right() - button->width() - m, r.top() + m);
+        button->move(r.width() - button->width() - m, m);
     }
 }
 
