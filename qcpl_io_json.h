@@ -25,20 +25,15 @@ struct JsonError
 
 using JsonReport = QVector<JsonError>;
 
-struct JsonOptions
-{
-    bool allowTextContent = true;
-};
-
-QJsonObject writePlot(Plot *plot, const JsonOptions& opts);
+QJsonObject writePlot(Plot *plot);
 QJsonObject writeLegend(QCPLegend* legend);
-QJsonObject writeTitle(QCPTextElement* title, const JsonOptions& opts);
-QJsonObject writeAxis(QCPAxis *axis, const JsonOptions& opts);
+QJsonObject writeTitle(QCPTextElement* title);
+QJsonObject writeAxis(QCPAxis *axis);
 
-void readPlot(const QJsonObject& root, Plot *plot, const JsonOptions& opts, JsonReport* report);
+void readPlot(const QJsonObject& root, Plot *plot, JsonReport* report);
 JsonError readLegend(const QJsonObject &obj, QCPLegend* legend);
-JsonError readTitle(const QJsonObject &obj, QCPTextElement* title, const JsonOptions& opts);
-JsonError readAxis(const QJsonObject &obj, QCPAxis* axis, const JsonOptions& opts);
+JsonError readTitle(const QJsonObject &obj, QCPTextElement* title);
+JsonError readAxis(const QJsonObject &obj, QCPAxis* axis);
 
 /**
     Allows a plot to store default view format of its elements.

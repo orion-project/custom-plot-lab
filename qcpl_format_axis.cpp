@@ -24,7 +24,8 @@ namespace QCPL {
 
 AxisFormatWidget::AxisFormatWidget(QCPAxis* axis, const AxisFormatDlgProps& props) : QWidget(), _axis(axis)
 {
-    _backup = writeAxis(axis, JsonOptions());
+    _backup = writeAxis(axis);
+    _backup["text"] = axis->label();
 
     auto p = sizePolicy();
     p.setVerticalStretch(255);
@@ -294,7 +295,8 @@ AxisFormatWidget::~AxisFormatWidget()
 
 void AxisFormatWidget::restore()
 {
-    readAxis(_backup, _axis, JsonOptions());
+    readAxis(_backup, _axis);
+    _axis->setLabel(_backup["text"].toString());
     if (_formatter)
         _formatter->setText(_backup["formatter_text"].toString());
     _axis->parentPlot()->replot();

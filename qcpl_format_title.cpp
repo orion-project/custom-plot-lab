@@ -21,7 +21,8 @@ namespace QCPL {
 
 TitleFormatWidget::TitleFormatWidget(QCPTextElement* title, const TitleFormatDlgProps& props) : QWidget(), _title(title)
 {
-    _backup = writeTitle(title, JsonOptions());
+    _backup = writeTitle(title);
+    _backup["text"] = title->text();
 
     TextEditorWidget::Options textOpts;
     textOpts.showAlignment = true;
@@ -70,7 +71,8 @@ TitleFormatWidget::TitleFormatWidget(QCPTextElement* title, const TitleFormatDlg
 
 void TitleFormatWidget::restore()
 {
-    readTitle(_backup, _title, JsonOptions());
+    readTitle(_backup, _title);
+    _title->setText(_backup["text"].toString());
     if (_formatter)
         _formatter->setText(_backup["formatter_text"].toString());
     auto plot = qobject_cast<Plot*>(_title->parentPlot());

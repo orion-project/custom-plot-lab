@@ -109,6 +109,9 @@ bool titleTextDlg(QCPTextElement* title, const TitleFormatDlgProps& props)
             [title](){ return title->text(); },
             [title](const QString& text){ title->setText(text); }))
     {
+        auto plot = qobject_cast<Plot*>(title->parentPlot());
+        if (plot)
+            plot->updateTitleVisibility();
         title->parentPlot()->replot();
         return true;
     }
