@@ -49,11 +49,11 @@ PlotWindow::PlotWindow(QWidget *parent) : QMainWindow(parent)
     // They are called when one calls `format()` on partucular TextFormatter object
     auto getWndW = [this]{ return QString::number(width()); };
     auto getWndH = [this]{ return QString::number(height()); };
-    _plot->addTextVar("{text_var}", "Text var 3", []{ return "Hallo World"; });
-    _plot->addTextVar("{unit_1}", "Unit of measurement 1", []{ return "mm"; });
-    _plot->addTextVar("{unit_2}", "Unit of measurement 2", []{ return "kg"; });
-    _plot->addTextVar("{wndW}", "Main window width", getWndW);
-    _plot->addTextVar("{wndH}", "Main window height", getWndH);
+    _plot->addTextVarT("{text_var}", "Text var 3", []{ return "Hallo World"; });
+    _plot->addTextVarT("{unit_1}", "Unit of measurement 1", []{ return "mm"; });
+    _plot->addTextVarT("{unit_2}", "Unit of measurement 2", []{ return "kg"; });
+    _plot->addTextVarT("{wndW}", "Main window width", getWndW);
+    _plot->addTextVarT("{wndH}", "Main window height", getWndH);
 
     _plot->addTextVarX("{some_text}", "Text var 1", []{ return "Galenium overloader"; });
     _plot->addTextVarX("{unit_1}", "Unit of measurement 1", []{ return "mm"; });
@@ -67,9 +67,9 @@ PlotWindow::PlotWindow(QWidget *parent) : QMainWindow(parent)
     _plot->addTextVarY("{wndW}", "Main window width", getWndW);
     _plot->addTextVarY("{wndH}", "Main window height", getWndH);
 
-    _plot->setDefaultTitleText("Plot title");
-    _plot->setDefaultAxisTextX("Axis X title");
-    _plot->setDefaultAxisTextY("Axis Y title");
+    _plot->setDefaultTextT("Plot title");
+    _plot->setDefaultTextX("Axis X title");
+    _plot->setDefaultTextY("Axis Y title");
 
     _plot->menuLegend = new QMenu(this);
     _plot->menuLegend->addAction("Format...", this, [this]{ _plot->legendFormatDlg(); });

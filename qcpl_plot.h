@@ -89,35 +89,35 @@ public:
     constexpr LayoutCell titleRC() const { return { 0, 0 }; }
 
     void addTextVar(void* target, const QString& name, const QString& descr, TextVarGetter getter);
-    void addTextVar(const QString& name, const QString& descr, TextVarGetter getter) { addTextVar(_title, name, descr, getter); }
+    void addTextVarT(const QString& name, const QString& descr, TextVarGetter getter) { addTextVar(_title, name, descr, getter); }
     void addTextVarX(const QString& name, const QString& descr, TextVarGetter getter) { addTextVar(xAxis, name, descr, getter); }
     void addTextVarY(const QString& name, const QString& descr, TextVarGetter getter) { addTextVar(yAxis, name, descr, getter); }
 
     void addFormatter(void* target, TextFormatterBase* formatter);
     TextFormatterBase* formatter(void* target) const { return _formatters.contains(target) ? _formatters[target] : nullptr; }
     void setFormatterText(void* target, const QString& text);
-    void setFormatterText(const QString& text) { setFormatterText(_title, text); }
+    void setFormatterTextT(const QString& text) { setFormatterText(_title, text); }
     void setFormatterTextX(const QString& text) { setFormatterText(xAxis, text); }
     void setFormatterTextY(const QString& text) { setFormatterText(yAxis, text); }
     QString formatterText(void* target) const;
-    QString formatterText() const { return formatterText(_title); }
+    QString formatterTextT() const { return formatterText(_title); }
     QString formatterTextX() const { return formatterText(xAxis); }
     QString formatterTextY() const { return formatterText(yAxis); }
 
     void updateTexts();
     void updateText(void* target);
-    void updateTitleText() { updateText(_title); }
-    void updateAxisTextX() { updateText(yAxis); }
-    void updateAxisTextY() { updateText(xAxis); }
+    void updateTextT() { updateText(_title); }
+    void updateTextX() { updateText(yAxis); }
+    void updateTextY() { updateText(xAxis); }
 
     QString defaultText(void* target) const { return _defaultTexts.contains(target) ? _defaultTexts[target] : QString(); }
-    QString defaultTitleText() const { return defaultText(_title); }
-    QString defaultAxisTextX() const { return defaultText(xAxis); }
-    QString defaultAxisTextY() const { return defaultText(yAxis); }
+    QString defaultTextT() const { return defaultText(_title); }
+    QString defaultTextX() const { return defaultText(xAxis); }
+    QString defaultTextY() const { return defaultText(yAxis); }
     void setDefaultText(void* target, const QString& text) { _defaultTexts[target] = text; }
-    void setDefaultTitleText(const QString& text) { setDefaultText(_title, text); }
-    void setDefaultAxisTextX(const QString& text) { setDefaultText(xAxis, text); }
-    void setDefaultAxisTextY(const QString& text) { setDefaultText(yAxis, text); }
+    void setDefaultTextT(const QString& text) { setDefaultText(_title, text); }
+    void setDefaultTextX(const QString& text) { setDefaultText(xAxis, text); }
+    void setDefaultTextY(const QString& text) { setDefaultText(yAxis, text); }
 
 public slots:
     void autolimits(bool replot = true) { autolimits(xAxis, false); autolimits(yAxis, replot); }
