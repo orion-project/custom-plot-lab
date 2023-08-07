@@ -336,8 +336,7 @@ bool Plot::axisTextDlg(QCPAxis* axis)
     props.defaultTitle = defaultTitle(axis);
     if (QCPL::axisTextDlg(axis, props))
     {
-        replot();
-        emit modified(QStringLiteral("%1 changed").arg(props.title));
+        emit modified("Plot::axisTextDlg");
         return true;
     }
     return false;
@@ -349,7 +348,12 @@ bool Plot::axisFormatDlg(QCPAxis* axis)
     props.title = tr("%1 Format").arg(getAxisIdent(axis));
     if (formatSaver)
         props.onSaveDefault = [this, axis ](){ formatSaver->saveAxis(axis); };
-    return QCPL::axisFormatDlg(axis, props);
+    if (QCPL::axisFormatDlg(axis, props))
+    {
+        emit modified("Plot::axisFormatDlg");
+        return true;
+    }
+    return false;
 }
 
 bool Plot::titleFormatDlg()
@@ -360,7 +364,7 @@ bool Plot::titleFormatDlg()
         props.onSaveDefault = [this](){ formatSaver->saveTitle(_title); };
     if (QCPL::titleFormatDlg(_title, props))
     {
-        replot();
+        emit modified("Plot::titleFormatDlg");
         return true;
     }
     return false;
@@ -374,7 +378,7 @@ bool Plot::legendFormatDlg()
         props.onSaveDefault = [this](){ formatSaver->saveLegend(legend); };
     if (QCPL::legendFormatDlg(legend, props))
     {
-        replot();
+        emit modified("Plot::legendFormatDlg");
         return true;
     }
     return false;

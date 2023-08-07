@@ -78,6 +78,10 @@ MarginsEditorWidget::MarginsEditorWidget(const QString& title, const Options &op
             new QLabel("Top:"), T, Space(10),
             new QLabel("Right:"), R, Space(10),
             new QLabel("Bottom:"), B, Stretch(),
+//                    new QLabel("←"), L, Space(10),
+//                    new QLabel("↑"), T, Space(10),
+//                    new QLabel("→"), R, Space(10),
+//                    new QLabel("↓"), B, Stretch(),
         }).useFor(this);
     }
     else

@@ -81,6 +81,7 @@ bool axisTextDlg(QCPAxis* axis, const AxisTextDlgProps& props)
         }
         else
             axis->setLabel(editor.text());
+        axis->parentPlot()->replot();
         return true;
     }
     return false;
@@ -120,33 +121,17 @@ bool genericFormatDlg(TEditor *editor, const TProps& props)
 
 bool axisFormatDlg(QCPAxis* axis, const AxisFormatDlgProps& props)
 {
-    return genericFormatDlg(new AxisFormatWidget(axis), props);
+    return genericFormatDlg(new AxisFormatWidget(axis, props), props);
 }
 
 bool titleFormatDlg(QCPTextElement* title, const TitleFormatDlgProps& props)
 {
-    TitleFormatWidget editor(title, props);
-
-    return Ori::Dlg::Dialog(&editor, false)
-        .withTitle(props.title)
-        .withOnApply([&editor, title]{ editor.apply(); title->parentPlot()->replot(); })
-        .withContentToButtonsSpacingFactor(3)
-        .withPersistenceId("title-format")
-        .connectOkToContentApply()
-        .exec();
+    return genericFormatDlg(new TitleFormatWidget(title, props), props);
 }
 
 bool legendFormatDlg(QCPLegend* legend, const LegendFormatDlgProps& props)
 {
-    LegendFormatWidget editor(legend, props);
-
-    return Ori::Dlg::Dialog(&editor, false)
-            .withTitle(props.title)
-            .withOnApply([&editor, legend]{ editor.apply(); legend->parentPlot()->replot(); })
-            .withContentToButtonsSpacingFactor(3)
-            .withPersistenceId("legend-format")
-            .connectOkToContentApply()
-            .exec();
+    return genericFormatDlg(new LegendFormatWidget(legend, props), props);
 }
 
 bool plotFormatDlg(Plot* plot, const PlotFormatDlgProps &props)

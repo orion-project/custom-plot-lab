@@ -2,12 +2,12 @@
 
 #include "qcpl_format.h"
 #include "qcpl_format_editors.h"
+#include "qcpl_io_json.h"
 #include "qcpl_text_editor.h"
 #include "qcpl_utils.h"
 #include "qcustomplot/qcustomplot.h"
 
 #include "helpers/OriLayouts.h"
-#include "widgets/OriLabels.h"
 #include "widgets/OriSelectableTile.h"
 
 #include <QAction>
@@ -23,15 +23,15 @@ namespace QCPL {
 
 LegendFormatWidget::LegendFormatWidget(QCPLegend *legend, const LegendFormatDlgProps& props) : QWidget(), _legend(legend)
 {
-    _onApplied = props.onApplied;
-    _onSaveDefault = props.onSaveDefault;
+    _backup = writeLegend(legend);
 
     TextEditorWidget::Options textOpts;
     textOpts.showBackColor = true;
     textOpts.colorAlphaBack = true;
     textOpts.narrow = true;
+    textOpts.readOnly = true;
     _textProps = new TextEditorWidget(textOpts);
-    _textProps->setText(props.sampleText.isEmpty() ? QString("spectrum1.txt\nprofile3.dat [1;2]\nClipboard 3 [3;4]") : props.sampleText);
+    _textProps->setText(props.sampleText.isEmpty() ? QString("• spectrum1.txt\n• profile3.dat [1;2]\n• Clipboard 3 [3;4]") : props.sampleText);
 
     PenEditorWidgetOptions penOpts;
     penOpts.noLabels = true;
@@ -67,23 +67,26 @@ LegendFormatWidget::LegendFormatWidget(QCPLegend *legend, const LegendFormatDlgP
 
     _visible = new QCheckBox(tr("Visible"));
     _saveDefault = new QCheckBox(tr("Save as default format"));
-    _saveDefault->setVisible(bool(_onSaveDefault));
+    _saveDefault->setVisible(bool(props.onSaveDefault));
 
-    auto separator = new Ori::Widgets::LabelSeparator;
-    separator->flat = true;
+    auto header = makeDialogHeader();
+    LayoutH({
+        SpaceH(),
+        LayoutV({ Stretch(), _visible, _saveDefault }).setMargin(6),
+    }).setMargin(0).useFor(header);
 
     LayoutV({
-        _visible,
-        _saveDefault,
-        separator,
-        LayoutV({_textProps}).makeGroupBox(tr("Font")),
-        LayoutV({_borderPen}).makeGroupBox(tr("Border")),
+        header,
+        makeSeparator(),
         LayoutV({
-            LayoutH({ iconGroup, SpaceH(), _paddings }),
-            LayoutH({ locationGroup, SpaceH(), _margins }),
-        }),
-        Stretch(),
-    }).setMargin(0).useFor(this);
+            LayoutV({_textProps}).makeGroupBox(tr("Font")),
+            LayoutV({_borderPen}).makeGroupBox(tr("Frame")),
+            LayoutV({
+                LayoutH({ iconGroup, SpaceH(), _paddings }),
+                LayoutH({ locationGroup, SpaceH(), _margins }),
+            }),
+        }).setDefSpacing().setDefMargins(),
+    }).setSpacing(0).setMargin(0).useFor(this);
 
     _visible->setChecked(legend->visible());
     _textProps->setFont(legend->font());
@@ -107,6 +110,12 @@ void LegendFormatWidget::makeLocationTile(Qt::Alignment align, int row, int col)
     _locationLayout->addWidget(tile, row, col);
 }
 
+void LegendFormatWidget::restore()
+{
+    readLegend(_backup, _legend);
+    _legend->parentPlot()->replot();
+}
+
 void LegendFormatWidget::apply()
 {
     _legend->setFont(_textProps->font());
@@ -120,9 +129,7 @@ void LegendFormatWidget::apply()
     setLegendLocation(_legend, Qt::Alignment(_locationGroup->selectedData().toInt()));
     setLegendMargins(_legend, _margins->value());
     _legend->setVisible(_visible->isChecked());
-    if (_onApplied) _onApplied();
-    if (_onSaveDefault and _saveDefault->isChecked())
-        _onSaveDefault();
+    _legend->parentPlot()->replot();
 }
 
 } // namespace QCPL

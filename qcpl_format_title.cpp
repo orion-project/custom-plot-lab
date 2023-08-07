@@ -2,11 +2,11 @@
 
 #include "qcpl_format.h"
 #include "qcpl_format_editors.h"
+#include "qcpl_io_json.h"
 #include "qcpl_text_editor.h"
 #include "qcpl_plot.h"
 
 #include "helpers/OriLayouts.h"
-#include "widgets/OriLabels.h"
 
 #include <QAction>
 #include <QDebug>
@@ -21,7 +21,7 @@ namespace QCPL {
 
 TitleFormatWidget::TitleFormatWidget(QCPTextElement* title, const TitleFormatDlgProps& props) : QWidget(), _title(title)
 {
-    _onSaveDefault = props.onSaveDefault;
+    _backup = writeTitle(title, JsonOptions());
 
     TextEditorWidget::Options textOpts;
     textOpts.showAlignment = true;
@@ -29,23 +29,26 @@ TitleFormatWidget::TitleFormatWidget(QCPTextElement* title, const TitleFormatDlg
 
     _visible = new QCheckBox(tr("Visible"));
     _saveDefault = new QCheckBox(tr("Save as default format"));
-    _saveDefault->setVisible(bool(_onSaveDefault));
+    _saveDefault->setVisible(bool(props.onSaveDefault));
 
     MarginsEditorWidget::Options marginOpts;
     marginOpts.layoutInLine = true;
     _margins = new MarginsEditorWidget(tr("Margins"), marginOpts);
 
-    auto separator = new Ori::Widgets::LabelSeparator;
-    separator->flat = true;
+    auto header = makeDialogHeader();
+    LayoutH({
+        SpaceH(),
+        LayoutV({ Stretch(), _visible, _saveDefault }).setMargin(6),
+    }).setMargin(0).useFor(header);
 
     LayoutV({
-        _visible,
-        _saveDefault,
-        separator,
-        LayoutV({_textProps}).makeGroupBox(tr("Text")),
-        _margins,
-        Stretch(),
-    }).setMargin(0).useFor(this);
+        header,
+        makeSeparator(),
+        LayoutV({
+            LayoutV({_textProps}).makeGroupBox(tr("Text")),
+            _margins,
+        }).setDefSpacing().setDefMargins(),
+    }).setSpacing(0).setMargin(0).useFor(this);
 
     _visible->setChecked(title->visible());
     _textProps->setText(title->text());
@@ -53,6 +56,14 @@ TitleFormatWidget::TitleFormatWidget(QCPTextElement* title, const TitleFormatDlg
     _textProps->setColor(title->textColor());
     _textProps->setTextFlags(title->textFlags());
     _margins->setValue(title->margins());
+}
+
+void TitleFormatWidget::restore()
+{
+    readTitle(_backup, _title, JsonOptions());
+    auto plot = qobject_cast<Plot*>(_title->parentPlot());
+    if (plot) plot->updateTitleVisibility();
+    _title->parentPlot()->replot();
 }
 
 void TitleFormatWidget::apply()
@@ -66,7 +77,8 @@ void TitleFormatWidget::apply()
     _title->setMargins(_margins->value());
     auto plot = qobject_cast<Plot*>(_title->parentPlot());
     if (plot) plot->updateTitleVisibility();
-    if (_onSaveDefault and _saveDefault->isChecked())
-        _onSaveDefault();
+    _title->parentPlot()->replot();
 }
+
+
 } // namespace QCPL

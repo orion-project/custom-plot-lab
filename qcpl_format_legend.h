@@ -2,7 +2,7 @@
 #define QCPL_FORMAT_LEGEND_H
 
 #include <QWidget>
-#include <QPen>
+#include <QJsonObject>
 
 class QCPLegend;
 
@@ -33,9 +33,11 @@ public:
 
 public slots:
     void apply();
+    void restore();
 
 private:
     QCPLegend *_legend;
+    QJsonObject _backup;
     Ori::Widgets::SelectableTileRadioGroup *_locationGroup;
     QGridLayout *_locationLayout;
     TextEditorWidget *_textProps;
@@ -43,8 +45,6 @@ private:
     MarginsEditorWidget *_margins, *_paddings;
     QCheckBox *_visible, *_saveDefault;
     PenEditorWidget *_borderPen;
-    std::function<void()> _onApplied;
-    std::function<void()> _onSaveDefault;
 
     void makeLocationTile(Qt::Alignment align, int row, int col);
 };

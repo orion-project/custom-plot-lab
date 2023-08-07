@@ -2,13 +2,12 @@
 #define QCPL_FORMAT_TITLE_H
 
 #include <QWidget>
+#include <QJsonObject>
 
 class QCPTextElement;
 
 QT_BEGIN_NAMESPACE
 class QCheckBox;
-class QGridLayout;
-class QSpinBox;
 QT_END_NAMESPACE
 
 namespace QCPL {
@@ -26,13 +25,14 @@ public:
 
 public slots:
     void apply();
+    void restore();
 
 private:
     QCPTextElement *_title;
+    QJsonObject _backup;
     TextEditorWidget *_textProps;
     QCheckBox *_visible, *_saveDefault;
     MarginsEditorWidget *_margins;
-    std::function<void()> _onSaveDefault;
 };
 
 } // namespace QCPL

@@ -1,5 +1,6 @@
 #include "qcpl_format_axis.h"
 
+#include "qcpl_format.h"
 #include "qcpl_format_editors.h"
 #include "qcpl_io_json.h"
 #include "qcpl_text_editor.h"
@@ -21,7 +22,7 @@ static int __tabIndex = 0;
 
 namespace QCPL {
 
-AxisFormatWidget::AxisFormatWidget(QCPAxis* axis) : QWidget(), _axis(axis)
+AxisFormatWidget::AxisFormatWidget(QCPAxis* axis, const AxisFormatDlgProps& props) : QWidget(), _axis(axis)
 {
     _backup = writeAxis(axis, JsonOptions());
 
@@ -193,6 +194,7 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis) : QWidget(), _axis(axis)
 
     _visible = new QCheckBox("Visible");
     _saveDefault = new QCheckBox("Save as default");
+    _saveDefault->setVisible(bool(props.onSaveDefault));
 
     auto header = makeDialogHeader();
     LayoutH({
@@ -203,10 +205,10 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis) : QWidget(), _axis(axis)
     }).setMargin(0).useFor(header);
 
     LayoutV({
-                header,
-                makeSeparator(),
-                layoutPages,
-            }).setSpacing(0).setMargin(0).useFor(this);
+        header,
+        makeSeparator(),
+        layoutPages,
+    }).setSpacing(0).setMargin(0).useFor(this);
 
     //-------------------------------------------------------
 

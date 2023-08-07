@@ -7,7 +7,6 @@
 QT_BEGIN_NAMESPACE
 class QCheckBox;
 class QGroupBox;
-class QJsonObject;
 class QSpinBox;
 class QTabBar;
 QT_END_NAMESPACE
@@ -21,6 +20,7 @@ class QCPAxis;
 
 namespace QCPL {
 
+class AxisFormatDlgProps;
 class PenEditorWidget;
 class TextEditorWidget;
 
@@ -29,13 +29,12 @@ class AxisFormatWidget : public QWidget
     Q_OBJECT
 
 public:
-    AxisFormatWidget(QCPAxis* axis);
+    AxisFormatWidget(QCPAxis* axis, const AxisFormatDlgProps &props);
     ~AxisFormatWidget();
-
-    void restore();
 
 public slots:
     void apply();
+    void restore();
 
 private:
     enum LabelsNumberFormat { lnfF, lnfE, lnfG };

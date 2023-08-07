@@ -249,7 +249,7 @@ TextEditorWidget::TextEditorWidget(const Options &opts) : QWidget()
         }
         if (opts.narrow)
         {
-            editor->preferredWidth = 100;
+            editor->preferredWidth = 150;
             auto p = editor->sizePolicy();
             p.setHorizontalPolicy(QSizePolicy::Minimum);
             editor->setSizePolicy(p);
