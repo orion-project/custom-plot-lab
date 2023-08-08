@@ -126,11 +126,6 @@ bool genericFormatDlg(TEditor *editor, const TProps& props)
 
     auto style = qApp->style();
     auto buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-    buttons->layout()->setContentsMargins(
-        style->pixelMetric(QStyle::PM_LayoutLeftMargin),
-        style->pixelMetric(QStyle::PM_LayoutTopMargin),
-        style->pixelMetric(QStyle::PM_LayoutRightMargin),
-        style->pixelMetric(QStyle::PM_LayoutBottomMargin));
     buttons->connect(buttons, &QDialogButtonBox::accepted, &dlg, [&dlg, editor, props](){
         editor->apply();
         if (props.onSaveDefault and editor->needSaveDefault())
@@ -147,6 +142,17 @@ bool genericFormatDlg(TEditor *editor, const TProps& props)
     });
 
     LayoutV({editor, buttons}).setMargin(0).useFor(&dlg);
+
+    // Set margins after inserting buttons into layout
+    // Otherwise margins can be reset when inserting into a layout having zero magrins
+    // This doesn't happen on default style but coud do if app style sheet is overriden
+    // (even particularly, like in reZonator which only provides styles for some components)
+    buttons->layout()->setContentsMargins(
+        style->pixelMetric(QStyle::PM_LayoutLeftMargin),
+        style->pixelMetric(QStyle::PM_LayoutTopMargin),
+        style->pixelMetric(QStyle::PM_LayoutRightMargin),
+        style->pixelMetric(QStyle::PM_LayoutBottomMargin));
+
     return dlg.exec() == QDialog::Accepted;
 }
 

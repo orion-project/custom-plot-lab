@@ -6,9 +6,16 @@
 #include "core/OriResult.h"
 #include "tools/OriSettings.h"
 
+#define MIME_TYPE "application/x-orion-project-org;value=plot-format"
 #define CURRENT_LEGEND_VERSION 1
 #define CURRENT_TITLE_VERSION 1
 #define CURRENT_AXIS_VERSION 1
+#define SECTION_INI "DefaultPlotFormat"
+#define KEY_TITLE "title"
+#define KEY_LEGEND "legend"
+#define KEY_AXIS "axis"
+#define KEY_AXIS_X "axis_x"
+#define KEY_AXIS_Y "axis_y"
 
 namespace QCPL {
 
@@ -113,10 +120,10 @@ QColor jsonToColor(const QJsonValue& val, const QColor& def)
 QJsonObject writePlot(Plot* plot)
 {
     return QJsonObject({
-        { "legend", writeLegend(plot->legend) },
-        { "title", writeTitle(plot->title()) },
-        { "axis_x", writeAxis(plot->xAxis) },
-        { "axis_y", writeAxis(plot->yAxis) },
+        { KEY_LEGEND, writeLegend(plot->legend) },
+        { KEY_TITLE, writeTitle(plot->title()) },
+        { KEY_AXIS_X, writeAxis(plot->xAxis) },
+        { KEY_AXIS_Y, writeAxis(plot->yAxis) },
     });
 }
 
@@ -195,19 +202,19 @@ QJsonObject writeAxis(QCPAxis *axis)
 void readPlot(const QJsonObject& root, Plot *plot, JsonReport *report)
 {
     {
-        auto err = readLegend(root["legend"].toObject(), plot->legend);
+        auto err = readLegend(root[KEY_LEGEND].toObject(), plot->legend);
         if (report and !err.ok()) report->append(err);
     }
     {
-        auto err = readTitle(root["title"].toObject(), plot->title());
+        auto err = readTitle(root[KEY_TITLE].toObject(), plot->title());
         if (report and !err.ok()) report->append(err);
     }
     {
-        auto err = readAxis(root["axis_x"].toObject(), plot->xAxis);
+        auto err = readAxis(root[KEY_AXIS_X].toObject(), plot->xAxis);
         if (report and !err.ok()) report->append(err);
     }
     {
-        auto err = readAxis(root["axis_y"].toObject(), plot->yAxis);
+        auto err = readAxis(root[KEY_AXIS_Y].toObject(), plot->yAxis);
         if (report and !err.ok()) report->append(err);
     }
     plot->updateTitleVisibility();
@@ -303,13 +310,6 @@ JsonError readAxis(const QJsonObject &obj, QCPAxis* axis)
 //                          QCPL::FormatStorageIni
 //------------------------------------------------------------------------------
 
-static void savePlotFormatIni(const QString& key, const QJsonObject& obj)
-{
-    Ori::Settings s;
-    s.beginGroup("DefaultPlotFormat");
-    s.setValue(key, QJsonDocument(obj).toJson(QJsonDocument::Compact));
-}
-
 static QJsonObject varToJson(const QVariant& data)
 {
     QString str = data.toString();
@@ -318,34 +318,48 @@ static QJsonObject varToJson(const QVariant& data)
     return doc.isNull() ? QJsonObject() : doc.object();
 }
 
-static QString makeAxisKey(QCPAxis* axis)
+static QVariant jsonToVar(const QJsonObject& obj)
 {
-    auto plot = axis->parentPlot();
-    if (axis == plot->xAxis) return "axis_x";
-    if (axis == plot->yAxis) return "axis_y";
-    return "axis";
+    return QJsonDocument(obj).toJson(QJsonDocument::Compact);
+}
+
+static void savePlotFormatIni(const QString& key, const QJsonObject& obj)
+{
+    Ori::Settings s;
+    s.beginGroup(SECTION_INI);
+    s.setValue(key, jsonToVar(obj));
+}
+
+void FormatStorageIni::save(Plot* plot)
+{
+    Ori::Settings s;
+    s.beginGroup(SECTION_INI);
+    s.setValue(KEY_TITLE, jsonToVar(writeTitle(plot->title())));
+    s.setValue(KEY_LEGEND, jsonToVar(writeLegend(plot->legend)));
+    s.setValue(KEY_AXIS_X, jsonToVar(writeAxis(plot->xAxis)));
+    s.setValue(KEY_AXIS_Y, jsonToVar(writeAxis(plot->yAxis)));
 }
 
 void FormatStorageIni::load(Plot *plot, JsonReport* report)
 {
     Ori::Settings s;
-    s.beginGroup("DefaultPlotFormat");
+    s.beginGroup(SECTION_INI);
     // Non existent settings keys can be safely read too, they result in empty json objects
     // and read functons should skip empty objects without substituting default values for every prop.
     {
-        auto err = readLegend(varToJson(s.value("legend")), plot->legend);
+        auto err = readLegend(varToJson(s.value(KEY_LEGEND)), plot->legend);
         if (report and !err.ok()) report->append(err);
     }
     {
-        auto err = readTitle(varToJson(s.value("title")), plot->title());
+        auto err = readTitle(varToJson(s.value(KEY_TITLE)), plot->title());
         if (report and !err.ok()) report->append(err);
     }
     {
-        auto err = readAxis(varToJson(s.value(makeAxisKey(plot->xAxis))), plot->xAxis);
+        auto err = readAxis(varToJson(s.value(KEY_AXIS_X)), plot->xAxis);
         if (report and !err.ok()) report->append(err);
     }
     {
-        auto err = readAxis(varToJson(s.value(makeAxisKey(plot->yAxis))), plot->yAxis);
+        auto err = readAxis(varToJson(s.value(KEY_AXIS_Y)), plot->yAxis);
         if (report and !err.ok()) report->append(err);
     }
     plot->updateTitleVisibility();
@@ -353,17 +367,20 @@ void FormatStorageIni::load(Plot *plot, JsonReport* report)
 
 void FormatStorageIni::saveLegend(QCPLegend* legend)
 {
-    savePlotFormatIni("legend", writeLegend(legend));
+    savePlotFormatIni(KEY_LEGEND, writeLegend(legend));
 }
 
 void FormatStorageIni::saveTitle(QCPTextElement* title)
 {
-    savePlotFormatIni("title", writeTitle(title));
+    savePlotFormatIni(KEY_TITLE, writeTitle(title));
 }
 
 void FormatStorageIni::saveAxis(QCPAxis* axis)
 {
-    savePlotFormatIni(makeAxisKey(axis), writeAxis(axis));
+    auto plot = axis->parentPlot();
+    QString key = (axis == plot->xAxis) ? KEY_AXIS_X :
+                      ((axis == plot->yAxis) ? KEY_AXIS_Y : KEY_AXIS);
+    savePlotFormatIni(key, writeAxis(axis));
 }
 
 //------------------------------------------------------------------------------
@@ -401,19 +418,25 @@ QString saveFormatToFile(const QString& fileName, Plot* plot)
 static void setClipboardData(const QJsonObject& value, const QString& dataType)
 {
     QJsonObject root({{ dataType, value }});
-    qApp->clipboard()->setText(QJsonDocument(root).toJson());
+    auto mimeData = new QMimeData;
+    mimeData->setData(MIME_TYPE, QJsonDocument(root).toJson());
+    qApp->clipboard()->setMimeData(mimeData);
 }
 
 using JsonResult = Ori::Result<QJsonObject>;
 
 static JsonResult getClipboradData(const QString& dataType)
 {
-    QString text = qApp->clipboard()->text();
-    if (text.isEmpty())
+    auto mimeData = qApp->clipboard()->mimeData();
+    if (!mimeData)
         return JsonResult::fail("Clipboard is empty");
 
+    auto data = mimeData->data(MIME_TYPE);
+    if (data.isNull())
+        return JsonResult::fail("Clipboard doesn't contain data in supported format");
+
     QJsonParseError error;
-    QJsonDocument doc = QJsonDocument::fromJson(text.toUtf8(), &error);
+    QJsonDocument doc = QJsonDocument::fromJson(data, &error);
     if (doc.isNull())
         return JsonResult::fail("Clipboard text is not a valid JSON text: " + error.errorString());
 
@@ -424,24 +447,71 @@ static JsonResult getClipboradData(const QString& dataType)
     return JsonResult::ok(root[dataType].toObject());
 }
 
+void copyPlotFormat(Plot* plot)
+{
+    setClipboardData(writePlot(plot), "plot");
+}
+
 void copyLegendFormat(QCPLegend* legend)
 {
-    setClipboardData(writeLegend(legend), "legend");
+    setClipboardData(writeLegend(legend), KEY_LEGEND);
 }
 
 void copyTitleFormat(QCPTextElement* title)
 {
-    setClipboardData(writeTitle(title), "title");
+    setClipboardData(writeTitle(title), KEY_TITLE);
 }
 
 void copyAxisFormat(QCPAxis* axis)
 {
-    setClipboardData(writeAxis(axis), "axis");
+    setClipboardData(writeAxis(axis), KEY_AXIS);
+}
+
+QString pastePlotFormat(Plot* plot)
+{
+    auto res = getClipboradData("plot");
+    if (!res.ok()) return res.error();
+
+    auto root = res.result();
+
+    // This is mostly for context menu commands and hence should be invoked on visible elements.
+    // It's not expected that element gets hidden when its format pasted, so the function doesn't
+    // change visibility
+    bool oldLegendVisible = plot->legend->visible();
+    bool oldTitleVisible = plot->title()->visible();
+    bool oldAxisVisibleX = plot->xAxis->visible();
+    bool oldAxisVisibleY = plot->yAxis->visible();
+    QStringList report;
+    {
+        auto err = readLegend(root[KEY_LEGEND].toObject(), plot->legend);
+        if (err.code == JsonError::BadVersion)
+            report << err.message;
+    }
+    {
+        auto err = readTitle(root[KEY_TITLE].toObject(), plot->title());
+        if (err.code == JsonError::BadVersion)
+            report << err.message;
+    }
+    {
+        auto err = readAxis(root[KEY_AXIS_X].toObject(), plot->xAxis);
+        if (err.code == JsonError::BadVersion)
+            report << err.message;
+    }
+    {
+        auto err = readAxis(root[KEY_AXIS_Y].toObject(), plot->yAxis);
+        if (err.code == JsonError::BadVersion)
+            report << err.message;
+    }
+    plot->legend->setVisible(oldLegendVisible);
+    plot->title()->setVisible(oldTitleVisible);
+    plot->xAxis->setVisible(oldAxisVisibleX);
+    plot->yAxis->setVisible(oldAxisVisibleY);
+    return report.join('\n');
 }
 
 QString pasteLegendFormat(QCPLegend* legend)
 {
-    auto res = getClipboradData("legend");
+    auto res = getClipboradData(KEY_LEGEND);
     if (!res.ok()) return res.error();
 
     // This is mostly for context menu commands and hence should be invoked on visible elements.
@@ -459,7 +529,7 @@ QString pasteLegendFormat(QCPLegend* legend)
 
 QString pasteTitleFormat(QCPTextElement* title)
 {
-    auto res = getClipboradData("title");
+    auto res = getClipboradData(KEY_TITLE);
     if (!res.ok()) return res.error();
 
     // This is mostly for context menu commands and hence should be invoked on visible elements.
@@ -477,7 +547,7 @@ QString pasteTitleFormat(QCPTextElement* title)
 
 QString pasteAxisFormat(QCPAxis* axis)
 {
-    auto res = getClipboradData("axis");
+    auto res = getClipboradData(KEY_AXIS);
     if (!res.ok()) return res.error();
 
     // This is mostly for context menu commands and hence should be invoked on visible elements.

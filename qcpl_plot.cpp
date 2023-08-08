@@ -82,16 +82,21 @@ Plot::Plot(QWidget *parent) : QCustomPlot(parent),
     connect(this, SIGNAL(axisDoubleClick(QCPAxis*,QCPAxis::SelectablePart,QMouseEvent*)),
             this, SLOT(axisDoubleClicked(QCPAxis*,QCPAxis::SelectablePart)));
 
-    auto f = font();
+    auto labelsFont = font();
+    auto titleFont = _title->font();
 #ifdef Q_OS_MAC
-    f.setPointSize(14);
+    labelsFont.setPointSize(14);
+    titleFont.setPointSize(16);
 #else
-    f.setPointSize(10);
+    labelsFont.setPointSize(10);
+    titleFont.setPointSize(14);
 #endif
-    xAxis->setLabelFont(f);
-    yAxis->setLabelFont(f);
-    xAxis->setSelectedLabelFont(f);
-    yAxis->setSelectedLabelFont(f);
+    xAxis->setLabelFont(labelsFont);
+    yAxis->setLabelFont(labelsFont);
+    xAxis->setSelectedLabelFont(labelsFont);
+    yAxis->setSelectedLabelFont(labelsFont);
+    _title->setFont(titleFont);
+    _title->setSelectedFont(titleFont);
 }
 
 Plot::~Plot()

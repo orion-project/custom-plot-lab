@@ -56,6 +56,7 @@ public:
 class FormatStorageIni: public FormatSaver
 {
 public:
+    void save(Plot* plot);
     void load(Plot* plot, JsonReport *report);
 
     void saveLegend(QCPLegend* legend) override;
@@ -79,9 +80,11 @@ QString loadFormatFromFile(const QString& fileName, Plot *plot, JsonReport* repo
 */
 QString saveFormatToFile(const QString& fileName, Plot *plot);
 
+void copyPlotFormat(Plot* plot);
 void copyLegendFormat(QCPLegend* legend);
 void copyTitleFormat(QCPTextElement* title);
 void copyAxisFormat(QCPAxis* axis);
+QString pastePlotFormat(Plot* plot);
 QString pasteLegendFormat(QCPLegend* legend);
 QString pasteTitleFormat(QCPTextElement* title);
 QString pasteAxisFormat(QCPAxis* axis);
