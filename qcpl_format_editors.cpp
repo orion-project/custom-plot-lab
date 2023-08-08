@@ -168,6 +168,7 @@ void ColorButton::setValue(const QColor& c)
 void ColorButton::selectColor()
 {
     QColorDialog dlg;
+    dlg.setOption(QColorDialog::DontUseNativeDialog, true);
     dlg.setCurrentColor(_color);
     if (dlg.exec())
         setValue(dlg.selectedColor());

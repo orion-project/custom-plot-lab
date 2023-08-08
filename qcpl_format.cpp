@@ -105,12 +105,17 @@ bool axisTextDlg(QCPAxis* axis, const AxisFormatDlgProps& props)
 
 bool titleTextDlg(QCPTextElement* title, const TitleFormatDlgProps& props)
 {
+    bool wasEmpty = title->text().isEmpty();
+    bool wasVisible = title->visible();
     if (genericTextDlg(props,
             [title](){ return title->text(); },
             [title](const QString& text){ title->setText(text); }))
     {
-        auto plot = qobject_cast<Plot*>(title->parentPlot());
-        if (plot)
+        bool isEmpty = title->text().isEmpty();
+        bool isVisible = title->visible();
+        if (wasEmpty && !isEmpty && !wasVisible &&!isVisible)
+            title->setVisible(true);
+        if (auto plot = qobject_cast<Plot*>(title->parentPlot()); plot)
             plot->updateTitleVisibility();
         title->parentPlot()->replot();
         return true;

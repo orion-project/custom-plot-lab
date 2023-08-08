@@ -82,6 +82,9 @@ void TitleFormatWidget::restore()
 
 void TitleFormatWidget::apply()
 {
+    bool wasEmpty = _title->text().isEmpty();
+    bool wasVisible = _title->visible();
+
     if (_formatter)
     {
         _formatter->setText(_textProps->text());
@@ -94,8 +97,17 @@ void TitleFormatWidget::apply()
     _title->setVisible(_visible->isChecked());
     _title->setTextFlags(_textProps->textFlags());
     _title->setMargins(_margins->value());
-    auto plot = qobject_cast<Plot*>(_title->parentPlot());
-    if (plot) plot->updateTitleVisibility();
+
+    bool isEmpty = _title->text().isEmpty();
+    bool isVisible = _title->visible();
+    if (wasEmpty && !isEmpty && !wasVisible &&!isVisible)
+    {
+        _title->setVisible(true);
+        _visible->setChecked(true);
+    }
+
+    if (auto plot = qobject_cast<Plot*>(_title->parentPlot()); plot)
+        plot->updateTitleVisibility();
     _title->parentPlot()->replot();
 }
 

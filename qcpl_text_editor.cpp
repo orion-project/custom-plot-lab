@@ -332,6 +332,7 @@ void TextEditorWidget::selectColor()
 {
     QColorDialog dlg;
     dlg.setOption(QColorDialog::ShowAlphaChannel, _opts.colorAlphaText);
+    dlg.setOption(QColorDialog::DontUseNativeDialog, true);
     dlg.setCurrentColor(_color);
     if (dlg.exec())
         setColor(dlg.selectedColor());
@@ -341,6 +342,7 @@ void TextEditorWidget::selectBackColor()
 {
     QColorDialog dlg;
     dlg.setOption(QColorDialog::ShowAlphaChannel, _opts.colorAlphaBack);
+    dlg.setOption(QColorDialog::DontUseNativeDialog, true);
     dlg.setCurrentColor(_backColor);
     if (dlg.exec())
         setBackColor(dlg.selectedColor());
