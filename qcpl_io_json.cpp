@@ -201,22 +201,14 @@ QJsonObject writeAxis(QCPAxis *axis)
 
 void readPlot(const QJsonObject& root, Plot *plot, JsonReport *report)
 {
-    {
-        auto err = readLegend(root[KEY_LEGEND].toObject(), plot->legend);
-        if (report and !err.ok()) report->append(err);
-    }
-    {
-        auto err = readTitle(root[KEY_TITLE].toObject(), plot->title());
-        if (report and !err.ok()) report->append(err);
-    }
-    {
-        auto err = readAxis(root[KEY_AXIS_X].toObject(), plot->xAxis);
-        if (report and !err.ok()) report->append(err);
-    }
-    {
-        auto err = readAxis(root[KEY_AXIS_Y].toObject(), plot->yAxis);
-        if (report and !err.ok()) report->append(err);
-    }
+    if (auto err = readLegend(root[KEY_LEGEND].toObject(), plot->legend); !err.ok() and report)
+        report->append(err);
+    if (auto err = readTitle(root[KEY_TITLE].toObject(), plot->title()); !err.ok() and report)
+        report->append(err);
+    if (auto err = readAxis(root[KEY_AXIS_X].toObject(), plot->xAxis); !err.ok() and report)
+        report->append(err);
+    if (auto err = readAxis(root[KEY_AXIS_Y].toObject(), plot->yAxis); !err.ok() and report)
+        report->append(err);
     plot->updateTitleVisibility();
 }
 
@@ -346,22 +338,14 @@ void FormatStorageIni::load(Plot *plot, JsonReport* report)
     s.beginGroup(SECTION_INI);
     // Non existent settings keys can be safely read too, they result in empty json objects
     // and read functons should skip empty objects without substituting default values for every prop.
-    {
-        auto err = readLegend(varToJson(s.value(KEY_LEGEND)), plot->legend);
-        if (report and !err.ok()) report->append(err);
-    }
-    {
-        auto err = readTitle(varToJson(s.value(KEY_TITLE)), plot->title());
-        if (report and !err.ok()) report->append(err);
-    }
-    {
-        auto err = readAxis(varToJson(s.value(KEY_AXIS_X)), plot->xAxis);
-        if (report and !err.ok()) report->append(err);
-    }
-    {
-        auto err = readAxis(varToJson(s.value(KEY_AXIS_Y)), plot->yAxis);
-        if (report and !err.ok()) report->append(err);
-    }
+    if (auto err = readLegend(varToJson(s.value(KEY_LEGEND)), plot->legend); !err.ok() and report)
+        report->append(err);
+    if (auto err = readTitle(varToJson(s.value(KEY_TITLE)), plot->title()); !err.ok() and report)
+            report->append(err);
+    if (auto err = readAxis(varToJson(s.value(KEY_AXIS_X)), plot->xAxis); !err.ok() and report)
+        report->append(err);
+    if (auto err = readAxis(varToJson(s.value(KEY_AXIS_Y)), plot->yAxis); !err.ok() and report)
+        report->append(err);
     plot->updateTitleVisibility();
 }
 
@@ -482,26 +466,14 @@ QString pastePlotFormat(Plot* plot)
     bool oldAxisVisibleX = plot->xAxis->visible();
     bool oldAxisVisibleY = plot->yAxis->visible();
     QStringList report;
-    {
-        auto err = readLegend(root[KEY_LEGEND].toObject(), plot->legend);
-        if (err.code == JsonError::BadVersion)
-            report << err.message;
-    }
-    {
-        auto err = readTitle(root[KEY_TITLE].toObject(), plot->title());
-        if (err.code == JsonError::BadVersion)
-            report << err.message;
-    }
-    {
-        auto err = readAxis(root[KEY_AXIS_X].toObject(), plot->xAxis);
-        if (err.code == JsonError::BadVersion)
-            report << err.message;
-    }
-    {
-        auto err = readAxis(root[KEY_AXIS_Y].toObject(), plot->yAxis);
-        if (err.code == JsonError::BadVersion)
-            report << err.message;
-    }
+    if (auto err = readLegend(root[KEY_LEGEND].toObject(), plot->legend); err.code == JsonError::BadVersion)
+        report << err.message;
+    if (auto err = readTitle(root[KEY_TITLE].toObject(), plot->title()); err.code == JsonError::BadVersion)
+        report << err.message;
+    if (auto err = readAxis(root[KEY_AXIS_X].toObject(), plot->xAxis); err.code == JsonError::BadVersion)
+        report << err.message;
+    if (auto err = readAxis(root[KEY_AXIS_Y].toObject(), plot->yAxis); err.code == JsonError::BadVersion)
+        report << err.message;
     plot->legend->setVisible(oldLegendVisible);
     plot->title()->setVisible(oldTitleVisible);
     plot->xAxis->setVisible(oldAxisVisibleX);
