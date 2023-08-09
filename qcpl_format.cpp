@@ -90,7 +90,6 @@ bool genericTextDlg(const TProps& props,
     return false;
 }
 
-
 bool axisTextDlg(QCPAxis* axis, const AxisFormatDlgProps& props)
 {
     if (genericTextDlg(props,
@@ -163,7 +162,20 @@ bool genericFormatDlg(TEditor *editor, const TProps& props)
 
 bool axisFormatDlg(QCPAxis* axis, const AxisFormatDlgProps& props)
 {
-    return genericFormatDlg(new AxisFormatWidget(axis, props), props);
+    AxisFormatWidget::Props widgetProps;
+    widgetProps.defaultText = props.defaultText;
+    widgetProps.formatter = props.formatter;
+    return genericFormatDlg(new AxisFormatWidget(axis, widgetProps), props);
+}
+
+bool colorScaleFormatDlg(QCPColorScale* scale, const AxisFormatDlgProps& props)
+{
+    AxisFormatWidget::Props widgetProps;
+    widgetProps.defaultText = props.defaultText;
+    widgetProps.formatter = props.formatter;
+    widgetProps.hasSaveDefault = bool(props.onSaveDefault);
+    widgetProps.colorScale = scale;
+    return genericFormatDlg(new AxisFormatWidget(scale->axis(), widgetProps), props);
 }
 
 bool titleFormatDlg(QCPTextElement* title, const TitleFormatDlgProps& props)

@@ -16,10 +16,22 @@
 #define KEY_AXIS "axis"
 #define KEY_AXIS_X "axis_x"
 #define KEY_AXIS_Y "axis_y"
+#define KEY_COLOR_SCALE "color_scale"
 
 namespace QCPL {
 
 namespace {
+
+QJsonValue colorToJson(const QColor& color)
+{
+    return color.name();
+}
+
+QColor jsonToColor(const QJsonValue& val, const QColor& def)
+{
+    QColor color(val.toString());
+    return color.isValid() ? color : def;
+}
 
 QJsonObject writeFont(const QFont& font)
 {
@@ -101,15 +113,46 @@ QPen readPen(const QJsonObject& obj, const QPen& def)
     return p;
 }
 
-QJsonValue colorToJson(const QColor& color)
+QJsonObject writeGradient(const QCPColorGradient& grad)
 {
-    return color.name();
+    auto obj = QJsonObject({
+        { "level_count", grad.levelCount() },
+        { "color_interpolation", int(grad.colorInterpolation()) },
+        { "nan_handling", int(grad.nanHandling()) },
+        { "nan_color", colorToJson(grad.nanColor()) },
+        { "periodic", grad.periodic() },
+    });
+    QJsonArray jsonStops;
+    auto stops = grad.colorStops();
+    for (auto it = stops.constBegin(); it != stops.constEnd(); it++)
+    {
+        jsonStops.append(QJsonObject({
+            { "stop", it.key() },
+            { "color", colorToJson(it.value()) },
+        }));
+    }
+    obj["color_stops"] = jsonStops;
+    return obj;
 }
 
-QColor jsonToColor(const QJsonValue& val, const QColor& def)
+QCPColorGradient readGradient(const QJsonObject& obj, const QCPColorGradient& def)
 {
-    QColor color(val.toString());
-    return color.isValid() ? color : def;
+    QCPColorGradient grad;
+    grad.setLevelCount(obj["level_count"].toInt(def.levelCount()));
+    grad.setColorInterpolation(QCPColorGradient::ColorInterpolation(obj["color_interpolation"].toInt(int(def.colorInterpolation()))));
+    grad.setNanHandling(QCPColorGradient::NanHandling(obj["nan_handling"].toInt(int(def.nanHandling()))));
+    grad.setNanColor(jsonToColor(obj["nan_color"], def.nanColor()));
+    grad.setPeriodic(obj["periodic"].toBool(def.periodic()));
+    grad.clearColorStops();
+    QJsonArray jsonStops = obj["color_stops"].toArray();
+    for (auto it = jsonStops.constBegin(); it != jsonStops.constEnd(); it++)
+    {
+        auto jsonStop = (*it).toObject();
+        QColor color(jsonStop["color"].toString());
+        if (color.isValid())
+            grad.setColorStopAt(jsonStop["stop"].toDouble(), color);
+    }
+    return grad;
 }
 
 } // namespace
@@ -193,6 +236,15 @@ QJsonObject writeAxis(QCPAxis *axis)
         { "subgrid_visible", grid->subGridVisible() },
         { "subgrid_pen", writePen(grid->subGridPen()) },
     });
+    return obj;
+}
+
+QJsonObject writeColorScale(QCPColorScale *scale)
+{
+    auto obj = writeAxis(scale->axis());
+    obj["color_bar_width"] = scale->barWidth();
+    obj["color_bar_gradient"] = writeGradient(scale->gradient());
+    obj["color_bar_margins"] = writeMargins(scale->margins());
     return obj;
 }
 
@@ -298,6 +350,17 @@ JsonError readAxis(const QJsonObject &obj, QCPAxis* axis)
     return {};
 }
 
+JsonError readColorScale(const QJsonObject &obj, QCPColorScale *scale)
+{
+    auto err = readAxis(obj, scale->axis());
+    if (!err.ok())
+        return err;
+    scale->setBarWidth(obj["color_bar_width"].toInt(scale->barWidth()));
+    scale->setGradient(readGradient(obj["color_bar_gradient"].toObject(), scale->gradient()));
+    scale->setMargins(readMargins(obj["color_bar_margins"].toObject(), scale->margins()));
+    return {};
+}
+
 //------------------------------------------------------------------------------
 //                          QCPL::FormatStorageIni
 //------------------------------------------------------------------------------
@@ -365,6 +428,11 @@ void FormatStorageIni::saveAxis(QCPAxis* axis)
     QString key = (axis == plot->xAxis) ? KEY_AXIS_X :
                       ((axis == plot->yAxis) ? KEY_AXIS_Y : KEY_AXIS);
     savePlotFormatIni(key, writeAxis(axis));
+}
+
+void FormatStorageIni::saveColorScale(QCPColorScale* scale)
+{
+    savePlotFormatIni(KEY_COLOR_SCALE, writeColorScale(scale));
 }
 
 //------------------------------------------------------------------------------
@@ -451,6 +519,11 @@ void copyAxisFormat(QCPAxis* axis)
     setClipboardData(writeAxis(axis), KEY_AXIS);
 }
 
+void copyColorScaleFormat(QCPColorScale* scale)
+{
+    setClipboardData(writeColorScale(scale), KEY_COLOR_SCALE);
+}
+
 QString pastePlotFormat(Plot* plot)
 {
     auto res = getClipboradData("plot");
@@ -486,9 +559,6 @@ QString pasteLegendFormat(QCPLegend* legend)
     auto res = getClipboradData(KEY_LEGEND);
     if (!res.ok()) return res.error();
 
-    // This is mostly for context menu commands and hence should be invoked on visible elements.
-    // It's not expected that element gets hidden when its format pasted, so the function doesn't
-    // change visibility
     bool oldVisible = legend->visible();
 
     auto err = readLegend(res.result(), legend);
@@ -504,9 +574,6 @@ QString pasteTitleFormat(QCPTextElement* title)
     auto res = getClipboradData(KEY_TITLE);
     if (!res.ok()) return res.error();
 
-    // This is mostly for context menu commands and hence should be invoked on visible elements.
-    // It's not expected that element gets hidden when its format pasted, so the function doesn't
-    // change visibility and there is not need to call `Plot::updateTitleVisibility()` after.
     bool oldVisible = title->visible();
 
     auto err = readTitle(res.result(), title);
@@ -522,9 +589,6 @@ QString pasteAxisFormat(QCPAxis* axis)
     auto res = getClipboradData(KEY_AXIS);
     if (!res.ok()) return res.error();
 
-    // This is mostly for context menu commands and hence should be invoked on visible elements.
-    // It's not expected that element gets hidden when its format pasted, so the function doesn't
-    // change visibility
     bool oldVisible = axis->visible();
 
     auto err = readAxis(res.result(), axis);
@@ -532,6 +596,21 @@ QString pasteAxisFormat(QCPAxis* axis)
         return err.message;
 
     axis->setVisible(oldVisible);
+    return {};
+}
+
+QString pasteColorScaleFormat(QCPColorScale* scale)
+{
+    auto res = getClipboradData(KEY_COLOR_SCALE);
+    if (!res.ok()) return res.error();
+
+    bool oldVisible = scale->visible();
+
+    auto err = readColorScale(res.result(), scale);
+    if (err.code == JsonError::BadVersion)
+        return err.message;
+
+    scale->setVisible(oldVisible);
     return {};
 }
 

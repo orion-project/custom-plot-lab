@@ -8,6 +8,7 @@
 
 class QCustomPlot;
 class QCPAxis;
+class QCPColorScale;
 class QCPGraph;
 class QCPLegend;
 class QCPRange;
@@ -41,6 +42,7 @@ struct AxisFormatDlgProps
 
 bool axisTextDlg(QCPAxis* axis, const AxisFormatDlgProps& props);
 bool axisFormatDlg(QCPAxis* axis, const AxisFormatDlgProps& props);
+bool colorScaleFormatDlg(QCPColorScale* scale, const AxisFormatDlgProps& props);
 
 //---------------------------------------------------------------------
 

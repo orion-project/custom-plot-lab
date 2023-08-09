@@ -19,14 +19,18 @@ protected:
 private:
     QCPL::Plot *_plot;
     QString recentFormatFile;
+    QCPColorScale *_colorScale = nullptr;
+    int _colorMapsCount = 0;
 
-    void addRandomSample();
+    void addRandomSampleLine();
+    void addRandomSampleColormap();
     void savePlotFormat();
     void loadPlotFormat();
     void loadDefaultFormat();
     void pasteLegendFormat();
     void pasteTitleFormat();
     void pasteAxisFormat(QCPAxis *axis);
+    void createColorScale();
 };
 
 #endif // PLOT_WINDOW_H

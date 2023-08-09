@@ -43,6 +43,13 @@ public:
     QMenu *menuPlot = nullptr;
     QMenu *menuLegend = nullptr;
     QMenu *menuTitle = nullptr;
+    QMap<QCPLayerable*, QMenu*> menus;
+
+    /// Display axis identifiers used for automatcally shown dialogs.
+    /// E.g. plot shows limits dialog when an axis is double clicked,
+    /// and the dialog should have some title. It tries to take a title from this map first
+    /// and substitutes some default title if nothing has been found. @see getAxisIdent()
+    QMap<QCPAxis*, QString> axisIdents;
 
     /// The callback used to get axis units for showing in the axis limits dialog.
     std::function<QString(QCPAxis*)> getAxisUnitString;
@@ -73,7 +80,8 @@ public:
     void setLimitsY(double min, double max, bool replot = true) { setLimits(yAxis, min, max, replot); }
     void setLimits(QCPAxis* axis, const AxisLimits& p, bool replot) { setLimits(axis, p.min, p.max, replot); }
     void setLimits(QCPAxis* axis, double min, double max, bool replot);
-    void extendLimits(double factor, bool replot = true);
+    void extendLimits(QCPAxis* axis, double factor, bool replot);
+    void extendLimits(double factor, bool replot = true) { extendLimits(xAxis, factor, false); extendLimits(yAxis, factor, replot); }
     void extendLimitsX(double factor, bool replot = true) { extendLimits(xAxis, factor, replot); }
     void extendLimitsY(double factor, bool replot = true) { extendLimits(yAxis, factor, replot); }
 
@@ -118,6 +126,12 @@ public:
     void setDefaultTextT(const QString& text) { setDefaultText(_title, text); }
     void setDefaultTextX(const QString& text) { setDefaultText(xAxis, text); }
     void setDefaultTextY(const QString& text) { setDefaultText(yAxis, text); }
+
+    bool limitsDlg(QCPAxis* axis);
+    bool axisTextDlg(QCPAxis* axis);
+    bool axisFormatDlg(QCPAxis* axis);
+    bool colorScaleFormatDlg(QCPColorScale* axis);
+    void autolimits(QCPAxis* axis, bool replot);
 
 public slots:
     void autolimits(bool replot = true) { autolimits(xAxis, false); autolimits(yAxis, replot); }
@@ -177,11 +191,6 @@ private:
 
     QColor nextGraphColor();
 
-    bool limitsDlg(QCPAxis* axis);
-    bool axisTextDlg(QCPAxis* axis);
-    bool axisFormatDlg(QCPAxis* axis);
-    void autolimits(QCPAxis* axis, bool replot);
-    void extendLimits(QCPAxis* axis, double factor, bool replot);
     void setAxisRange(QCPAxis* axis, const QCPRange &range);
     double safeMargins(QCPAxis* axis);
     QString getAxisIdent(QCPAxis* axis) const;

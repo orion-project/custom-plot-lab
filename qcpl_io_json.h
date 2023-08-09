@@ -4,6 +4,7 @@
 #include <QString>
 
 class QCPAxis;
+class QCPColorScale;
 class QCPLegend;
 class QCPTextElement;
 
@@ -29,11 +30,13 @@ QJsonObject writePlot(Plot *plot);
 QJsonObject writeLegend(QCPLegend* legend);
 QJsonObject writeTitle(QCPTextElement* title);
 QJsonObject writeAxis(QCPAxis *axis);
+QJsonObject writeColorScale(QCPColorScale *scale);
 
 void readPlot(const QJsonObject& root, Plot *plot, JsonReport* report);
 JsonError readLegend(const QJsonObject &obj, QCPLegend* legend);
 JsonError readTitle(const QJsonObject &obj, QCPTextElement* title);
 JsonError readAxis(const QJsonObject &obj, QCPAxis* axis);
+JsonError readColorScale(const QJsonObject &obj, QCPColorScale *scale);
 
 /**
     Allows a plot to store default view format of its elements.
@@ -47,6 +50,7 @@ public:
     virtual void saveLegend(QCPLegend* legend) = 0;
     virtual void saveTitle(QCPTextElement* title) = 0;
     virtual void saveAxis(QCPAxis* axis) = 0;
+    virtual void saveColorScale(QCPColorScale* scale) = 0;
 };
 
 /**
@@ -62,6 +66,7 @@ public:
     void saveLegend(QCPLegend* legend) override;
     void saveTitle(QCPTextElement* title) override;
     void saveAxis(QCPAxis* axis) override;
+    void saveColorScale(QCPColorScale* scale) override;
 };
 
 /**
@@ -84,10 +89,16 @@ void copyPlotFormat(Plot* plot);
 void copyLegendFormat(QCPLegend* legend);
 void copyTitleFormat(QCPTextElement* title);
 void copyAxisFormat(QCPAxis* axis);
+void copyColorScaleFormat(QCPColorScale* scale);
+
+// These commands are for context menus and hence should be invoked on visible elements.
+// It's not expected that element gets hidden when its format pasted
+// so the functions don't change visibility
 QString pastePlotFormat(Plot* plot);
 QString pasteLegendFormat(QCPLegend* legend);
 QString pasteTitleFormat(QCPTextElement* title);
 QString pasteAxisFormat(QCPAxis* axis);
+QString pasteColorScaleFormat(QCPColorScale* scale);
 
 } // namespace QCPL
 

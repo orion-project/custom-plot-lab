@@ -8,6 +8,7 @@
 
 #include "helpers/OriLayouts.h"
 #include "widgets/OriOptionsGroup.h"
+#include "widgets/OriSelectableTile.h"
 
 #include <QCheckBox>
 #include <QDebug>
@@ -22,9 +23,87 @@ static int __tabIndex = 0;
 
 namespace QCPL {
 
-AxisFormatWidget::AxisFormatWidget(QCPAxis* axis, const AxisFormatDlgProps& props) : QWidget(), _axis(axis)
+//------------------------------------------------------------------------------
+//                               AxisFormatWidget
+//------------------------------------------------------------------------------
+
+class SelectableTileContentGradient : public Ori::Widgets::SelectableTileContent
 {
-    _backup = writeAxis(axis);
+public:
+    SelectableTileContentGradient(QCPAxis::AxisType axisType, QCPColorGradient::GradientPreset gradient)
+        : _axisType(axisType), _gradient(QCPColorGradient(gradient))
+    {
+        setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    }
+
+protected:
+    void paintEvent(QPaintEvent*) override
+    {
+        QPainter p(this);
+        p.drawImage(0, 0, _image);
+    }
+
+    void resizeEvent(QResizeEvent *event) override
+    {
+        if (_image.size() != event->size())
+            updateGradientImage();
+    }
+
+private:
+    QCPAxis::AxisType _axisType;
+    QCPColorGradient _gradient;
+    QImage _image;
+
+    // The same code as in QCPColorScaleAxisRectPrivate::updateGradientImage()
+    void updateGradientImage()
+    {
+        if (rect().isEmpty())
+            return;
+        const QImage::Format format = QImage::Format_ARGB32_Premultiplied;
+        int n = _gradient.levelCount();
+        int w, h;
+        QVector<double> data(n);
+        for (int i = 0; i < n; i++)
+            data[i] = i;
+        if (_axisType == QCPAxis::atBottom || _axisType == QCPAxis::atTop)
+        {
+            w = n;
+            h = rect().height();
+            _image = QImage(w, h, format);
+            QVector<QRgb*> pixels;
+            for (int y = 0; y < h; y++)
+                pixels.append(reinterpret_cast<QRgb*>(_image.scanLine(y)));
+            _gradient.colorize(data.constData(), QCPRange(0, n-1), pixels.first(), n);
+            for (int y = 1; y < h; y++)
+                memcpy(pixels.at(y), pixels.first(), size_t(n)*sizeof(QRgb));
+        }
+        else
+        {
+            w = rect().width();
+            h = n;
+            _image = QImage(w, h, format);
+            for (int y = 0; y < h; y++)
+            {
+                QRgb *pixels = reinterpret_cast<QRgb*>(_image.scanLine(y));
+                const QRgb lineColor = _gradient.color(data[h-1-y], QCPRange(0, n-1));
+                for (int x = 0; x < w; x++)
+                    pixels[x] = lineColor;
+            }
+        }
+    }
+};
+
+//------------------------------------------------------------------------------
+//                               AxisFormatWidget
+//------------------------------------------------------------------------------
+
+AxisFormatWidget::AxisFormatWidget(QCPAxis* axis, const Props &props) :
+    QWidget(), _axis(axis), _scale(props.colorScale)
+{
+    if (_scale)
+        _backup = writeColorScale(_scale);
+    else
+        _backup = writeAxis(_axis);
     _backup["text"] = axis->label();
 
     auto p = sizePolicy();
@@ -32,6 +111,12 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis, const AxisFormatDlgProps& prop
     setSizePolicy(p);
 
     auto hintColor = palette().mid().color().name(QColor::HexRgb);
+
+    auto layoutPages = new QStackedLayout;
+
+    _tabs = new QTabBar;
+    _tabs->setShape(QTabBar::TriangularNorth);
+    connect(_tabs, &QTabBar::currentChanged, layoutPages, &QStackedLayout::setCurrentIndex);
 
     //-------------------------------------------------------
     //                    Tab "Axis"
@@ -61,8 +146,6 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis, const AxisFormatDlgProps& prop
     _logarithmic = new QCheckBox(tr("Logarithmic"));
     _reversed = new QCheckBox(tr("Reversed"));
 
-    auto layoutPages = new QStackedLayout;
-
     layoutPages->addWidget(LayoutV({
         LayoutV({ _titleEditor }).makeGroupBox(tr("Title")),
         LayoutH({
@@ -70,6 +153,7 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis, const AxisFormatDlgProps& prop
             LayoutV({ _logarithmic, _reversed }).makeGroupBox(tr("Scale")),
         })
     }).makeWidget());
+    _tabs->addTab("Axis");
 
     //-------------------------------------------------------
     //                   Tab "Labels"
@@ -138,6 +222,7 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis, const AxisFormatDlgProps& prop
         _labelsEditor,
         Stretch(),
     }).makeWidget());
+    _tabs->addTab("Labels");
 
     //-------------------------------------------------------
     //                   Tab "Lines"
@@ -192,17 +277,66 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis, const AxisFormatDlgProps& prop
             _groupSubTicks,
         }).setDefSpacing(2),
     }).setDefSpacing(2).makeWidget());
-
-    _tabs = new QTabBar;
-    _tabs->addTab("Axis");
-    _tabs->addTab("Labels");
     _tabs->addTab("Lines");
-    _tabs->setShape(QTabBar::TriangularNorth);
-    connect(_tabs, &QTabBar::currentChanged, layoutPages, &QStackedLayout::setCurrentIndex);
+
+    //-------------------------------------------------------
+    //                   Tab "Gradient"
+
+    QVector<QCPColorGradient::GradientPreset> gradientTypes;
+
+    if (_scale)
+    {
+        MarginsEditorWidget::Options marginOpts;
+        marginOpts.layoutInLine = true;
+        _colorScaleMargins = new MarginsEditorWidget(tr("Margins"), marginOpts);
+
+        auto axisType = _axis->axisType();
+        _gradientGroup = new Ori::Widgets::SelectableTileRadioGroup(this);
+        QBoxLayout *gradientLayout;
+        if (axisType == QCPAxis::atBottom || axisType == QCPAxis::atTop)
+            gradientLayout = new QVBoxLayout;
+        else gradientLayout = new QHBoxLayout;
+        gradientTypes = {
+            QCPColorGradient::gpGrayscale,
+            QCPColorGradient::gpHot,
+            QCPColorGradient::gpCold,
+            QCPColorGradient::gpNight,
+            QCPColorGradient::gpCandy,
+            QCPColorGradient::gpGeography,
+            QCPColorGradient::gpIon,
+            QCPColorGradient::gpThermal,
+            QCPColorGradient::gpPolar,
+            QCPColorGradient::gpSpectrum,
+            QCPColorGradient::gpJet,
+            QCPColorGradient::gpHues,
+        };
+        for (auto preset : gradientTypes)
+        {
+            auto tile = new Ori::Widgets::SelectableTile(new SelectableTileContentGradient(axisType, preset));
+            tile->setData(int(preset));
+            _gradientGroup->addTile(tile);
+            gradientLayout->addWidget(tile);
+        }
+
+        _colorScaleWidth = makeSpinBox(10, 100);
+
+        // TODO: the layout is not adjusted for horizonatl gradients
+        layoutPages->addWidget(LayoutV({
+            LayoutH({
+                _colorScaleMargins,
+                LayoutH({ new QLabel("Bar width:"), _colorScaleWidth }).makeGroupBox(tr("Size")),
+            }),
+            SpaceV(3),
+            gradientLayout,
+        }).setDefSpacing(2).makeWidget());
+        _tabs->addTab("Gradient");
+    }
+
+    //-------------------------------------------------------
 
     _visible = new QCheckBox("Visible");
     _saveDefault = new QCheckBox("Save as default");
-    _saveDefault->setVisible(bool(props.onSaveDefault));
+    _saveDefault->setVisible(props.hasSaveDefault);
 
     auto header = makeDialogHeader();
     LayoutH({
@@ -220,7 +354,10 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis, const AxisFormatDlgProps& prop
 
     //-------------------------------------------------------
 
-    _visible->setChecked(axis->visible());
+    if (_scale)
+        _visible->setChecked(_scale->visible());
+    else
+        _visible->setChecked(axis->visible());
     if (props.formatter)
         _titleEditor->setText(props.formatter->text());
     else
@@ -283,6 +420,18 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis, const AxisFormatDlgProps& prop
     _zeroPen->setValue(grid->zeroLinePen());
     _groupSubGrid->setChecked(grid->subGridVisible());
     _subGridPen->setValue(grid->subGridPen());
+    if (_scale)
+    {
+        _colorScaleMargins->setValue(_scale->margins());
+        // We don't support arbitrary gradients, only selection from presets
+        auto gradient = _scale->gradient();
+        for (auto preset : gradientTypes)
+            if (gradient == QCPColorGradient(preset)) {
+                _gradientGroup->selectData(int(preset));
+                break;
+            }
+        _colorScaleWidth->setValue(_scale->barWidth());
+    }
 
     _tabs->setCurrentIndex(__tabIndex);
     layoutPages->setCurrentIndex(__tabIndex);
@@ -295,7 +444,10 @@ AxisFormatWidget::~AxisFormatWidget()
 
 void AxisFormatWidget::restore()
 {
-    readAxis(_backup, _axis);
+    if (_scale)
+        readColorScale(_backup, _scale);
+    else
+        readAxis(_backup, _axis);
     _axis->setLabel(_backup["text"].toString());
     if (_formatter)
         _formatter->setText(_backup["formatter_text"].toString());
@@ -304,7 +456,10 @@ void AxisFormatWidget::restore()
 
 void AxisFormatWidget::apply()
 {
-    _axis->setVisible(_visible->isChecked());
+    if (_scale)
+        _scale->setVisible(_visible->isChecked());
+    else
+        _axis->setVisible(_visible->isChecked());
     if (_formatter)
     {
         _formatter->setText(_titleEditor->text());
@@ -358,6 +513,14 @@ void AxisFormatWidget::apply()
     grid->setZeroLinePen(_zeroPen->value());
     grid->setSubGridVisible(_groupSubGrid->isChecked());
     grid->setSubGridPen(_subGridPen->value());
+    if (_scale)
+    {
+        _scale->setMargins(_colorScaleMargins->value());
+        auto selectedGradient = _gradientGroup->selectedData();
+        if (!selectedGradient.isNull() and selectedGradient.isValid())
+            _scale->setGradient(QCPColorGradient::GradientPreset(selectedGradient.toInt()));
+        _scale->setBarWidth(_colorScaleWidth->value());
+    }
 
     _axis->parentPlot()->replot();
 }

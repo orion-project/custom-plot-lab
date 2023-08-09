@@ -166,22 +166,28 @@ void Plot::wheelEvent(QWheelEvent *event)
 
 void Plot::contextMenuEvent(QContextMenuEvent *event)
 {
-    QMenu* menu = nullptr;
     QPointF pos(event->x(), event->y());
-    if (_title->selectTest(pos, true) >= 0)
-        menu = menuTitle;
-    if (legend->selectTest(pos, true) >= 0)
-        menu = menuLegend;
-    else if (xAxis->getPartAt(pos) != QCPAxis::spNone)
-        menu = menuAxisX;
-    else if (yAxis->getPartAt(pos) != QCPAxis::spNone)
-        menu = menuAxisY;
-    else if (menuGraph) {
+    QMenu* menu = nullptr;
+    if (menuTitle && _title->selectTest(pos, false) >= 0) menu = menuTitle;
+    else if (menuLegend && legend->selectTest(pos, false) >= 0) menu = menuLegend;
+    else if (menuAxisX && xAxis->selectTest(pos, false) >= 0) menu = menuAxisX;
+    else if (menuAxisY && yAxis->selectTest(pos, false) >= 0) menu = menuAxisY;
+    if (!menu && menuGraph) {
         foreach (auto g, selectedGraphs())
             if (!isService(g)) {
                 menu = menuGraph;
                 break;
             }
+    }
+    if (!menu) {
+        auto it = menus.constBegin();
+        while (it != menus.constEnd()) {
+            if (it.key()->selectTest(pos, false) > 0) {
+                menu = it.value();
+                break;
+            }
+            it++;
+        }
     }
     if (!menu) menu = menuPlot;
     if (menu) menu->popup(event->globalPos());
@@ -256,12 +262,6 @@ void Plot::autolimits(QCPAxis* axis, bool replot)
         extendLimits(axis, safeMargins(axis), false);
 
     if (replot) this->replot();
-}
-
-void Plot::extendLimits(double factor, bool replot)
-{
-    extendLimits(xAxis, factor, false);
-    extendLimits(yAxis, factor, replot);
 }
 
 void Plot::extendLimits(QCPAxis* axis, double factor, bool replot)
@@ -362,6 +362,22 @@ bool Plot::axisFormatDlg(QCPAxis* axis)
     return false;
 }
 
+bool Plot::colorScaleFormatDlg(QCPColorScale* scale)
+{
+    AxisFormatDlgProps props;
+    props.title = tr("%1 Format").arg(getAxisIdent(scale->axis()));
+    props.formatter = formatter(scale->axis());
+    props.defaultText = defaultText(scale->axis());
+    if (formatSaver)
+        props.onSaveDefault = [this, scale](){ formatSaver->saveColorScale(scale); };
+    if (QCPL::colorScaleFormatDlg(scale, props))
+    {
+        emit modified("Plot::colorScaleFormatDlg");
+        return true;
+    }
+    return false;
+}
+
 bool Plot::titleTextDlg()
 {
     TitleFormatDlgProps props;
@@ -406,14 +422,33 @@ bool Plot::legendFormatDlg()
     return false;
 }
 
+static QCPAxis* getOppositeAxis(QCPAxis* axis)
+{
+    auto rect = axis->axisRect();
+    auto type = axis->axisType();
+    if (type == QCPAxis::atLeft)
+        return rect->axis(QCPAxis::atRight);
+    if (type == QCPAxis::atRight)
+        return rect->axis(QCPAxis::atLeft);
+    if (type == QCPAxis::atTop)
+        return rect->axis(QCPAxis::atBottom);
+    return rect->axis(QCPAxis::atTop);
+}
+
 QString Plot::getAxisIdent(QCPAxis* axis) const
 {
-   if (axis == xAxis)
-       return tr("X-axis");
-   if (axis == yAxis)
-       return tr("Y-axis");
-   auto label = axis->label();
-   return label.isEmpty() ? tr("Axis") : label;
+    if (axisIdents.contains(axis))
+        return axisIdents[axis];
+    auto axis2 = getOppositeAxis(axis);
+    if (axisIdents.contains(axis2))
+        return axisIdents[axis2];
+    if (axis == xAxis || axis == xAxis2)
+        return tr("X-axis");
+    if (axis == yAxis || axis == yAxis2)
+        return tr("Y-axis");
+    if (!axis->label().isEmpty())
+        return axis->label();
+    return tr("Axis");
 }
 
 bool Plot::isFrameVisible() const

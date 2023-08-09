@@ -18,7 +18,8 @@ PlotWindow::PlotWindow(QWidget *parent) : QMainWindow(parent)
     setCentralWidget(_plot);
 
     auto m = menuBar()->addMenu("Data");
-    m->addAction("Add random graph", this, &PlotWindow::addRandomSample);
+    m->addAction("Add random line graph", this, &PlotWindow::addRandomSampleLine);
+    m->addAction("Add random coormap graph", this, &PlotWindow::addRandomSampleColormap);
     m->addAction("Save plot format...", this, &PlotWindow::savePlotFormat);
     m->addAction("Load plot format...", this, &PlotWindow::loadPlotFormat);
     m->addAction("Load default plot format", this, &PlotWindow::loadDefaultFormat);
@@ -93,7 +94,7 @@ PlotWindow::PlotWindow(QWidget *parent) : QMainWindow(parent)
     _plot->menuAxisY->addAction("Copy format", this, [this](){ QCPL::copyAxisFormat(_plot->yAxis); });
     _plot->menuAxisY->addAction("Paste format", this, [this](){ pasteAxisFormat(_plot->yAxis); });
 
-    addRandomSample();
+    addRandomSampleLine();
     _plot->autolimits();
 
     resize(800, 600);
@@ -108,9 +109,71 @@ PlotWindow::~PlotWindow()
     s.setValue("recentFormatFile", recentFormatFile);
 }
 
-void PlotWindow::addRandomSample()
+void PlotWindow::addRandomSampleLine()
 {
     _plot->makeNewGraph(OriPetname::make(), QCPL::makeRandomSample());
+}
+
+void PlotWindow::createColorScale()
+{
+    _colorScale = new QCPColorScale(_plot);
+    auto colorAxis = _colorScale->axis();
+    auto plotArea = _plot->axisRectRC();
+    _plot->plotLayout()->addElement(plotArea.row, plotArea.col + 1, _colorScale);
+
+    // Register variables for color axis, not for the color scale itself.
+    // This allows to use built-in axisTextDlg() function
+    // colorScaleFormatDlg() also searches vars for scale->axis(), not for the scale itself
+    auto getWndW = [this]{ return QString::number(width()); };
+    auto getWndH = [this]{ return QString::number(height()); };
+    _plot->addTextVar(colorAxis, "{force_var}", "Text var 2", []{ return "May the Force be with you"; });
+    _plot->addTextVar(colorAxis, "{unit_1}", "Unit of measurement 1", []{ return "mm"; });
+    _plot->addTextVar(colorAxis, "{unit_2}", "Unit of measurement 2", []{ return "kg"; });
+    _plot->addTextVar(colorAxis, "{wndW}", "Main window width", getWndW);
+    _plot->addTextVar(colorAxis, "{wndH}", "Main window height", getWndH);
+
+    auto menu = new QMenu(this);
+    menu->addAction("Format...", _plot, [this]{ _plot->colorScaleFormatDlg(_colorScale); });
+    menu->addAction("Text...", _plot, [this, colorAxis]{ _plot->axisTextDlg(colorAxis); });
+    menu->addAction("Copy format", this, [this](){ QCPL::copyColorScaleFormat(_colorScale); });
+    menu->addAction("Paste format", this, [this](){
+        auto err = QCPL::pasteColorScaleFormat(_colorScale);
+        if (err.isEmpty())
+        {
+            qDebug() << "Color scale format pasted";
+            _plot->replot();
+        }
+        else Ori::Dlg::error(err);
+    });
+    _plot->menus[_colorScale] = menu;
+    _plot->axisIdents[colorAxis] = "Color Scale";
+}
+
+void PlotWindow::addRandomSampleColormap()
+{
+    if (!_colorScale)
+        createColorScale();
+
+    auto graph = new QCPColorMap(_plot->xAxis, _plot->yAxis);
+    graph->setName(OriPetname::make());
+    graph->setColorScale(_colorScale);
+
+    const int countX = 100;
+    const int countY = 50;
+    double offsetX = _colorMapsCount * countX;
+    double offsetY = _colorMapsCount * countY;
+    _colorMapsCount++;
+
+    auto data = graph->data();
+    data->setSize(countX, countY);
+    data->setRange({ offsetX, offsetX+countX-1.0 }, { offsetY, offsetY+countY-1.0 });
+    for (int y = 0; y < countY; y++)
+    {
+        auto line = QCPL::makeRandomSample(countX);
+        for (int x = 0; x < countX; x++)
+            data->setCell(x, y, line.y[x]);
+    }
+    _plot->replot();
 }
 
 void PlotWindow::resizeEvent(QResizeEvent *event)
