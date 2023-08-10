@@ -51,6 +51,12 @@ public:
     /// and substitutes some default title if nothing has been found. @see getAxisIdent()
     QMap<QCPAxis*, QString> axisIdents;
 
+    /// Map of objects with their store keys
+    /// By default plot consists of axes, title, and legend.
+    /// Additional parts (e.g. color scale of 2D graph) can be mentioned here
+    /// in order not to loose them during copy/pasting or format saving.
+    QHash<QCPLayerable*, QString> additionalParts;
+
     /// The callback used to get axis units for showing in the axis limits dialog.
     std::function<QString(QCPAxis*)> getAxisUnitString;
 

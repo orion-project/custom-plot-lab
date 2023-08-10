@@ -570,7 +570,11 @@ void Plot::updateTitleVisibility()
     // We can't just hide the title, because the layout will still respect it's size.
     // We can't just extract the title from layout because it will be deleted.
     // So we have to move it into another layout instead.
-    if (!_title->visible() or _title->text().isEmpty())
+    QString text;
+    if (auto f = formatter(_title); f)
+        text = f->text();
+    else text = _title->text();
+    if (!_title->visible() or text.isEmpty())
     {
         // it's ok to get element without checking, but a console warning is printed then
         if (_backupLayout->hasElement(0, 0) and _backupLayout->element(0, 0) == _title)

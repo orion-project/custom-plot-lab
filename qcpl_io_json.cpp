@@ -16,7 +16,6 @@
 #define KEY_AXIS "axis"
 #define KEY_AXIS_X "axis_x"
 #define KEY_AXIS_Y "axis_y"
-#define KEY_COLOR_SCALE "color_scale"
 
 namespace QCPL {
 
@@ -162,12 +161,22 @@ QCPColorGradient readGradient(const QJsonObject& obj, const QCPColorGradient& de
 
 QJsonObject writePlot(Plot* plot)
 {
-    return QJsonObject({
+    QJsonObject root({
         { KEY_LEGEND, writeLegend(plot->legend) },
         { KEY_TITLE, writeTitle(plot->title()) },
         { KEY_AXIS_X, writeAxis(plot->xAxis) },
         { KEY_AXIS_Y, writeAxis(plot->yAxis) },
     });
+    for (auto it = plot->additionalParts.constBegin(); it != plot->additionalParts.constEnd(); it++)
+    {
+        if (auto colorScale = qobject_cast<QCPColorScale*>(it.key()); colorScale)
+        {
+            root[it.value()] = writeColorScale(colorScale);
+            continue;
+        }
+        qWarning() << "writePlot: Unknown how lo write object to key" << it.value();
+    }
+    return root;
 }
 
 QJsonObject writeLegend(QCPLegend* legend)
@@ -261,6 +270,16 @@ void readPlot(const QJsonObject& root, Plot *plot, JsonReport *report)
         report->append(err);
     if (auto err = readAxis(root[KEY_AXIS_Y].toObject(), plot->yAxis); !err.ok() and report)
         report->append(err);
+    for (auto it = plot->additionalParts.constBegin(); it != plot->additionalParts.constEnd(); it++)
+    {
+        if (auto colorScale = qobject_cast<QCPColorScale*>(it.key()); colorScale)
+        {
+            if (auto err = readColorScale(root[it.value()].toObject(), colorScale); !err.ok() and report)
+                report->append(err);
+            continue;
+        }
+        qWarning() << "readPlot: Unknown how lo read object from key" << it.value();
+    }
     plot->updateTitleVisibility();
 }
 
@@ -365,6 +384,17 @@ JsonError readColorScale(const QJsonObject &obj, QCPColorScale *scale)
 //                          QCPL::FormatStorageIni
 //------------------------------------------------------------------------------
 
+QString findStorageKey(const char* func, QCPLayerable* obj)
+{
+    auto plot = qobject_cast<Plot*>(obj->parentPlot());
+    if (!plot || !plot->additionalParts.contains(obj))
+    {
+        qWarning() << func << "Object is not registerd in parent plot as storable object";
+        return {};
+    }
+    return plot->additionalParts[obj];
+}
+
 static QJsonObject varToJson(const QVariant& data)
 {
     QString str = data.toString();
@@ -393,6 +423,15 @@ void FormatStorageIni::save(Plot* plot)
     s.setValue(KEY_LEGEND, jsonToVar(writeLegend(plot->legend)));
     s.setValue(KEY_AXIS_X, jsonToVar(writeAxis(plot->xAxis)));
     s.setValue(KEY_AXIS_Y, jsonToVar(writeAxis(plot->yAxis)));
+    for (auto it = plot->additionalParts.constBegin(); it != plot->additionalParts.constEnd(); it++)
+    {
+        if (auto colorScale = qobject_cast<QCPColorScale*>(it.key()); colorScale)
+        {
+            s.setValue(it.value(), jsonToVar(writeColorScale(colorScale)));
+            continue;
+        }
+        qWarning() << "FormatStorageIni::save: Unknown how to save object with key" << it.value();
+    }
 }
 
 void FormatStorageIni::load(Plot *plot, JsonReport* report)
@@ -409,6 +448,16 @@ void FormatStorageIni::load(Plot *plot, JsonReport* report)
         report->append(err);
     if (auto err = readAxis(varToJson(s.value(KEY_AXIS_Y)), plot->yAxis); !err.ok() and report)
         report->append(err);
+    for (auto it = plot->additionalParts.constBegin(); it != plot->additionalParts.constEnd(); it++)
+    {
+        if (auto colorScale = qobject_cast<QCPColorScale*>(it.key()); colorScale)
+        {
+            if (auto err = readColorScale(varToJson(s.value(it.value())), colorScale); !err.ok() and report)
+                report->append(err);
+            continue;
+        }
+        qWarning() << "FormatStorageIni::load: Unknown how to read object from key" << it.value();
+    }
     plot->updateTitleVisibility();
 }
 
@@ -432,7 +481,8 @@ void FormatStorageIni::saveAxis(QCPAxis* axis)
 
 void FormatStorageIni::saveColorScale(QCPColorScale* scale)
 {
-    savePlotFormatIni(KEY_COLOR_SCALE, writeColorScale(scale));
+    if (auto key = findStorageKey("FormatStorageIni::saveColorScale", scale); !key.isEmpty())
+        savePlotFormatIni(key, writeColorScale(scale));
 }
 
 //------------------------------------------------------------------------------
@@ -521,37 +571,36 @@ void copyAxisFormat(QCPAxis* axis)
 
 void copyColorScaleFormat(QCPColorScale* scale)
 {
-    setClipboardData(writeColorScale(scale), KEY_COLOR_SCALE);
+    if (auto key = findStorageKey("copyColorScaleFormat", scale); !key.isEmpty())
+        setClipboardData(writeColorScale(scale), key);
 }
 
 QString pastePlotFormat(Plot* plot)
 {
     auto res = getClipboradData("plot");
     if (!res.ok()) return res.error();
-
     auto root = res.result();
-
     // This is mostly for context menu commands and hence should be invoked on visible elements.
     // It's not expected that element gets hidden when its format pasted, so the function doesn't
     // change visibility
-    bool oldLegendVisible = plot->legend->visible();
-    bool oldTitleVisible = plot->title()->visible();
-    bool oldAxisVisibleX = plot->xAxis->visible();
-    bool oldAxisVisibleY = plot->yAxis->visible();
-    QStringList report;
-    if (auto err = readLegend(root[KEY_LEGEND].toObject(), plot->legend); err.code == JsonError::BadVersion)
-        report << err.message;
-    if (auto err = readTitle(root[KEY_TITLE].toObject(), plot->title()); err.code == JsonError::BadVersion)
-        report << err.message;
-    if (auto err = readAxis(root[KEY_AXIS_X].toObject(), plot->xAxis); err.code == JsonError::BadVersion)
-        report << err.message;
-    if (auto err = readAxis(root[KEY_AXIS_Y].toObject(), plot->yAxis); err.code == JsonError::BadVersion)
-        report << err.message;
-    plot->legend->setVisible(oldLegendVisible);
-    plot->title()->setVisible(oldTitleVisible);
-    plot->xAxis->setVisible(oldAxisVisibleX);
-    plot->yAxis->setVisible(oldAxisVisibleY);
-    return report.join('\n');
+    QHash<QCPLayerable*, bool> oldVisibility {
+        { plot->title(), plot->title()->visible() },
+        { plot->legend, plot->legend->visible() },
+        { plot->xAxis, plot->xAxis->visible() },
+        { plot->yAxis, plot->yAxis->visible() },
+    };
+    for (auto it = plot->additionalParts.constBegin(); it != plot->additionalParts.constEnd(); it++)
+        oldVisibility[it.key()] = it.key()->visible();
+    JsonReport report;
+    readPlot(root, plot, &report);
+    QStringList strReport;
+    for (auto& err : report)
+        if (!err.ok() && err.code != JsonError::NoData)
+            strReport << err.message;
+    for (auto it = oldVisibility.constBegin(); it != oldVisibility.constEnd(); it++)
+        it.key()->setVisible(it.value());
+    plot->updateTitleVisibility();
+    return strReport.join('\n');
 }
 
 QString pasteLegendFormat(QCPLegend* legend)
@@ -601,7 +650,11 @@ QString pasteAxisFormat(QCPAxis* axis)
 
 QString pasteColorScaleFormat(QCPColorScale* scale)
 {
-    auto res = getClipboradData(KEY_COLOR_SCALE);
+    auto key = findStorageKey("copyColorScaleFormat", scale);
+    if (key.isEmpty())
+        return "Operation is not supported";
+
+    auto res = getClipboradData(key);
     if (!res.ok()) return res.error();
 
     bool oldVisible = scale->visible();
