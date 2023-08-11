@@ -1,0 +1,9 @@
+<svg height="24" width="24" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<linearGradient id="a" gradientUnits="userSpaceOnUse" x1="7.5" x2="17.38" y1="11.9" y2="20.32">
+<stop offset="0" stop-color="#a6b5ca"/>
+<stop offset="1" stop-color="#6a6e7e"/>
+</linearGradient>
+<path d="m0 5.5h24" fill="none" stroke="#182e6d"/>
+<path d="m0 15.5h24" fill="none" stroke="#182e6d" transform="matrix(0 -1 1 0 -9 24)"/>
+<path d="m7.5 19 2.92-3.58 4.32 8.08 2.6-1.5-4.34-7.63 6-.37-11.5-8z" fill="#fff" stroke="url(#a)" stroke-linecap="square" stroke-linejoin="round"/>
+</svg>

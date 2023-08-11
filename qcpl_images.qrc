@@ -1,6 +1,6 @@
 <RCC>
     <qresource prefix="/qcpl_images">
-        <file alias="plot_tracing">./img/plot_tracing.png</file>
+        <file alias="plot_tracing">./img/plot_tracing.svg</file>
         <file alias="bold">./img/bold.svg</file>
         <file alias="italic">./img/italic.svg</file>
         <file alias="underline">./img/underline.svg</file>
