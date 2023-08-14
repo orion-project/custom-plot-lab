@@ -114,11 +114,30 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis, const Props &props) :
 
     auto hintColor = palette().mid().color().name(QColor::HexRgb);
 
+    //-------------------------------------------------------
+
     auto layoutPages = new QStackedLayout;
 
     _tabs = new QTabBar;
     _tabs->setShape(QTabBar::TriangularNorth);
     connect(_tabs, &QTabBar::currentChanged, layoutPages, &QStackedLayout::setCurrentIndex);
+
+    _visible = new QCheckBox("Visible");
+    _saveDefault = new QCheckBox("Save as default");
+
+    auto header = makeDialogHeader();
+    LayoutH({
+        SpaceH(),
+        LayoutV({ Stretch(), _visible, _saveDefault }).setMargin(6),
+        LayoutV({ Stretch(), _tabs }).setMargin(0),
+        SpaceH(2),
+    }).setMargin(0).useFor(header);
+
+    LayoutV({
+        header,
+        makeSeparator(),
+        layoutPages,
+    }).setSpacing(0).setMargin(0).useFor(this);
 
     //-------------------------------------------------------
     //                    Tab "Axis"
@@ -351,26 +370,6 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis, const Props &props) :
 
     //-------------------------------------------------------
 
-    _visible = new QCheckBox("Visible");
-    _saveDefault = new QCheckBox("Save as default");
-    _saveDefault->setVisible(props.hasSaveDefault);
-
-    auto header = makeDialogHeader();
-    LayoutH({
-        SpaceH(),
-        LayoutV({ Stretch(), _visible, _saveDefault }).setMargin(6),
-        LayoutV({ Stretch(), _tabs }).setMargin(0),
-        SpaceH(2),
-    }).setMargin(0).useFor(header);
-
-    LayoutV({
-        header,
-        makeSeparator(),
-        layoutPages,
-    }).setSpacing(0).setMargin(0).useFor(this);
-
-    //-------------------------------------------------------
-
     if (_scale)
         _visible->setChecked(_scale->visible());
     else
@@ -453,6 +452,10 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis, const Props &props) :
     _tickerReadability->setChecked(ticker->tickStepStrategy() == QCPAxisTicker::tssReadability);
     _tickCount->setValue(ticker->tickCount());
     _tickOffset->setValue(ticker->tickOrigin());
+
+    // toggle visibility after adding to layout,
+    // otherwise widget can flash on the screen as top-level window
+    _saveDefault->setVisible(props.hasSaveDefault);
 
     _tabs->setCurrentIndex(__tabIndex);
     layoutPages->setCurrentIndex(__tabIndex);

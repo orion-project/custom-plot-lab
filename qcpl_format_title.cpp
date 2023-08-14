@@ -37,7 +37,6 @@ TitleFormatWidget::TitleFormatWidget(QCPTextElement* title, const TitleFormatDlg
 
     _visible = new QCheckBox(tr("Visible"));
     _saveDefault = new QCheckBox(tr("Save as default format"));
-    _saveDefault->setVisible(bool(props.onSaveDefault));
 
     MarginsEditorWidget::Options marginOpts;
     marginOpts.layoutInLine = true;
@@ -67,6 +66,9 @@ TitleFormatWidget::TitleFormatWidget(QCPTextElement* title, const TitleFormatDlg
     _textProps->setColor(title->textColor());
     _textProps->setTextFlags(title->textFlags());
     _margins->setValue(title->margins());
+    // toggle visibility after adding to layout,
+    // otherwise widget can flash on the screen as top-level window
+    _saveDefault->setVisible(bool(props.onSaveDefault));
 }
 
 void TitleFormatWidget::restore()

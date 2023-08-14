@@ -172,7 +172,6 @@ TextEditorWidget::TextEditorWidget(const Options &opts) : QWidget()
     if (!opts.iconSize.isEmpty())
         _toolbar2->setIconSize(opts.iconSize);
     _toolbar2->setContentsMargins(0, 0, 0, 0);
-    _toolbar2->setVisible(opts.narrow);
 
     auto toolbar = [&opts, this](){
         return opts.narrow ? _toolbar2 : _toolbar1;
@@ -256,6 +255,10 @@ TextEditorWidget::TextEditorWidget(const Options &opts) : QWidget()
     }
 
     Ori::Layouts::LayoutV({_toolbar1, _toolbar2, editorWidget()}).setSpacing(0).setMargin(0).useFor(this);
+
+    // toggle visibility after adding to layout,
+    // otherwise widget can flash on the screen as top-level window
+    _toolbar2->setVisible(opts.narrow);
 }
 
 QWidget* TextEditorWidget::editorWidget()

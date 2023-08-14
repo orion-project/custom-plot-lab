@@ -67,7 +67,6 @@ LegendFormatWidget::LegendFormatWidget(QCPLegend *legend, const LegendFormatDlgP
 
     _visible = new QCheckBox(tr("Visible"));
     _saveDefault = new QCheckBox(tr("Save as default format"));
-    _saveDefault->setVisible(bool(props.onSaveDefault));
 
     auto header = makeDialogHeader();
     LayoutH({
@@ -99,6 +98,9 @@ LegendFormatWidget::LegendFormatWidget(QCPLegend *legend, const LegendFormatDlgP
     _paddings->setValue(legend->margins());
     _margins->setValue(legendMargins(_legend));
     _locationGroup->selectData(int(legendLocation(_legend)));
+    // toggle visibility after adding to layout,
+    // otherwise widget can flash on the screen as top-level window
+    _saveDefault->setVisible(bool(props.onSaveDefault));
 }
 
 void LegendFormatWidget::makeLocationTile(Qt::Alignment align, int row, int col)
