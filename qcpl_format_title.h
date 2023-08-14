@@ -25,6 +25,7 @@ public:
     TitleFormatWidget(QCPTextElement* title, const TitleFormatDlgProps& props);
 
     bool needSaveDefault() const;
+    void populate();
 
 public slots:
     void apply();

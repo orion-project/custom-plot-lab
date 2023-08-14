@@ -95,6 +95,23 @@ private:
     }
 };
 
+static QVector<QCPColorGradient::GradientPreset> gradientPresets() {
+    return {
+        QCPColorGradient::gpGrayscale,
+        QCPColorGradient::gpHot,
+        QCPColorGradient::gpCold,
+        QCPColorGradient::gpNight,
+        QCPColorGradient::gpCandy,
+        QCPColorGradient::gpGeography,
+        QCPColorGradient::gpIon,
+        QCPColorGradient::gpThermal,
+        QCPColorGradient::gpPolar,
+        QCPColorGradient::gpSpectrum,
+        QCPColorGradient::gpJet,
+        QCPColorGradient::gpHues,
+    };
+}
+
 //------------------------------------------------------------------------------
 //                               AxisFormatWidget
 //------------------------------------------------------------------------------
@@ -332,21 +349,7 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis, const Props &props) :
         if (axisType == QCPAxis::atBottom || axisType == QCPAxis::atTop)
             gradientLayout = new QVBoxLayout;
         else gradientLayout = new QHBoxLayout;
-        gradientTypes = {
-            QCPColorGradient::gpGrayscale,
-            QCPColorGradient::gpHot,
-            QCPColorGradient::gpCold,
-            QCPColorGradient::gpNight,
-            QCPColorGradient::gpCandy,
-            QCPColorGradient::gpGeography,
-            QCPColorGradient::gpIon,
-            QCPColorGradient::gpThermal,
-            QCPColorGradient::gpPolar,
-            QCPColorGradient::gpSpectrum,
-            QCPColorGradient::gpJet,
-            QCPColorGradient::gpHues,
-        };
-        for (auto preset : gradientTypes)
+        foreach (auto preset, gradientPresets())
         {
             auto tile = new Ori::Widgets::SelectableTile(new SelectableTileContentGradient(axisType, preset));
             tile->setData(int(preset));
@@ -370,31 +373,46 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis, const Props &props) :
 
     //-------------------------------------------------------
 
+    // toggle visibility after adding to layout,
+    // otherwise widget can flash on the screen as top-level window
+    _saveDefault->setVisible(props.hasSaveDefault);
+
+    _tabs->setCurrentIndex(__tabIndex);
+    layoutPages->setCurrentIndex(__tabIndex);
+}
+
+AxisFormatWidget::~AxisFormatWidget()
+{
+    __tabIndex = _tabs->currentIndex();
+}
+
+void AxisFormatWidget::populate()
+{
     if (_scale)
         _visible->setChecked(_scale->visible());
     else
-        _visible->setChecked(axis->visible());
-    if (props.formatter)
-        _titleEditor->setText(props.formatter->text());
+        _visible->setChecked(_axis->visible());
+    if (_formatter)
+        _titleEditor->setText(_formatter->text());
     else
-        _titleEditor->setText(axis->label());
-    _titleEditor->setFont(axis->labelFont());
-    _titleEditor->setColor(axis->labelColor());
-    _innerMargin->setValue(axis->labelPadding());
-    _outerMargin->setValue(axis->padding());
-    _offset->setValue(-axis->offset());
-    _logarithmic->setChecked(axis->scaleType() == QCPAxis::stLogarithmic);
-    _reversed->setChecked(axis->rangeReversed());
-    _labelsVisible->setChecked(axis->tickLabels());
-    _labelsInside->setChecked(axis->tickLabelSide() == QCPAxis::lsInside);
-    _labelsAngle->setValue(axis->tickLabelRotation());
-    _labelsPadding->setValue(axis->tickLabelPadding());
-    _labelsEditor->setColor(axis->tickLabelColor());
-    _labelsEditor->setFont(axis->tickLabelFont());
+        _titleEditor->setText(_axis->label());
+    _titleEditor->setFont(_axis->labelFont());
+    _titleEditor->setColor(_axis->labelColor());
+    _innerMargin->setValue(_axis->labelPadding());
+    _outerMargin->setValue(_axis->padding());
+    _offset->setValue(-_axis->offset());
+    _logarithmic->setChecked(_axis->scaleType() == QCPAxis::stLogarithmic);
+    _reversed->setChecked(_axis->rangeReversed());
+    _labelsVisible->setChecked(_axis->tickLabels());
+    _labelsInside->setChecked(_axis->tickLabelSide() == QCPAxis::lsInside);
+    _labelsAngle->setValue(_axis->tickLabelRotation());
+    _labelsPadding->setValue(_axis->tickLabelPadding());
+    _labelsEditor->setColor(_axis->tickLabelColor());
+    _labelsEditor->setFont(_axis->tickLabelFont());
 
     _numberFormat->setOption(lnfG); // default value
     _expFormat->setOption(lefDot); // default value
-    QString fmt = axis->numberFormat();
+    QString fmt = _axis->numberFormat();
     if (fmt.size() > 0) {
         if (fmt.at(0) == 'f') {
             _numberFormat->setOption(lnfF);
@@ -420,17 +438,17 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis, const Props &props) :
         }
     }
 
-    _labelsPrecision->setValue(axis->numberPrecision());
-    _axisPen->setValue(axis->basePen());
-    _groupTicks->setChecked(axis->ticks());
-    _tickPen->setValue(axis->tickPen());
-    _tickLengthIn->setValue(axis->tickLengthIn());
-    _tickLengthOut->setValue(axis->tickLengthOut());
-    _groupTicks->setChecked(axis->subTicks());
-    _subTickPen->setValue(axis->subTickPen());
-    _subTickLengthIn->setValue(axis->subTickLengthIn());
-    _subTickLengthOut->setValue(axis->subTickLengthOut());
-    auto grid = axis->grid();
+    _labelsPrecision->setValue(_axis->numberPrecision());
+    _axisPen->setValue(_axis->basePen());
+    _groupTicks->setChecked(_axis->ticks());
+    _tickPen->setValue(_axis->tickPen());
+    _tickLengthIn->setValue(_axis->tickLengthIn());
+    _tickLengthOut->setValue(_axis->tickLengthOut());
+    _groupTicks->setChecked(_axis->subTicks());
+    _subTickPen->setValue(_axis->subTickPen());
+    _subTickLengthIn->setValue(_axis->subTickLengthIn());
+    _subTickLengthOut->setValue(_axis->subTickLengthOut());
+    auto grid = _axis->grid();
     _gridGroup->setChecked(grid->visible());
     _gridPen->setValue(grid->pen());
     _zeroPen->setValue(grid->zeroLinePen());
@@ -441,29 +459,17 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis, const Props &props) :
         _colorScaleMargins->setValue(_scale->margins());
         // We don't support arbitrary gradients, only selection from presets
         auto gradient = _scale->gradient();
-        for (auto preset : gradientTypes)
+        foreach (auto preset, gradientPresets())
             if (gradient == QCPColorGradient(preset)) {
                 _gradientGroup->selectData(int(preset));
                 break;
             }
         _colorScaleWidth->setValue(_scale->barWidth());
     }
-    auto ticker = axis->ticker();
+    auto ticker = _axis->ticker();
     _tickerReadability->setChecked(ticker->tickStepStrategy() == QCPAxisTicker::tssReadability);
     _tickCount->setValue(ticker->tickCount());
     _tickOffset->setValue(ticker->tickOrigin());
-
-    // toggle visibility after adding to layout,
-    // otherwise widget can flash on the screen as top-level window
-    _saveDefault->setVisible(props.hasSaveDefault);
-
-    _tabs->setCurrentIndex(__tabIndex);
-    layoutPages->setCurrentIndex(__tabIndex);
-}
-
-AxisFormatWidget::~AxisFormatWidget()
-{
-    __tabIndex = _tabs->currentIndex();
 }
 
 void AxisFormatWidget::restore()

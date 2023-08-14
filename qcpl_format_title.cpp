@@ -57,18 +57,22 @@ TitleFormatWidget::TitleFormatWidget(QCPTextElement* title, const TitleFormatDlg
         }).setDefSpacing().setDefMargins(),
     }).setSpacing(0).setMargin(0).useFor(this);
 
-    _visible->setChecked(title->visible());
-    if (props.formatter)
-        _textProps->setText(props.formatter->text());
-    else
-        _textProps->setText(title->text());
-    _textProps->setFont(title->font());
-    _textProps->setColor(title->textColor());
-    _textProps->setTextFlags(title->textFlags());
-    _margins->setValue(title->margins());
     // toggle visibility after adding to layout,
     // otherwise widget can flash on the screen as top-level window
     _saveDefault->setVisible(bool(props.onSaveDefault));
+}
+
+void TitleFormatWidget::populate()
+{
+    _visible->setChecked(_title->visible());
+    if (_formatter)
+        _textProps->setText(_formatter->text());
+    else
+        _textProps->setText(_title->text());
+    _textProps->setFont(_title->font());
+    _textProps->setColor(_title->textColor());
+    _textProps->setTextFlags(_title->textFlags());
+    _margins->setValue(_title->margins());
 }
 
 void TitleFormatWidget::restore()

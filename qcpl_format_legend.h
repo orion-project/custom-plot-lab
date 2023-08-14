@@ -32,6 +32,7 @@ public:
     explicit LegendFormatWidget(QCPLegend *legend, const LegendFormatDlgProps& props);
 
     bool needSaveDefault() const;
+    void populate();
 
 public slots:
     void apply();

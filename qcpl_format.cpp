@@ -157,6 +157,13 @@ bool genericFormatDlg(TEditor *editor, const TProps& props)
         style->pixelMetric(QStyle::PM_LayoutRightMargin),
         style->pixelMetric(QStyle::PM_LayoutBottomMargin));
 
+    // It's better to have a separate method called after the dialog layout has been already built.
+    // Otherwise there could be weird issues if app overrides its style sheet (even particularly).
+    // E.g. QTextEditor can reset its font to default during being put into layout,
+    // even though its style was not mentioned in the overriding style sheel.
+    // This happens for AxisFormatWidget but does not happen for TitleFormatWidget, weird...
+    editor->populate();
+
     return dlg.exec() == QDialog::Accepted;
 }
 

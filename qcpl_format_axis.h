@@ -45,6 +45,7 @@ public:
     ~AxisFormatWidget();
 
     bool needSaveDefault() const;
+    void populate();
 
 public slots:
     void apply();

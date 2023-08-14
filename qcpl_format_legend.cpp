@@ -87,17 +87,6 @@ LegendFormatWidget::LegendFormatWidget(QCPLegend *legend, const LegendFormatDlgP
         }).setDefSpacing().setDefMargins(),
     }).setSpacing(0).setMargin(0).useFor(this);
 
-    _visible->setChecked(legend->visible());
-    _textProps->setFont(legend->font());
-    _textProps->setColor(legend->textColor());
-    _textProps->setBackColor(legend->brush().color());
-    _borderPen->setValue(legend->borderPen());
-    _iconW->setValue(_legend->iconSize().width());
-    _iconH->setValue(_legend->iconSize().height());
-    _iconMargin->setValue(_legend->iconTextPadding());
-    _paddings->setValue(legend->margins());
-    _margins->setValue(legendMargins(_legend));
-    _locationGroup->selectData(int(legendLocation(_legend)));
     // toggle visibility after adding to layout,
     // otherwise widget can flash on the screen as top-level window
     _saveDefault->setVisible(bool(props.onSaveDefault));
@@ -110,6 +99,21 @@ void LegendFormatWidget::makeLocationTile(Qt::Alignment align, int row, int col)
     tile->setFixedSize(24, 24);
     _locationGroup->addTile(tile);
     _locationLayout->addWidget(tile, row, col);
+}
+
+void LegendFormatWidget::populate()
+{
+    _visible->setChecked(_legend->visible());
+    _textProps->setFont(_legend->font());
+    _textProps->setColor(_legend->textColor());
+    _textProps->setBackColor(_legend->brush().color());
+    _borderPen->setValue(_legend->borderPen());
+    _iconW->setValue(_legend->iconSize().width());
+    _iconH->setValue(_legend->iconSize().height());
+    _iconMargin->setValue(_legend->iconTextPadding());
+    _paddings->setValue(_legend->margins());
+    _margins->setValue(legendMargins(_legend));
+    _locationGroup->selectData(int(legendLocation(_legend)));
 }
 
 void LegendFormatWidget::restore()
