@@ -4,11 +4,13 @@
 #include "qcpl_format_editors.h"
 #include "qcpl_io_json.h"
 #include "qcpl_text_editor.h"
+#include "qcpl_utils.h"
 #include "qcustomplot/qcustomplot.h"
 
 #include "helpers/OriLayouts.h"
 #include "widgets/OriOptionsGroup.h"
 #include "widgets/OriSelectableTile.h"
+#include "widgets/OriValueEdit.h"
 
 #include <QCheckBox>
 #include <QDebug>
@@ -146,12 +148,27 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis, const Props &props) :
     _logarithmic = new QCheckBox(tr("Logarithmic"));
     _reversed = new QCheckBox(tr("Reversed"));
 
+    _tickerReadability = new QCheckBox(tr("Prefer readability, not exact count"));
+    _tickCount = makeSpinBox(1, 500);
+    _tickOffset = new Ori::Widgets::ValueEdit();
+    _tickOffset->setPreferredWidth(100);
+
     layoutPages->addWidget(LayoutV({
         LayoutV({ _titleEditor }).makeGroupBox(tr("Title")),
         LayoutH({
             LayoutV({ offsets }).makeGroupBox(tr("Offsets")),
             LayoutV({ _logarithmic, _reversed }).makeGroupBox(tr("Scale")),
-        })
+        }),
+        LayoutH({
+            _tickerReadability,
+            SpaceH(2),
+            new QLabel(tr("Tick count:")),
+            _tickCount,
+            SpaceH(2),
+            new QLabel(tr("Tick offset:")),
+            _tickOffset,
+            Stretch(),
+        }).makeGroupBox(tr("Ticker"))
     }).makeWidget());
     _tabs->addTab("Axis");
 
@@ -196,7 +213,7 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis, const Props &props) :
     _expFormat->addOption(lefDot, tr("Dot mutiplication"), sampleNum+"·10<sup>6</sup>");
     _expFormat->addOption(lefCross, tr("Cross mutiplication"), sampleNum+"×10<sup>6</sup>");
 
-    _labelsPrecision = makeSpinBox(1, 15);
+    _labelsPrecision = makeSpinBox(0, 15);
     auto precisionHint = new QLabel(QString("<span style='color:%1'>%2</span>").arg(hintColor,
         tr("For fixed and exponential formats - number of digits after decimal point. "
             "For automatic format - maximum number of significant digits.")));
@@ -218,9 +235,9 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis, const Props &props) :
             LayoutV({_labelsPrecision, precisionHint}).makeGroupBox(tr("Number precision")),
             Stretch(),
         }),
-        SpaceV(2),
-        _labelsEditor,
-        Stretch(),
+        LayoutV({
+            _labelsEditor,
+        }).makeGroupBox(tr("Font")),
     }).makeWidget());
     _tabs->addTab("Labels");
 
@@ -250,7 +267,7 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis, const Props &props) :
     tickLen->addRow(new QLabel(tr("Outer length:")), _tickLengthOut);
     _groupTicks = LayoutV({
         _tickPen,
-        SpaceV(),
+        SpaceV(2),
         LayoutH({tickLen, Stretch()}),
     }).makeGroupBox(tr("Primary ticks"));
     _groupTicks->setCheckable(true);
@@ -260,7 +277,7 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis, const Props &props) :
     subTickLen->addRow(new QLabel(tr("Outer length:")), _subTickLengthOut);
     _groupSubTicks = LayoutV({
         _subTickPen,
-        SpaceV(),
+        SpaceV(2),
         LayoutH({subTickLen, Stretch()}),
     }).makeGroupBox(tr("Additional ticks"));
     _groupSubTicks->setCheckable(true);
@@ -432,6 +449,10 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis, const Props &props) :
             }
         _colorScaleWidth->setValue(_scale->barWidth());
     }
+    auto ticker = axis->ticker();
+    _tickerReadability->setChecked(ticker->tickStepStrategy() == QCPAxisTicker::tssReadability);
+    _tickCount->setValue(ticker->tickCount());
+    _tickOffset->setValue(ticker->tickOrigin());
 
     _tabs->setCurrentIndex(__tabIndex);
     layoutPages->setCurrentIndex(__tabIndex);
@@ -521,7 +542,11 @@ void AxisFormatWidget::apply()
             _scale->setGradient(QCPColorGradient::GradientPreset(selectedGradient.toInt()));
         _scale->setBarWidth(_colorScaleWidth->value());
     }
-
+    auto ticker = _axis->ticker();
+    ticker->setTickStepStrategy(_tickerReadability->isChecked() ? QCPAxisTicker::tssReadability : QCPAxisTicker::tssMeetTickCount);
+    ticker->setTickCount(_tickCount->value());
+    ticker->setTickOrigin(_tickOffset->value());
+    updateAxisTicker(_axis);
     _axis->parentPlot()->replot();
 }
 

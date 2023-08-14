@@ -5,6 +5,7 @@
 
 #include <QMargins>
 
+class QCPAxis;
 class QCPLayoutInset;
 class QCPLegend;
 
@@ -16,6 +17,8 @@ Qt::Alignment legendLocation(QCPLegend* legend);
 void setLegendLocation(QCPLegend* legend, Qt::Alignment align);
 QMargins legendMargins(QCPLegend* legend);
 void setLegendMargins(QCPLegend* legend, const QMargins& margins);
+
+void updateAxisTicker(QCPAxis* axis);
 
 } // namespace QCPL
 

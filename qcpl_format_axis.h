@@ -14,6 +14,7 @@ QT_END_NAMESPACE
 namespace Ori::Widgets {
 class OptionsGroup;
 class SelectableTileRadioGroup;
+class ValueEdit;
 }
 
 class QCPAxis;
@@ -61,15 +62,15 @@ private:
     TextEditorWidget *_titleEditor, *_labelsEditor;
     QSpinBox *_outerMargin, *_innerMargin, *_offset, *_labelsAngle, *_labelsPadding,
         *_labelsPrecision, *_tickLengthIn, *_tickLengthOut, *_subTickLengthIn, *_subTickLengthOut,
-        *_colorScaleWidth;
-    QCheckBox *_visible, *_saveDefault, *_logarithmic, *_reversed, *_labelsVisible, *_labelsInside;
+        *_colorScaleWidth, *_tickCount;
+    QCheckBox *_visible, *_saveDefault, *_logarithmic, *_reversed, *_labelsVisible, *_labelsInside,
+        *_tickerReadability;
     QGroupBox *_axisGroup, *_gridGroup, *_groupSubGrid, *_groupTicks, *_groupSubTicks;
     Ori::Widgets::OptionsGroup *_numberFormat, *_expFormat;
     PenEditorWidget *_axisPen, *_tickPen, *_subTickPen, *_gridPen, *_zeroPen, *_subGridPen;
     MarginsEditorWidget *_colorScaleMargins;
     Ori::Widgets::SelectableTileRadioGroup *_gradientGroup;
-
-    //void updateGradientImage();
+    Ori::Widgets::ValueEdit *_tickOffset;
 };
 
 } // namespace QCPL

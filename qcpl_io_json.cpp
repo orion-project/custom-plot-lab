@@ -212,6 +212,7 @@ QJsonObject writeTitle(QCPTextElement* title)
 QJsonObject writeAxis(QCPAxis *axis)
 {
     auto grid = axis->grid();
+    auto ticker = axis->ticker();
     auto obj = QJsonObject({
         { "version", CURRENT_AXIS_VERSION },
         { "visible", axis->visible() },
@@ -244,6 +245,9 @@ QJsonObject writeAxis(QCPAxis *axis)
         { "zero_pen", writePen(grid->zeroLinePen()) },
         { "subgrid_visible", grid->subGridVisible() },
         { "subgrid_pen", writePen(grid->subGridPen()) },
+        { "tick_strategy", int(ticker->tickStepStrategy()) },
+        { "tick_count", ticker->tickCount() },
+        { "tick_offset", ticker->tickOrigin() },
     });
     return obj;
 }
@@ -366,6 +370,11 @@ JsonError readAxis(const QJsonObject &obj, QCPAxis* axis)
     grid->setZeroLinePen(readPen(obj["zero_pen"].toObject(), grid->zeroLinePen()));
     grid->setSubGridVisible(obj["subgrid_visible"].toBool(grid->subGridVisible()));
     grid->setSubGridPen(readPen(obj["subgrid_pen"].toObject(), grid->subGridPen()));
+    auto ticker = axis->ticker();
+    ticker->setTickStepStrategy(QCPAxisTicker::TickStepStrategy(obj["tick_strategy"].toInt(int(ticker->tickStepStrategy()))));
+    ticker->setTickCount(obj["tick_count"].toInt(ticker->tickCount()));
+    ticker->setTickOrigin(obj["tick_offset"].toDouble(ticker->tickOrigin()));
+    updateAxisTicker(axis);
     return {};
 }
 

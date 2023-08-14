@@ -44,4 +44,21 @@ void setLegendMargins(QCPLegend* legend, const QMargins& margins)
     legend->parentPlot()->axisRect()->insetLayout()->setMargins(margins);
 }
 
+void updateAxisTicker(QCPAxis* axis)
+{
+    QSharedPointer<QCPAxisTicker> curTicker = axis->ticker();
+    QSharedPointer<QCPAxisTicker> newTicker;
+    if (axis->scaleType() == QCPAxis::stLogarithmic && !dynamic_cast<QCPAxisTickerLog*>(curTicker.get()))
+        newTicker.reset(new QCPAxisTickerLog);
+    else if (axis->scaleType() == QCPAxis::stLinear && dynamic_cast<QCPAxisTickerLog*>(curTicker.get()))
+        newTicker.reset(new QCPAxisTicker);
+    if (newTicker && curTicker)
+    {
+        newTicker->setTickStepStrategy(curTicker->tickStepStrategy());
+        newTicker->setTickCount(curTicker->tickCount());
+        newTicker->setTickOrigin(curTicker->tickOrigin());
+        axis->setTicker(newTicker);
+    }
+}
+
 } // namespace QCPL
