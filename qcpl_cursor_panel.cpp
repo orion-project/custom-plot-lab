@@ -122,10 +122,13 @@ void CursorPanel::linkClicked(const QUrl& url)
 {
     if (url.scheme() == "do")
     {
-        if (url.host() == "set_x")
+        QString cmd = url.host();
+        if (cmd == "set_x")
             setCursorX();
-        else if (url.host() == "set_y")
+        else if (cmd == "set_y")
             setCursorY();
+        else
+            emit customCommandInvoked(cmd);
     }
 }
 
@@ -137,12 +140,17 @@ void CursorPanel::cursorPositionCanged()
         actnCursorFollow->setChecked(false);
 }
 
-QString CursorPanel::formatLinkX(const QString& x) const
+QString CursorPanel::formatLink(const QString& cmd, const QString& val)
+{
+    return QStringLiteral("<a href='do://%1'>%2</a>").arg(cmd, val);
+}
+
+QString CursorPanel::formatLinkX(const QString& x)
 {
     return QStringLiteral("X = <a href='do://set_x'>%1</a>").arg(x);
 }
 
-QString CursorPanel::formatLinkY(const QString& y) const
+QString CursorPanel::formatLinkY(const QString& y)
 {
     return QStringLiteral("Y = <a href='do://set_y'>%1</a>").arg(y);
 }

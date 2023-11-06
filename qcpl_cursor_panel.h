@@ -28,8 +28,9 @@ public:
     void fillMenu(QMenu *menu);
 
     void setNumberPrecision(int value, bool update);
-    QString formatLinkX(const QString& x) const;
-    QString formatLinkY(const QString& y) const;
+    static QString formatLink(const QString& cmd, const QString& val);
+    static QString formatLinkX(const QString& x);
+    static QString formatLinkY(const QString& y);
 
     bool autoUpdateInfo() const { return _autoUpdateInfo; }
     void setAutoUpdateInfo(bool v) { _autoUpdateInfo = v; }
@@ -38,6 +39,9 @@ public:
     void setMode(Mode mode);
     bool enabled() const;
     void setEnabled(bool on);
+
+signals:
+    void customCommandInvoked(const QString& cmd);
 
 protected:
     QSize sizeHint() const;
