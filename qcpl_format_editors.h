@@ -15,9 +15,14 @@ QT_END_NAMESPACE
 namespace Ori {
 namespace Widgets {
 class MenuToolButton;
+class BaseColorButton;
 }}
 
 namespace QCPL {
+
+//---------------------------------------------------------------------
+//                         MarginsEditorWidget
+//---------------------------------------------------------------------
 
 class MarginsEditorWidget : public QGroupBox
 {
@@ -38,22 +43,6 @@ private:
     QSpinBox *L, *T, *R, *B;
 };
 
-class ColorButton : public QToolButton
-{
-    Q_OBJECT
-
-public:
-    explicit ColorButton(QWidget* parent = nullptr);
-
-    void setValue(const QColor& c);
-    QColor value() const { return _color; }
-
-private:
-    QColor _color;
-
-    void selectColor();
-};
-
 struct PenEditorWidgetOptions
 {
     QString labelStyle;
@@ -63,12 +52,15 @@ struct PenEditorWidgetOptions
     bool noLabels = false;
 };
 
+//---------------------------------------------------------------------
+//                         PenEditorWidget
+//---------------------------------------------------------------------
+
 class PenEditorWidget : public QWidget
 {
     Q_OBJECT
 
 public:
-
     explicit PenEditorWidget(PenEditorWidgetOptions opts = PenEditorWidgetOptions(), QWidget *parent = nullptr);
 
     void setValue(const QPen& p);
@@ -77,18 +69,21 @@ public:
 private:
     QPen _pen;
     QSpinBox *_width;
-    ColorButton *_color;
+    Ori::Widgets::BaseColorButton *_color;
     Ori::Widgets::MenuToolButton *_style;
 
     void createPenAction(Qt::PenStyle style, const QString& title);
 };
+
+//---------------------------------------------------------------------
+//                              Helpers
+//---------------------------------------------------------------------
 
 QSpinBox* makeSpinBox(int min, int max);
 QWidget* makeSeparator();
 QWidget* makeLabelSeparator(const QString& title);
 QWidget* makeDialogHeader();
 QWidget* makeParamLabel(const QString& name, const QString& hint, const QString &hintColor);
-QPixmap makeSolidColorIcon(const QBrush &b, const QSize &sz = QSize());
 QPixmap makePenIcon(const QPen& pen, const QSize& sz = QSize());
 
 } // namespace QCPL

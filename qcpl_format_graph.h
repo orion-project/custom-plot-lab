@@ -11,6 +11,7 @@ QT_END_NAMESPACE
 namespace Ori {
 namespace Widgets {
 class MenuToolButton;
+class BaseColorButton;
 }}
 
 class QCPGraph;
@@ -35,7 +36,7 @@ private:
     PenEditorWidget *_linePen, *_markerPen;
     QSpinBox *_markerSize, *_markerSkip;
     Ori::Widgets::MenuToolButton *_markerShape;
-    ColorButton *_markerColor;
+    Ori::Widgets::BaseColorButton *_markerColor;
 
     void createMarkerShapeAction(int shape, const QString& title);
     void selectMarkerColor();

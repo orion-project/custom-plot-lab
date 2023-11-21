@@ -19,6 +19,7 @@ QT_END_NAMESPACE
 namespace Ori {
 namespace Widgets {
 class MenuToolButton;
+class BaseColorButton;
 }}
 
 namespace QCPL {
@@ -95,9 +96,9 @@ private:
     QPlainTextEdit *_textEditor = nullptr;
     QLineEdit *_lineEditor = nullptr;
     QColor _color, _backColor;
-    QAction *_actnBold, *_actnItalic, *_actnUnderline, *_actnColor;
-    QAction *_actnBackColor = nullptr;
+    QAction *_actnBold, *_actnItalic, *_actnUnderline;
     Ori::Widgets::MenuToolButton* _btnAlign = nullptr;
+    Ori::Widgets::BaseColorButton *_btnTextColor, *_btnBackColor = nullptr;
     QFontComboBox *_comboFont;
     QComboBox *_comboSize;
     QToolBar *_toolbar1, *_toolbar2;
@@ -111,8 +112,6 @@ private:
     void toggleBold();
     void toggleItalic();
     void toggleUnderline();
-    void selectColor();
-    void selectBackColor();
     void insertVar();
 };
 

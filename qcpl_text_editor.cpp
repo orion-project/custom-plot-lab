@@ -3,9 +3,9 @@
 #include "helpers/OriLayouts.h"
 #include "helpers/OriWidgets.h"
 #include "widgets/OriMenuToolButton.h"
+#include "widgets/OriColorSelectors.h"
 
 #include <QApplication>
-#include <QColorDialog>
 #include <QDebug>
 #include <QFontComboBox>
 #include <QFontDialog>
@@ -129,32 +129,6 @@ private:
 //                                TextEditorWidget
 //------------------------------------------------------------------------------
 
-static QPixmap makeColorIcon(QMap<QString, QPixmap>& icons, const QString& baseIcon, const QBrush &b)
-{
-    auto n = b.style() == Qt::NoBrush ? QStringLiteral("empty") : b.color().name();
-    if (icons.contains(n))
-        return icons[n];
-    auto pixmap = QIcon(baseIcon).pixmap(24, 24);
-    QPainter p(&pixmap);
-    p.setPen(b.color());
-    p.setBrush(b);
-    p.drawRect(0, 18, 23, 5);
-    icons[n] = pixmap;
-    return pixmap;
-}
-
-static QPixmap makeTextColorIcon(const QBrush &b)
-{
-    static QMap<QString, QPixmap> icons;
-    return makeColorIcon(icons, QStringLiteral(":/qcpl_images/text_color"), b);
-}
-
-static QPixmap makeBackColorIcon(const QBrush &b)
-{
-    static QMap<QString, QPixmap> icons;
-    return makeColorIcon(icons, QStringLiteral(":/qcpl_images/back_color"), b);
-}
-
 TextEditorWidget::TextEditorWidget(const Options &opts) : QWidget()
 {
     _opts = opts;
@@ -211,9 +185,25 @@ TextEditorWidget::TextEditorWidget(const Options &opts) : QWidget()
     if (opts.narrow)
         _toolbar2->addSeparator();
 
-    _actnColor = toolbar()->addAction(tr("Color..."), this, &TextEditorWidget::selectColor);
+    _btnTextColor = new Ori::Widgets::ColorButton;
+    _btnTextColor->setIconSize(toolbar()->iconSize());
+    _btnTextColor->setBaseIcon(QIcon(":/qcpl_images/text_color"));
+    _btnTextColor->setIconRect(QRect(0, 18, 23, 5));
+    _btnTextColor->setToolTip(tr("Front color"));
+    _btnTextColor->allowTransparentColors = _opts.colorAlphaText;
+    connect(_btnTextColor, &Ori::Widgets::BaseColorButton::colorSelected, this, &TextEditorWidget::setColor);
+    toolbar()->addWidget(_btnTextColor);
     if (opts.showBackColor)
-        _actnBackColor = toolbar()->addAction(tr("Back Color..."), this, &TextEditorWidget::selectBackColor);
+    {
+        _btnBackColor = new Ori::Widgets::ColorButton;
+        _btnBackColor->setIconSize(toolbar()->iconSize());
+        _btnBackColor->setBaseIcon(QIcon(":/qcpl_images/back_color"));
+        _btnBackColor->setIconRect(QRect(0, 18, 23, 5));
+        _btnBackColor->setToolTip(tr("Back color"));
+        _btnBackColor->allowTransparentColors = _opts.colorAlphaBack;
+        connect(_btnBackColor, &Ori::Widgets::BaseColorButton::colorSelected, this, &TextEditorWidget::setBackColor);
+        toolbar()->addWidget(_btnBackColor);
+    }
     if (opts.narrow)
         _toolbar2->addSeparator();
 
@@ -286,14 +276,14 @@ void TextEditorWidget::setFont(const QFont& font)
 void TextEditorWidget::setColor(const QColor& color)
 {
     _color = color;
-    _actnColor->setIcon(makeTextColorIcon(_color));
+    _btnTextColor->setSelectedColor(color);
 }
 
 void TextEditorWidget::setBackColor(const QColor& color)
 {
-    if (!_actnBackColor) return;
     _backColor = color;
-    _actnBackColor->setIcon(makeBackColorIcon(_backColor));
+    if (_btnBackColor)
+        _btnBackColor->setSelectedColor(color);
 }
 
 void TextEditorWidget::setTextFlags(int flags)
@@ -329,26 +319,6 @@ void TextEditorWidget::setFontSize(const QString& size)
     auto font = currentFont();
     font.setPointSize(pointSize);
     setCurrentFont(font);
-}
-
-void TextEditorWidget::selectColor()
-{
-    QColorDialog dlg;
-    dlg.setOption(QColorDialog::ShowAlphaChannel, _opts.colorAlphaText);
-    dlg.setOption(QColorDialog::DontUseNativeDialog, true);
-    dlg.setCurrentColor(_color);
-    if (dlg.exec())
-        setColor(dlg.selectedColor());
-}
-
-void TextEditorWidget::selectBackColor()
-{
-    QColorDialog dlg;
-    dlg.setOption(QColorDialog::ShowAlphaChannel, _opts.colorAlphaBack);
-    dlg.setOption(QColorDialog::DontUseNativeDialog, true);
-    dlg.setCurrentColor(_backColor);
-    if (dlg.exec())
-        setBackColor(dlg.selectedColor());
 }
 
 int TextEditorWidget::textFlags() const

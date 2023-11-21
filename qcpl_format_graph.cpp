@@ -4,8 +4,8 @@
 #include "qcpl_plot.h"
 
 #include "helpers/OriLayouts.h"
-#include "widgets/OriLabels.h"
 #include "widgets/OriMenuToolButton.h"
+#include "widgets/OriColorSelectors.h"
 
 #include <QGridLayout>
 #include <QSpinBox>
@@ -44,9 +44,9 @@ GraphFormatWidget::GraphFormatWidget(QCPGraph *graph) : QWidget(), _graph(graph)
     _markerSize = new QSpinBox;
     _markerSize->setValue(scatterStyle.size());
 
-    _markerColor = new ColorButton;
+    _markerColor = new Ori::Widgets::ColorButton;
     _markerColor->setIconSize({40, 16});
-    _markerColor->setValue(scatterStyle.brush().color());
+    _markerColor->setSelectedColor(scatterStyle.brush().color());
 
     auto markerLayout = new QGridLayout;
     markerLayout->setHorizontalSpacing(10);
@@ -117,7 +117,7 @@ void GraphFormatWidget::apply()
     QCPScatterStyle scatterStyle = _graph->scatterStyle();
     scatterStyle.setShape(QCPScatterStyle::ScatterShape(_markerShape->selectedId()));
     scatterStyle.setSize(_markerSize->value());
-    scatterStyle.setBrush(_markerColor->value());
+    scatterStyle.setBrush(_markerColor->selectedColor());
     scatterStyle.setPen(_markerPen->value());
     _graph->setScatterStyle(scatterStyle);
     _graph->setScatterSkip(_markerSkip->value());

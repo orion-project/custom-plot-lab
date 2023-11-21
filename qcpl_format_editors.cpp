@@ -3,6 +3,7 @@
 #include "widgets/OriLabels.h"
 #include "helpers/OriLayouts.h"
 #include "widgets/OriMenuToolButton.h"
+#include "widgets/OriColorSelectors.h"
 
 #include <QAction>
 #include <QColorDialog>
@@ -112,22 +113,6 @@ QMargins MarginsEditorWidget::value() const
 //                              Helpers
 //---------------------------------------------------------------------
 
-QPixmap makeSolidColorIcon(const QBrush &b, const QSize &sz)
-{
-    int w, h;
-    if (sz.isEmpty())
-        w = 24, h = 24;
-    else
-        w = sz.width(), h = sz.height();
-    QPixmap pixmap(w, h);
-    pixmap.fill(Qt::transparent);
-    QPainter p(&pixmap);
-    p.setPen(b.color());
-    p.setBrush(b);
-    p.drawRect(5, 5, w-10, h-10);
-    return pixmap;
-}
-
 QPixmap makePenIcon(const QPen& pen, const QSize &sz)
 {
     int w, h;
@@ -151,30 +136,6 @@ QPixmap makePenIcon(const QPen& pen, const QSize &sz)
 }
 
 //---------------------------------------------------------------------
-//                            ColorButton
-//---------------------------------------------------------------------
-
-ColorButton::ColorButton(QWidget* parent) : QToolButton(parent)
-{
-    connect(this, &QToolButton::clicked, this, &ColorButton::selectColor);
-}
-
-void ColorButton::setValue(const QColor& c)
-{
-    _color = c;
-    setIcon(makeSolidColorIcon(c, iconSize()));
-}
-
-void ColorButton::selectColor()
-{
-    QColorDialog dlg;
-    dlg.setOption(QColorDialog::DontUseNativeDialog, true);
-    dlg.setCurrentColor(_color);
-    if (dlg.exec())
-        setValue(dlg.selectedColor());
-}
-
-//---------------------------------------------------------------------
 //                         PenEditorWidget
 //---------------------------------------------------------------------
 
@@ -191,7 +152,8 @@ PenEditorWidget::PenEditorWidget(PenEditorWidgetOptions opts, QWidget *parent) :
 
     _width = new QSpinBox;
 
-    _color = new ColorButton;
+    _color = new Ori::Widgets::ColorButton;
+    _color->drawIconFrame = false;
     _color->setIconSize({ opts.narrow || opts.noLabels ? 60 : 40, 16 });
 
     QLabel *labelStyle, *labelWidth, *labelColor;
@@ -266,7 +228,7 @@ void PenEditorWidget::createPenAction(Qt::PenStyle style, const QString& title)
 void PenEditorWidget::setValue(const QPen& p)
 {
     _pen = p;
-    _color->setValue(p.color());
+    _color->setSelectedColor(p.color());
     _width->setValue(p.width());
     _style->setSelectedId(p.style() == Qt::CustomDashLine ? Qt::SolidLine : p.style());
 }
@@ -274,7 +236,7 @@ void PenEditorWidget::setValue(const QPen& p)
 QPen PenEditorWidget::value() const
 {
     QPen p(_pen);
-    p.setColor(_color->value());
+    p.setColor(_color->selectedColor());
     p.setWidth(_width->value());
     p.setStyle(Qt::PenStyle(_style->selectedId()));
     p.setJoinStyle(Qt::MiterJoin);
