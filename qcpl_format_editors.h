@@ -43,6 +43,10 @@ private:
     QSpinBox *L, *T, *R, *B;
 };
 
+//---------------------------------------------------------------------
+//                         PenEditorWidget
+//---------------------------------------------------------------------
+
 struct PenEditorWidgetOptions
 {
     QString labelStyle;
@@ -51,10 +55,6 @@ struct PenEditorWidgetOptions
     bool narrow = false;
     bool noLabels = false;
 };
-
-//---------------------------------------------------------------------
-//                         PenEditorWidget
-//---------------------------------------------------------------------
 
 class PenEditorWidget : public QWidget
 {

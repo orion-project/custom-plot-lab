@@ -2,6 +2,7 @@
 #define QCPL_IO_JSON_H
 
 #include <QString>
+#include <QPen>
 
 class QCPAxis;
 class QCPColorScale;
@@ -31,12 +32,14 @@ QJsonObject writeLegend(QCPLegend* legend);
 QJsonObject writeTitle(QCPTextElement* title);
 QJsonObject writeAxis(QCPAxis *axis);
 QJsonObject writeColorScale(QCPColorScale *scale);
+QJsonObject writePen(const QPen& pen);
 
 void readPlot(const QJsonObject& root, Plot *plot, JsonReport* report);
 JsonError readLegend(const QJsonObject &obj, QCPLegend* legend);
 JsonError readTitle(const QJsonObject &obj, QCPTextElement* title);
 JsonError readAxis(const QJsonObject &obj, QCPAxis* axis);
 JsonError readColorScale(const QJsonObject &obj, QCPColorScale *scale);
+QPen readPen(const QJsonObject& obj, const QPen& def);
 
 /**
     Allows a plot to store default view format of its elements.

@@ -92,26 +92,6 @@ QMargins readMargins(const QJsonObject& obj, const QMargins& def)
     );
 }
 
-QJsonObject writePen(const QPen& pen)
-{
-    return QJsonObject({
-        { "color", pen.color().name() },
-        { "style", int(pen.style()) },
-        { "width", pen.width() },
-    });
-}
-
-QPen readPen(const QJsonObject& obj, const QPen& def)
-{
-    QPen p(def);
-    QColor c(obj["color"].toString());
-    if (c.isValid())
-        p.setColor(c);
-    p.setStyle(Qt::PenStyle(obj["style"].toInt(def.style())));
-    p.setWidth(obj["width"].toInt(def.width()));
-    return p;
-}
-
 QJsonObject writeGradient(const QCPColorGradient& grad)
 {
     auto obj = QJsonObject({
@@ -156,8 +136,28 @@ QCPColorGradient readGradient(const QJsonObject& obj, const QCPColorGradient& de
 
 } // namespace
 
+QJsonObject writePen(const QPen& pen)
+{
+    return QJsonObject({
+        { "color", pen.color().name() },
+        { "style", int(pen.style()) },
+        { "width", pen.width() },
+    });
+}
+
+QPen readPen(const QJsonObject& obj, const QPen& def)
+{
+    QPen p(def);
+    QColor c(obj["color"].toString());
+    if (c.isValid())
+        p.setColor(c);
+    p.setStyle(Qt::PenStyle(obj["style"].toInt(def.style())));
+    p.setWidth(obj["width"].toInt(def.width()));
+    return p;
+}
+
 //------------------------------------------------------------------------------
-//                             Qrite to JSON
+//                             Write to JSON
 
 QJsonObject writePlot(Plot* plot)
 {
