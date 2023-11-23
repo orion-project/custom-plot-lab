@@ -143,7 +143,8 @@ PenEditorWidget::PenEditorWidget(PenEditorWidgetOptions opts, QWidget *parent) :
 {
     _style = new Ori::Widgets::MenuToolButton;
     _style->setIconSize({ opts.narrow || opts.noLabels ? 80 : 50, 16 });
-    createPenAction(Qt::NoPen, "No line");
+    if (opts.enableNoPen)
+        createPenAction(Qt::NoPen, "No line");
     createPenAction(Qt::SolidLine, "Solid");
     createPenAction(Qt::DashLine, "Dashed"),
     createPenAction(Qt::DotLine, "Dotted");

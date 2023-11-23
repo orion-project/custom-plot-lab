@@ -54,6 +54,7 @@ struct PenEditorWidgetOptions
     int gridRow = 0;
     bool narrow = false;
     bool noLabels = false;
+    bool enableNoPen = true;
 };
 
 class PenEditorWidget : public QWidget
