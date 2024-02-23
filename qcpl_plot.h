@@ -28,6 +28,9 @@ public:
     QVector<Graph*>& serviceGraphs() { return _serviceGraphs; }
     Graph* selectedGraph() const;
 
+    enum GraphCountFlags {COUNT_DEFAULT = 0x0, COUNT_ONLY_VISIBLE = 0x1, COUNT_SERVICE = 0x2};
+    int graphsCount(GraphCountFlags flags = COUNT_DEFAULT) const;
+
     bool graphAutoColors = true;
     bool useSafeMargins = true;
     bool excludeServiceGraphsFromAutolimiting = true;

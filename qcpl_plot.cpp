@@ -591,5 +591,19 @@ void Plot::updateTitleVisibility()
     }
 }
 
-} // namespace QCPL
+int Plot::graphsCount(GraphCountFlags flags) const
+{
+    int count = 0;
+    for (int i = 0; i < graphCount(); i++)
+    {
+        auto g = graph(i);
+        if (!g->visible() and (flags & COUNT_ONLY_VISIBLE))
+            continue;
+        if (isService(g) and !(flags & COUNT_SERVICE))
+            continue;
+        count++;
+    }
+    return count;
+}
 
+} // namespace QCPL
