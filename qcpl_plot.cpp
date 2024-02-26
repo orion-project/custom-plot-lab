@@ -607,17 +607,26 @@ int Plot::graphsCount(GraphCountFlags flags) const
     return count;
 }
 
-void Plot::setFactor(QCPAxis* axis, int factor)
+AxisFactor Plot::axisFactor(QCPAxis* axis) const
+{
+    auto factorTicker = dynamic_cast<FactorAxisTicker*>(axis->ticker().data());
+    return factorTicker ? factorTicker->factor : AxisFactor();
+}
+
+void Plot::setAxisFactor(QCPAxis* axis, const AxisFactor& factor)
 {
     auto factorTicker = dynamic_cast<FactorAxisTicker*>(axis->ticker().data());
     if (factorTicker)
     {
-        if (factor != 0)
+        if (isAxisFactorSet(factor))
             factorTicker->factor = factor;
         else
+        {
+            qDebug() << "Reset axis factor";
             axis->setTicker(factorTicker->prevTicker);
+        }
     }
-    else if (factor != 0)
+    else if (isAxisFactorSet(factor))
     {
         auto factorTicker = new FactorAxisTicker(axis->ticker());
         factorTicker->factor = factor;

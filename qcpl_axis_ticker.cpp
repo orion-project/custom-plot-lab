@@ -22,7 +22,10 @@ void FactorAxisTicker::generate(const QCPRange &range, const QLocale &locale, QC
         return;
 
     QVector<double> factoredTicks(ticks.size());
-    double f = qPow(10.0, factor);
+
+    double f =  std::holds_alternative<int>(factor)
+        ? qPow(10.0, double(std::get<int>(factor)))
+        : std::get<double>(factor);
     for (int i = 0; i < ticks.size(); i++)
         factoredTicks[i] = ticks.at(i) / f;
 

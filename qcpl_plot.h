@@ -93,9 +93,12 @@ public:
     void extendLimits(double factor, bool replot = true) { extendLimits(xAxis, factor, false); extendLimits(yAxis, factor, replot); }
     void extendLimitsX(double factor, bool replot = true) { extendLimits(xAxis, factor, replot); }
     void extendLimitsY(double factor, bool replot = true) { extendLimits(yAxis, factor, replot); }
-    void setFactorX(int factor) { setFactor(xAxis, factor); }
-    void setFactorY(int factor) { setFactor(yAxis, factor); }
-    void setFactor(QCPAxis* axis, int factor);
+    AxisFactor axisFactor(QCPAxis* axis) const;
+    AxisFactor axisFactorX() const { return axisFactor(xAxis); }
+    AxisFactor axisFactorY() const { return axisFactor(yAxis); }
+    void setAxisFactorX(const AxisFactor& factor) { setAxisFactor(xAxis, factor); }
+    void setAxisFactorY(const AxisFactor& factor) { setAxisFactor(yAxis, factor); }
+    void setAxisFactor(QCPAxis* axis, const AxisFactor& factor);
 
     enum class PlotPart { None, AxisX, AxisY };
     PlotPart selectedPart() const;

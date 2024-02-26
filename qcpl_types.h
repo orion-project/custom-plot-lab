@@ -4,6 +4,8 @@
 #include <QVector>
 #include <QFont>
 
+#include <variant>
+
 namespace QCPL {
 
 typedef QVector<double> ValueArray;
@@ -40,6 +42,9 @@ struct PlotFormatSettings
     int axisTitleFontSize = 0;
     int axisTicksFontSize = 0;
 };
+
+using AxisFactor = std::variant<int, double>;
+bool isAxisFactorSet(const AxisFactor& factor);
 
 } // namespace QCPL
 

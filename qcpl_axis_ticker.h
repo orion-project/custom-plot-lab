@@ -3,6 +3,8 @@
 
 #include "qcustomplot/qcustomplot.h"
 
+#include "qcpl_types.h"
+
 namespace QCPL {
 
 class FactorAxisTicker : public QCPAxisTicker
@@ -10,9 +12,10 @@ class FactorAxisTicker : public QCPAxisTicker
 public:
     FactorAxisTicker(QSharedPointer<QCPAxisTicker> prevTicker);
 
-    void generate(const QCPRange &range, const QLocale &locale, QChar formatChar, int precision, QVector<double> &ticks, QVector<double> *subTicks, QVector<QString> *tickLabels) override;
+    void generate(const QCPRange &range, const QLocale &locale, QChar formatChar, int precision,
+                    QVector<double> &ticks, QVector<double> *subTicks, QVector<QString> *tickLabels) override;
 
-    int factor = 0;
+    AxisFactor factor;
     QSharedPointer<QCPAxisTicker> prevTicker;
 };
 
