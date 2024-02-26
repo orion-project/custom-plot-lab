@@ -34,6 +34,7 @@ public:
     bool graphAutoColors = true;
     bool useSafeMargins = true;
     bool excludeServiceGraphsFromAutolimiting = true;
+    bool formatAxisTitleAfterFactorSet = false;
 
     /// Used for saving format settings of plot elements that can be used as 'default' setting.
     /// It is up to application when to load these stored default settings.

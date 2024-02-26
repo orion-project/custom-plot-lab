@@ -31,4 +31,15 @@ bool isAxisFactorSet(const AxisFactor& factor)
     return false;
 }
 
+QString axisFactorStr(const AxisFactor& factor)
+{
+    if (!isAxisFactorSet(factor))
+        return QString();
+    if (std::holds_alternative<int>(factor))
+        return QString("×1e%1").arg(std::get<int>(factor));
+    if (std::holds_alternative<double>(factor))
+        return QString("×%1").arg(std::get<double>(factor));
+    return QString();
+}
+
 } // namespace QCPL

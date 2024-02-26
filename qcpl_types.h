@@ -45,6 +45,7 @@ struct PlotFormatSettings
 
 using AxisFactor = std::variant<int, double>;
 bool isAxisFactorSet(const AxisFactor& factor);
+QString axisFactorStr(const AxisFactor& factor);
 
 } // namespace QCPL
 

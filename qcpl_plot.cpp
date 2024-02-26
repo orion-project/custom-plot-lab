@@ -621,10 +621,7 @@ void Plot::setAxisFactor(QCPAxis* axis, const AxisFactor& factor)
         if (isAxisFactorSet(factor))
             factorTicker->factor = factor;
         else
-        {
-            qDebug() << "Reset axis factor";
             axis->setTicker(factorTicker->prevTicker);
-        }
     }
     else if (isAxisFactorSet(factor))
     {
@@ -632,6 +629,8 @@ void Plot::setAxisFactor(QCPAxis* axis, const AxisFactor& factor)
         factorTicker->factor = factor;
         axis->setTicker(QSharedPointer<QCPAxisTicker>(factorTicker));
     }
+    if (formatAxisTitleAfterFactorSet)
+        updateText(axis);
     replot();
 }
 
