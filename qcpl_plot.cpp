@@ -1,6 +1,6 @@
 #include "qcpl_plot.h"
 
-#include "qcpl_axis_ticker.h"
+#include "qcpl_axis_factor.h"
 #include "qcpl_colors.h"
 #include "qcpl_graph.h"
 #include "qcpl_format.h"
@@ -328,6 +328,19 @@ bool Plot::limitsDlgXY()
         setAxisRange(xAxis, range);
         setAxisRange(yAxis, range);
         replot();
+        return true;
+    }
+    return false;
+}
+
+bool Plot::axisFactorDlg(QCPAxis* axis)
+{
+    AxisFactorDlgProps props;
+    props.title = tr("%1 Factor").arg(getAxisIdent(axis));
+    props.plot = this;
+    if (QCPL::axisFactorDlg(axis, props))
+    {
+        emit modified("Plot::axisFactorDlg");
         return true;
     }
     return false;

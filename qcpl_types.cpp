@@ -27,7 +27,10 @@ bool isAxisFactorSet(const AxisFactor& factor)
     if (std::holds_alternative<int>(factor))
         return std::get<int>(factor) != 0;
     if (std::holds_alternative<double>(factor))
-        return std::get<double>(factor) != 0.0;
+    {
+        auto f = std::get<double>(factor);
+        return f != 0.0 && f != 1.0;
+    }
     return false;
 }
 

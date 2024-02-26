@@ -1,5 +1,6 @@
 #include "qcpl_format.h"
 
+#include "qcpl_axis_factor.h"
 #include "qcpl_format_axis.h"
 #include "qcpl_format_graph.h"
 #include "qcpl_format_legend.h"
@@ -43,6 +44,21 @@ bool axisLimitsDlg(QCPRange& range, const AxisLimitsDlgProps& props)
         range.lower = editorMin->value();
         range.upper = editorMax->value();
         range.normalize();
+        return true;
+    }
+    return false;
+}
+
+bool axisFactorDlg(QCPAxis* axis, const AxisFactorDlgProps& props)
+{
+    AxisFactorWidget::Props widgetProps;
+    AxisFactorWidget editor(axis, widgetProps);
+    if (Ori::Dlg::Dialog(&editor, false)
+            .withTitle(props.title)
+            .withContentToButtonsSpacingFactor(3)
+            .exec())
+    {
+        props.plot->setAxisFactor(axis, editor.selectedFactor());
         return true;
     }
     return false;

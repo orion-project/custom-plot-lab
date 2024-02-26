@@ -32,6 +32,16 @@ bool axisLimitsDlg(QCPRange& range, const AxisLimitsDlgProps& props);
 
 //---------------------------------------------------------------------
 
+struct AxisFactorDlgProps
+{
+    QString title;
+    Plot *plot;
+};
+
+bool axisFactorDlg(QCPAxis* axis, const AxisFactorDlgProps& props);
+
+//---------------------------------------------------------------------
+
 struct AxisFormatDlgProps
 {
     QString title;

@@ -1,6 +1,6 @@
 #include "qcpl_types.h"
 
-#include "qcpl_axis_ticker.h"
+#include "qcpl_axis_factor.h"
 
 #include "qcustomplot/qcustomplot.h"
 

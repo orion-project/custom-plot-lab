@@ -144,6 +144,7 @@ public:
     void setDefaultTextY(const QString& text) { setDefaultText(yAxis, text); }
 
     bool limitsDlg(QCPAxis* axis);
+    bool axisFactorDlg(QCPAxis* axis);
     bool axisTextDlg(QCPAxis* axis);
     bool axisFormatDlg(QCPAxis* axis);
     bool colorScaleFormatDlg(QCPColorScale* axis);
@@ -156,6 +157,8 @@ public slots:
     bool limitsDlgX() { return limitsDlg(xAxis); }
     bool limitsDlgY() { return limitsDlg(yAxis); }
     bool limitsDlgXY();
+    bool axisFactorDlgX() { return axisFactorDlg(xAxis); }
+    bool axisFactorDlgY() { return axisFactorDlg(yAxis); }
     void zoomIn() { extendLimits(-(_zoomStepX+_zoomStepY)/2.0); }
     void zoomOut() { extendLimits((_zoomStepX+_zoomStepY)/2.0); }
     void zoomInX() { extendLimitsX(-_zoomStepX); }
