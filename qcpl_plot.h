@@ -93,6 +93,9 @@ public:
     void extendLimits(double factor, bool replot = true) { extendLimits(xAxis, factor, false); extendLimits(yAxis, factor, replot); }
     void extendLimitsX(double factor, bool replot = true) { extendLimits(xAxis, factor, replot); }
     void extendLimitsY(double factor, bool replot = true) { extendLimits(yAxis, factor, replot); }
+    void setFactorX(int factor) { setFactor(xAxis, factor); }
+    void setFactorY(int factor) { setFactor(yAxis, factor); }
+    void setFactor(QCPAxis* axis, int factor);
 
     enum class PlotPart { None, AxisX, AxisY };
     PlotPart selectedPart() const;

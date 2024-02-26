@@ -1,5 +1,7 @@
 #include "qcpl_types.h"
 
+#include "qcpl_axis_ticker.h"
+
 #include "qcustomplot/qcustomplot.h"
 
 #include <QRandomGenerator>
@@ -48,15 +50,23 @@ void updateAxisTicker(QCPAxis* axis)
 {
     QSharedPointer<QCPAxisTicker> curTicker = axis->ticker();
     QSharedPointer<QCPAxisTicker> newTicker;
-    if (axis->scaleType() == QCPAxis::stLogarithmic && !dynamic_cast<QCPAxisTickerLog*>(curTicker.get()))
+    auto curTickerRaw = curTicker.get();
+    if (auto factorTicker = dynamic_cast<FactorAxisTicker*>(curTickerRaw); factorTicker)
+        curTickerRaw = factorTicker->prevTicker.get();
+    if (axis->scaleType() == QCPAxis::stLogarithmic && !dynamic_cast<QCPAxisTickerLog*>(curTickerRaw))
         newTicker.reset(new QCPAxisTickerLog);
-    else if (axis->scaleType() == QCPAxis::stLinear && dynamic_cast<QCPAxisTickerLog*>(curTicker.get()))
+    else if (axis->scaleType() == QCPAxis::stLinear && dynamic_cast<QCPAxisTickerLog*>(curTickerRaw))
         newTicker.reset(new QCPAxisTicker);
     if (newTicker && curTicker)
     {
         newTicker->setTickStepStrategy(curTicker->tickStepStrategy());
         newTicker->setTickCount(curTicker->tickCount());
         newTicker->setTickOrigin(curTicker->tickOrigin());
+        if (auto factorTicker = dynamic_cast<FactorAxisTicker*>(curTicker.get()); factorTicker)
+        {
+            factorTicker->prevTicker = newTicker;
+            newTicker = curTicker;
+        }
         axis->setTicker(newTicker);
     }
 }

@@ -58,7 +58,7 @@ GraphFormatWidget::GraphFormatWidget(QCPGraph *graph) : QWidget(), _graph(graph)
     markerLayout->addWidget(_markerColor, 0, 5);
 
     PenEditorWidgetOptions opts;
-    opts.labelStyle = tr("Lines:");
+    opts.labelStyle = tr("Pen:");
     opts.gridLayout = markerLayout;
     opts.gridRow = 1;
     // we don't put _markerPen widget itself into a layout,
@@ -77,7 +77,7 @@ GraphFormatWidget::GraphFormatWidget(QCPGraph *graph) : QWidget(), _graph(graph)
                 markerLayout,
                 Space(10),
                 LayoutH({
-                    new QLabel(tr("Skip points after each drawn marker:")),
+                    new QLabel(tr("Drawn marker each n-th point:")),
                     _markerSkip,
                     Stretch(),
                 }),
@@ -108,7 +108,8 @@ static QPixmap makeScatterShapeIcon(int shape, const QSize& sz)
 
 void GraphFormatWidget::createMarkerShapeAction(int shape, const QString& title)
 {
-    _markerShape->addAction(shape, new QAction(makeScatterShapeIcon(shape, _markerShape->iconSize()), title, this));
+    auto icon = makeScatterShapeIcon(shape, _markerShape->iconSize());
+    _markerShape->addAction(shape, new QAction(icon, title, this));
 }
 
 void GraphFormatWidget::apply()

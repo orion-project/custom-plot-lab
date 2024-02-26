@@ -1,5 +1,6 @@
 #include "qcpl_plot.h"
 
+#include "qcpl_axis_ticker.h"
 #include "qcpl_colors.h"
 #include "qcpl_graph.h"
 #include "qcpl_format.h"
@@ -604,6 +605,25 @@ int Plot::graphsCount(GraphCountFlags flags) const
         count++;
     }
     return count;
+}
+
+void Plot::setFactor(QCPAxis* axis, int factor)
+{
+    auto factorTicker = dynamic_cast<FactorAxisTicker*>(axis->ticker().data());
+    if (factorTicker)
+    {
+        if (factor != 0)
+            factorTicker->factor = factor;
+        else
+            axis->setTicker(factorTicker->prevTicker);
+    }
+    else if (factor != 0)
+    {
+        auto factorTicker = new FactorAxisTicker(axis->ticker());
+        factorTicker->factor = factor;
+        axis->setTicker(QSharedPointer<QCPAxisTicker>(factorTicker));
+    }
+    replot();
 }
 
 } // namespace QCPL
