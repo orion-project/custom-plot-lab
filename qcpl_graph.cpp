@@ -46,8 +46,10 @@ void LineGraph::draw(QCPPainter *painter)
     {
       QPen selectionPen(selectionDecorator->pen());
       if (mLineStyle != lsNone)
+      {
         selectionPen.setWidth(mPen.width() + 2*selectionDecorator->pen().width());
-      selectionPen.setJoinStyle(Qt::RoundJoin);
+        selectionPen.setCapStyle(Qt::RoundCap);
+      }
 
       painter->setPen(selectionPen);
       painter->setBrush(Qt::NoBrush);

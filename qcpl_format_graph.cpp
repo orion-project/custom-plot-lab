@@ -1,7 +1,7 @@
 #include "qcpl_format_graph.h"
 
 #include "qcpl_format_editors.h"
-#include "qcpl_plot.h"
+#include "./qcustomplot/qcustomplot.h"
 
 #include "helpers/OriLayouts.h"
 #include "widgets/OriMenuToolButton.h"
@@ -25,6 +25,7 @@ GraphFormatWidget::GraphFormatWidget(QCPGraph *graph) : QWidget(), _graph(graph)
     _markerShape = new Ori::Widgets::MenuToolButton;
     _markerShape->setIconSize({16, 16});
     createMarkerShapeAction(QCPScatterStyle::ssNone, tr("None"));
+    // This is a tiny dot and the same effect can be achived with Circle of size 1
     //createMarkerShapeAction(QCPScatterStyle::ssDot, tr("Dot"));
     createMarkerShapeAction(QCPScatterStyle::ssCross, tr("Cross"));
     createMarkerShapeAction(QCPScatterStyle::ssPlus, tr("Plus"));
@@ -39,12 +40,14 @@ GraphFormatWidget::GraphFormatWidget(QCPGraph *graph) : QWidget(), _graph(graph)
     createMarkerShapeAction(QCPScatterStyle::ssPlusSquare, tr("Plus-square"));
     createMarkerShapeAction(QCPScatterStyle::ssCrossCircle, tr("Cross-circle"));
     createMarkerShapeAction(QCPScatterStyle::ssPlusCircle, tr("Plus-circle"));
+    createMarkerShapeAction(QCPScatterStyle::ssPeace, tr("Peace"));
     _markerShape->setSelectedId(scatterStyle.shape());
 
     _markerSize = new QSpinBox;
     _markerSize->setValue(scatterStyle.size());
 
     _markerColor = new Ori::Widgets::ColorButton;
+    _markerColor->drawIconFrame = false;
     _markerColor->setIconSize({40, 16});
     _markerColor->setSelectedColor(scatterStyle.brush().color());
 
@@ -67,7 +70,9 @@ GraphFormatWidget::GraphFormatWidget(QCPGraph *graph) : QWidget(), _graph(graph)
     _markerPen->setValue(graph->scatterStyle().pen());
 
     _markerSkip = new QSpinBox;
-    _markerSkip->setValue(graph->scatterSkip());
+    _markerSkip->setMinimum(1);
+    _markerSkip->setMaximum(1000000);
+    _markerSkip->setValue(graph->scatterSkip()+1);
 
     LayoutV({
                 makeLabelSeparator(tr("Line")),
@@ -119,9 +124,24 @@ void GraphFormatWidget::apply()
     scatterStyle.setShape(QCPScatterStyle::ScatterShape(_markerShape->selectedId()));
     scatterStyle.setSize(_markerSize->value());
     scatterStyle.setBrush(_markerColor->selectedColor());
-    scatterStyle.setPen(_markerPen->value());
+    auto markerPen = _markerPen->value();
+    switch (scatterStyle.shape())
+    {
+    case QCPScatterStyle::ssCross:
+    case QCPScatterStyle::ssPlus:
+    case QCPScatterStyle::ssStar:
+    case QCPScatterStyle::ssPeace:
+        // There markers are invisible if there is not pen and this can be confusing
+        // also it doesn't make any sence to select them without pen
+        if (markerPen.style() == Qt::PenStyle::NoPen)
+            markerPen.setStyle(Qt::PenStyle::SolidLine);
+        break;
+    default:
+        break;
+    }
+    scatterStyle.setPen(markerPen);
     _graph->setScatterStyle(scatterStyle);
-    _graph->setScatterSkip(_markerSkip->value());
+    _graph->setScatterSkip(_markerSkip->value()-1);
 }
 
 } // namespace QCPL

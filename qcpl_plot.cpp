@@ -54,9 +54,9 @@ Plot::Plot(QWidget *parent) : QCustomPlot(parent),
     {
         // TODO: make selector customizable: line color/width/visibility, points count/color/size/visibility
         auto decorator = new QCPSelectionDecorator;
-        decorator->setPen(QPen(QBrush(QColor(0, 255, 255, 120)), 2));
-        decorator->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssSquare, Qt::black, Qt::black, 6));
-        decorator->setUsedScatterProperties(QCPScatterStyle::spAll);
+        decorator->setPen(QPen(QBrush(QColor(0, 240, 255, 120)), 2));
+        //decorator->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssSquare, Qt::black, Qt::black, 6));
+        //decorator->setUsedScatterProperties(QCPScatterStyle::spAll);
         LineGraph::setSharedSelectionDecorator(decorator);
     }
 
