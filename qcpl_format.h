@@ -92,7 +92,8 @@ bool plotFormatDlg(Plot* plot, const PlotFormatDlgProps& props = PlotFormatDlgPr
 struct GraphFormatDlgProps
 {
     QString title;
-    Plot *plot;
+    // Required for genericFormatDlg()
+    std::function<void()> onSaveDefault;
 };
 
 bool graphFormatDlg(QCPGraph* graph, const GraphFormatDlgProps& props);

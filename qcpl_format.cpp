@@ -224,13 +224,7 @@ bool plotFormatDlg(Plot* plot, const PlotFormatDlgProps &props)
 
 bool graphFormatDlg(QCPGraph* graph, const GraphFormatDlgProps& props)
 {
-    GraphFormatWidget editor(graph);
-
-    return Ori::Dlg::Dialog(&editor, false)
-            .withTitle(props.title)
-            .withOnApply([&editor, &props]{ editor.apply(); props.plot->replot(); })
-            .connectOkToContentApply()
-            .exec();
+    return genericFormatDlg(new GraphFormatWidget(graph), props);
 }
 
 //------------------------------------------------------------------------------

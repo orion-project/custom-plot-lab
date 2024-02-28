@@ -6,6 +6,7 @@
 
 class QCPAxis;
 class QCPColorScale;
+class QCPGraph;
 class QCPLegend;
 class QCPTextElement;
 
@@ -32,6 +33,7 @@ QJsonObject writeLegend(QCPLegend* legend);
 QJsonObject writeTitle(QCPTextElement* title);
 QJsonObject writeAxis(QCPAxis *axis);
 QJsonObject writeColorScale(QCPColorScale *scale);
+QJsonObject writeGraph(QCPGraph * graph);
 QJsonObject writePen(const QPen& pen);
 
 void readPlot(const QJsonObject& root, Plot *plot, JsonReport* report);
@@ -39,6 +41,7 @@ JsonError readLegend(const QJsonObject &obj, QCPLegend* legend);
 JsonError readTitle(const QJsonObject &obj, QCPTextElement* title);
 JsonError readAxis(const QJsonObject &obj, QCPAxis* axis);
 JsonError readColorScale(const QJsonObject &obj, QCPColorScale *scale);
+JsonError readGraph(const QJsonObject &obj, QCPGraph * graph);
 QPen readPen(const QJsonObject& obj, const QPen& def);
 
 /**
@@ -93,6 +96,7 @@ void copyLegendFormat(QCPLegend* legend);
 void copyTitleFormat(QCPTextElement* title);
 void copyAxisFormat(QCPAxis* axis);
 void copyColorScaleFormat(QCPColorScale* scale);
+void copyGraphFormat(QCPGraph* graph);
 
 // These commands are for context menus and hence should be invoked on visible elements.
 // It's not expected that element gets hidden when its format pasted
@@ -102,6 +106,7 @@ QString pasteLegendFormat(QCPLegend* legend);
 QString pasteTitleFormat(QCPTextElement* title);
 QString pasteAxisFormat(QCPAxis* axis);
 QString pasteColorScaleFormat(QCPColorScale* scale);
+QString pasteGraphFormat(QCPGraph* graph);
 
 } // namespace QCPL
 

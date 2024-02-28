@@ -142,7 +142,7 @@ QPixmap makePenIcon(const QPen& pen, const QSize &sz)
 PenEditorWidget::PenEditorWidget(PenEditorWidgetOptions opts, QWidget *parent) : QWidget(parent)
 {
     _style = new Ori::Widgets::MenuToolButton;
-    _style->setIconSize({ opts.narrow || opts.noLabels ? 80 : 50, 16 });
+    _style->setIconSize({ opts.narrow || opts.noLabels ? penIconWidthNarrow : penIconWidthNormal, iconHeight });
     if (opts.enableNoPen)
         createPenAction(Qt::NoPen, "No line");
     createPenAction(Qt::SolidLine, "Solid");
@@ -155,7 +155,7 @@ PenEditorWidget::PenEditorWidget(PenEditorWidgetOptions opts, QWidget *parent) :
 
     _color = new Ori::Widgets::ColorButton;
     _color->drawIconFrame = false;
-    _color->setIconSize({ opts.narrow || opts.noLabels ? 60 : 40, 16 });
+    _color->setIconSize({ opts.narrow || opts.noLabels ? colorIconWidthNarrow : colorIconWidthNormal, iconHeight });
 
     QLabel *labelStyle, *labelWidth, *labelColor;
     if (!opts.noLabels)
@@ -204,25 +204,21 @@ PenEditorWidget::PenEditorWidget(PenEditorWidgetOptions opts, QWidget *parent) :
 void PenEditorWidget::createPenAction(Qt::PenStyle style, const QString& title)
 {
     auto sz = _style->iconSize();
-    int w = sz.width();
-    int h = sz.height();
+
+    if (style == Qt::NoPen)
+    {
+        _style->addAction(style, new QAction(QIcon(":/qcpl_images/style_empty"), title, this));
+        return;
+    }
 
     QPixmap pixmap(sz);
     pixmap.fill(Qt::transparent);
     QPainter p(&pixmap);
-
-    if (style == Qt::NoPen)
-    {
-        QIcon(":/qcpl_images/style_empty").paint(&p, 0, 0, w, h);
-    }
-    else
-    {
-        QPen pen;
-        pen.setWidth(3);
-        pen.setStyle(style);
-        p.setPen(pen);
-        p.drawLine(0, h/2, w, h/2);
-    }
+    QPen pen;
+    pen.setWidth(3);
+    pen.setStyle(style);
+    p.setPen(pen);
+    p.drawLine(0, sz.height()/2, sz.width(), sz.height()/2);
     _style->addAction(style, new QAction(pixmap, title, this));
 }
 

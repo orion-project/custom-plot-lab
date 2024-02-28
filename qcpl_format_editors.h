@@ -62,6 +62,14 @@ class PenEditorWidget : public QWidget
     Q_OBJECT
 
 public:
+    // 'narrow' is the mode of widget, not a marker of icon size
+    // that's why 'narrow' is wider than 'normal'
+    static const int penIconWidthNarrow = 80;
+    static const int penIconWidthNormal = 50;
+    static const int colorIconWidthNarrow = 60;
+    static const int colorIconWidthNormal = 40;
+    static const int iconHeight = 16;
+
     explicit PenEditorWidget(PenEditorWidgetOptions opts = PenEditorWidgetOptions(), QWidget *parent = nullptr);
 
     void setValue(const QPen& p);

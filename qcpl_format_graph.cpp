@@ -1,7 +1,8 @@
 #include "qcpl_format_graph.h"
 
 #include "qcpl_format_editors.h"
-#include "./qcustomplot/qcustomplot.h"
+#include "qcpl_io_json.h"
+#include "qcustomplot/qcustomplot.h"
 
 #include "helpers/OriLayouts.h"
 #include "widgets/OriMenuToolButton.h"
@@ -17,13 +18,12 @@ namespace QCPL {
 
 GraphFormatWidget::GraphFormatWidget(QCPGraph *graph) : QWidget(), _graph(graph)
 {
-    _linePen = new PenEditorWidget;
-    _linePen->setValue(graph->pen());
+    _backup = writeGraph(graph);
 
-    QCPScatterStyle scatterStyle = _graph->scatterStyle();
+    _linePen = new PenEditorWidget;
 
     _markerShape = new Ori::Widgets::MenuToolButton;
-    _markerShape->setIconSize({16, 16});
+    _markerShape->setIconSize({PenEditorWidget::penIconWidthNormal, PenEditorWidget::iconHeight});
     createMarkerShapeAction(QCPScatterStyle::ssNone, tr("None"));
     // This is a tiny dot and the same effect can be achived with Circle of size 1
     //createMarkerShapeAction(QCPScatterStyle::ssDot, tr("Dot"));
@@ -41,15 +41,12 @@ GraphFormatWidget::GraphFormatWidget(QCPGraph *graph) : QWidget(), _graph(graph)
     createMarkerShapeAction(QCPScatterStyle::ssCrossCircle, tr("Cross-circle"));
     createMarkerShapeAction(QCPScatterStyle::ssPlusCircle, tr("Plus-circle"));
     createMarkerShapeAction(QCPScatterStyle::ssPeace, tr("Peace"));
-    _markerShape->setSelectedId(scatterStyle.shape());
 
     _markerSize = new QSpinBox;
-    _markerSize->setValue(scatterStyle.size());
 
     _markerColor = new Ori::Widgets::ColorButton;
     _markerColor->drawIconFrame = false;
     _markerColor->setIconSize({40, 16});
-    _markerColor->setSelectedColor(scatterStyle.brush().color());
 
     auto markerLayout = new QGridLayout;
     markerLayout->setHorizontalSpacing(10);
@@ -67,12 +64,10 @@ GraphFormatWidget::GraphFormatWidget(QCPGraph *graph) : QWidget(), _graph(graph)
     // we don't put _markerPen widget itself into a layout,
     // so a parent must be provided to make it freed
     _markerPen = new PenEditorWidget(opts, this);
-    _markerPen->setValue(graph->scatterStyle().pen());
 
     _markerSkip = new QSpinBox;
     _markerSkip->setMinimum(1);
     _markerSkip->setMaximum(1000000);
-    _markerSkip->setValue(graph->scatterSkip()+1);
 
     LayoutV({
                 makeLabelSeparator(tr("Line")),
@@ -87,9 +82,7 @@ GraphFormatWidget::GraphFormatWidget(QCPGraph *graph) : QWidget(), _graph(graph)
                     Stretch(),
                 }),
                 makeLabelSeparator(""),
-                Space(20),
-                Stretch(),
-            }).setMargin(0).useFor(this);
+            }).useFor(this);
 }
 
 static QPixmap makeScatterShapeIcon(int shape, const QSize& sz)
@@ -97,7 +90,7 @@ static QPixmap makeScatterShapeIcon(int shape, const QSize& sz)
     if (shape == QCPScatterStyle::ssNone)
         return QIcon(":/qcpl_images/style_empty").pixmap(sz);
 
-    QPixmap pixmap(sz);
+    QPixmap pixmap(sz.height(), sz.height());
     pixmap.fill(Qt::transparent);
     QCPPainter p(&pixmap);
     p.setAntialiasing(true);
@@ -106,7 +99,7 @@ static QPixmap makeScatterShapeIcon(int shape, const QSize& sz)
     ss.setShape(QCPScatterStyle::ScatterShape(shape));
     ss.setPen(QPen(Qt::black));
     ss.setSize(sz.height()-2);
-    ss.drawShape(&p, sz.width()/2, sz.height()/2);
+    ss.drawShape(&p, sz.height()/2, sz.height()/2);
 
     return pixmap;
 }
@@ -115,6 +108,23 @@ void GraphFormatWidget::createMarkerShapeAction(int shape, const QString& title)
 {
     auto icon = makeScatterShapeIcon(shape, _markerShape->iconSize());
     _markerShape->addAction(shape, new QAction(icon, title, this));
+}
+
+void GraphFormatWidget::populate()
+{
+    _linePen->setValue(_graph->pen());
+    QCPScatterStyle scatterStyle = _graph->scatterStyle();
+    _markerShape->setSelectedId(scatterStyle.shape());
+    _markerSize->setValue(scatterStyle.size());
+    _markerColor->setSelectedColor(scatterStyle.brush().color());
+    _markerPen->setValue(_graph->scatterStyle().pen());
+    _markerSkip->setValue(_graph->scatterSkip()+1);
+}
+
+void GraphFormatWidget::restore()
+{
+    readGraph(_backup, _graph);
+    _graph->parentPlot()->replot();
 }
 
 void GraphFormatWidget::apply()
@@ -142,6 +152,7 @@ void GraphFormatWidget::apply()
     scatterStyle.setPen(markerPen);
     _graph->setScatterStyle(scatterStyle);
     _graph->setScatterSkip(_markerSkip->value()-1);
+    _graph->parentPlot()->replot();
 }
 
 } // namespace QCPL

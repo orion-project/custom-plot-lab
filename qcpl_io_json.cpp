@@ -10,12 +10,14 @@
 #define CURRENT_LEGEND_VERSION 1
 #define CURRENT_TITLE_VERSION 1
 #define CURRENT_AXIS_VERSION 1
+#define CURRENT_GRAPH_VERSION 1
 #define SECTION_INI "DefaultPlotFormat"
 #define KEY_TITLE "title"
 #define KEY_LEGEND "legend"
 #define KEY_AXIS "axis"
 #define KEY_AXIS_X "axis_x"
 #define KEY_AXIS_Y "axis_y"
+#define KEY_GRAPH "graph"
 
 namespace QCPL {
 
@@ -261,6 +263,20 @@ QJsonObject writeColorScale(QCPColorScale *scale)
     return obj;
 }
 
+QJsonObject writeGraph(QCPGraph * graph)
+{
+    auto scatter = graph->scatterStyle();
+    return QJsonObject({
+        { "version", CURRENT_GRAPH_VERSION },
+        { "line_pen", writePen(graph->pen()) },
+        { "scatter_pen", writePen(scatter.pen()) },
+        { "scatter_color", colorToJson(scatter.brush().color()) },
+        { "scatter_shape", int(scatter.shape()) },
+        { "scatter_size", scatter.size() },
+        { "scatter_skip", graph->scatterSkip() },
+    });
+}
+
 //------------------------------------------------------------------------------
 //                             Read from JSON
 
@@ -386,6 +402,26 @@ JsonError readColorScale(const QJsonObject &obj, QCPColorScale *scale)
     scale->setBarWidth(obj["color_bar_width"].toInt(scale->barWidth()));
     scale->setGradient(readGradient(obj["color_bar_gradient"].toObject(), scale->gradient()));
     scale->setMargins(readMargins(obj["color_bar_margins"].toObject(), scale->margins()));
+    return {};
+}
+
+JsonError readGraph(const QJsonObject &obj, QCPGraph * graph)
+{
+    if (obj.isEmpty())
+        return { JsonError::NoData, "Line format object is empty" };
+    auto ver = obj["version"].toInt();
+    if (ver != CURRENT_GRAPH_VERSION)
+        return {
+                JsonError::BadVersion,
+                QString("Unsupported line format version %1, expected %2").arg(ver, CURRENT_GRAPH_VERSION) };
+    graph->setPen(readPen(obj["line_pen"].toObject(), graph->pen()));
+    QCPScatterStyle scatter = graph->scatterStyle();
+    scatter.setPen(readPen(obj["scatter_pen"].toObject(), scatter.pen()));
+    scatter.setBrush(jsonToColor(obj["scatter_color"], scatter.brush().color()));
+    scatter.setShape(QCPScatterStyle::ScatterShape(obj["scatter_shape"].toInt(int(scatter.shape()))));
+    scatter.setSize(obj["scatter_size"].toDouble(scatter.size()));
+    graph->setScatterStyle(scatter);
+    graph->setScatterSkip(obj["scatter_skip"].toInt(graph->scatterSkip()));
     return {};
 }
 
@@ -584,6 +620,11 @@ void copyColorScaleFormat(QCPColorScale* scale)
         setClipboardData(writeColorScale(scale), key);
 }
 
+void copyGraphFormat(QCPGraph* graph)
+{
+    setClipboardData(writeGraph(graph), KEY_GRAPH);
+}
+
 QString pastePlotFormat(Plot* plot)
 {
     auto res = getClipboradData("plot");
@@ -673,6 +714,18 @@ QString pasteColorScaleFormat(QCPColorScale* scale)
         return err.message;
 
     scale->setVisible(oldVisible);
+    return {};
+}
+
+QString pasteGraphFormat(QCPGraph* graph)
+{
+    auto res = getClipboradData(KEY_GRAPH);
+    if (!res.ok()) return res.error();
+
+    auto err = readGraph(res.result(), graph);
+    if (err.code == JsonError::BadVersion)
+        return err.message;
+
     return {};
 }
 

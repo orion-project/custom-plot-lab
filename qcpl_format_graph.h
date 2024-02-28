@@ -2,6 +2,7 @@
 #define QCPL_FORMAT_GRAPH_H
 
 #include <QWidget>
+#include <QJsonObject>
 
 QT_BEGIN_NAMESPACE
 class QSpinBox;
@@ -28,11 +29,18 @@ class GraphFormatWidget : public QWidget
 public:
     explicit GraphFormatWidget(QCPGraph *graph);
 
+    // Required for genericFormatDlg()
+    bool needSaveDefault() const { return false; }
+
+    void populate();
+
 public slots:
     void apply();
+    void restore();
 
 private:
     QCPGraph *_graph;
+    QJsonObject _backup;
     PenEditorWidget *_linePen, *_markerPen;
     QSpinBox *_markerSize, *_markerSkip;
     Ori::Widgets::MenuToolButton *_markerShape;
