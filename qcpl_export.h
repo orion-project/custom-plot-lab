@@ -2,10 +2,13 @@
 #define QCPL_EXPORT_H
 
 #include <QVector>
+#include <QJsonObject>
 
 QT_BEGIN_NAMESPACE
 class QTextStream;
 QT_END_NAMESPACE
+
+class QCustomPlot;
 
 namespace QCPL {
 
@@ -64,6 +67,20 @@ private:
     QString _prev, _prevX, _prevY;
     bool _merge;
 };
+
+struct ExportToImageProps
+{
+    QString fileName;
+    int width = 0;
+    int height = 0;
+    bool proportional = true;
+    bool scalePixels = false;
+
+    QJsonObject toJson() const;
+    void fromJson(const QJsonObject& obj);
+};
+
+bool exportImageDlg(QCustomPlot* plot, ExportToImageProps& props);
 
 } // namespace QCPL
 
