@@ -28,7 +28,11 @@ struct JsonError
 
 using JsonReport = QVector<JsonError>;
 
-QJsonObject writePlot(Plot *plot);
+struct WritePlotOptions
+{
+    bool onlyPrimaryAxes = true;
+};
+QJsonObject writePlot(Plot *plot, const WritePlotOptions& opts = WritePlotOptions());
 QJsonObject writeLegend(QCPLegend* legend);
 QJsonObject writeTitle(QCPTextElement* title);
 QJsonObject writeAxis(QCPAxis *axis);
@@ -36,7 +40,11 @@ QJsonObject writeColorScale(QCPColorScale *scale);
 QJsonObject writeGraph(QCPGraph * graph);
 QJsonObject writePen(const QPen& pen);
 
-void readPlot(const QJsonObject& root, Plot *plot, JsonReport* report);
+struct ReadPlotOptions
+{
+    bool autoCreateAxes = false;
+};
+void readPlot(const QJsonObject& root, Plot *plot, JsonReport* report, const ReadPlotOptions& opts = ReadPlotOptions());
 JsonError readLegend(const QJsonObject &obj, QCPLegend* legend);
 JsonError readTitle(const QJsonObject &obj, QCPTextElement* title);
 JsonError readAxis(const QJsonObject &obj, QCPAxis* axis);
@@ -82,14 +90,14 @@ public:
     Suggesting there errors are rare,
     we don't support localization here and return user readable message in common language.
 */
-QString loadFormatFromFile(const QString& fileName, Plot *plot, JsonReport* report);
+QString loadFormatFromFile(const QString& fileName, Plot *plot, JsonReport* report, const ReadPlotOptions& opts = ReadPlotOptions());
 
 /**
     Saves plot format settings to file and returns empty string when succeeded.
     Suggesting there errors are rare,
     we don't support localization here and return user readable message in common language.
 */
-QString saveFormatToFile(const QString& fileName, Plot *plot);
+QString saveFormatToFile(const QString& fileName, Plot *plot, const WritePlotOptions& opts = WritePlotOptions());
 
 void copyPlotFormat(Plot* plot);
 void copyLegendFormat(QCPLegend* legend);

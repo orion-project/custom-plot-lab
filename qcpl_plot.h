@@ -103,9 +103,6 @@ public:
     void setAxisFactorY(const AxisFactor& factor) { setAxisFactor(yAxis, factor); }
     void setAxisFactor(QCPAxis* axis, const AxisFactor& factor);
 
-    enum class PlotPart { None, AxisX, AxisY };
-    PlotPart selectedPart() const;
-
     /// Initial layout row and column where the axis rect is placed.
     /// It's the row 1 because the row 0 is occupied by the plot title.
     /// Can be used for calculation of placement of additional elements, e.g. color scale of 2D plots.
@@ -154,6 +151,7 @@ public:
 
     QString axisIdent(QCPAxis* axis) const;
     QCPAxis* addAxis(QCPAxis::AxisType axisType);
+    QCPAxis* selectedAxis() const;
 
 public slots:
     void autolimits(bool replot = true) { autolimits(xAxis, false); autolimits(yAxis, replot); }

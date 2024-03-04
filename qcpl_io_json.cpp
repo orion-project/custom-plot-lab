@@ -161,14 +161,36 @@ QPen readPen(const QJsonObject& obj, const QPen& def)
 //------------------------------------------------------------------------------
 //                             Write to JSON
 
-QJsonObject writePlot(Plot* plot)
+static QString makeAxisKey(const QString base, int index) {
+    return index == 0 ? base : QString("%1_%2").arg(base).arg(index);
+}
+
+QJsonObject writePlot(Plot* plot, const WritePlotOptions &opts)
 {
     QJsonObject root({
         { KEY_LEGEND, writeLegend(plot->legend) },
         { KEY_TITLE, writeTitle(plot->title()) },
-        { KEY_AXIS_X, writeAxis(plot->xAxis) },
-        { KEY_AXIS_Y, writeAxis(plot->yAxis) },
     });
+
+    auto axes = plot->axisRect()->axes(QCPAxis::atBottom);
+    for (int i = 0; i < axes.size(); i++) {
+        root[makeAxisKey("axis_x", i)] = writeAxis(axes.at(i));
+        if (opts.onlyPrimaryAxes) break;
+    }
+    axes = plot->axisRect()->axes(QCPAxis::atLeft);
+    for (int i = 0; i < axes.size(); i++) {
+        root[makeAxisKey("axis_y", i)] = writeAxis(axes.at(i));
+        if (opts.onlyPrimaryAxes) break;
+    }
+    if (!opts.onlyPrimaryAxes) {
+        axes = plot->axisRect()->axes(QCPAxis::atTop);
+        for (int i = 0; i < axes.size(); i++)
+            root[makeAxisKey("axis_x2", i)] = writeAxis(axes.at(i));
+        axes = plot->axisRect()->axes(QCPAxis::atRight);
+        for (int i = 0; i < axes.size(); i++)
+            root[makeAxisKey("axis_y2", i)] = writeAxis(axes.at(i));
+    }
+
     for (auto it = plot->additionalParts.constBegin(); it != plot->additionalParts.constEnd(); it++)
     {
         if (auto colorScale = qobject_cast<QCPColorScale*>(it.key()); colorScale)
@@ -280,16 +302,52 @@ QJsonObject writeGraph(QCPGraph * graph)
 //------------------------------------------------------------------------------
 //                             Read from JSON
 
-void readPlot(const QJsonObject& root, Plot *plot, JsonReport *report)
+void readPlot(const QJsonObject& root, Plot *plot, JsonReport *report, const ReadPlotOptions& opts)
 {
     if (auto err = readLegend(root[KEY_LEGEND].toObject(), plot->legend); !err.ok() and report)
         report->append(err);
     if (auto err = readTitle(root[KEY_TITLE].toObject(), plot->title()); !err.ok() and report)
         report->append(err);
-    if (auto err = readAxis(root[KEY_AXIS_X].toObject(), plot->xAxis); !err.ok() and report)
-        report->append(err);
-    if (auto err = readAxis(root[KEY_AXIS_Y].toObject(), plot->yAxis); !err.ok() and report)
-        report->append(err);
+
+    const QLatin1String axisKeyPrefix("axis_");
+    QList<QPair<int, QString>> bottomAxisKeys, leftAxisKeys, topAxisKeys, rightAxisKeys;
+    foreach (const auto& key, root.keys())
+    {
+        if (!key.startsWith(axisKeyPrefix)) continue;
+        auto s = QStringView(key).right(key.size() - axisKeyPrefix.size());
+        QList<QPair<int, QString>> *keys;
+        int indexOffset;
+        if (s.startsWith(QLatin1String("y2"))) keys = &rightAxisKeys, indexOffset = 2;
+        else if (s.startsWith(QLatin1String("x2"))) keys = &topAxisKeys, indexOffset = 2;
+        else if (s.startsWith('y')) keys = &leftAxisKeys, indexOffset = 1;
+        else if (s.startsWith('x')) keys = &bottomAxisKeys, indexOffset = 1;
+        else continue;
+        s = s.right(s.size() - indexOffset);
+        int index = s.startsWith('_') ? s.right(s.size()-1).toInt() : 0;
+        keys->append({index, key});
+    }
+    auto readAxes = [root, plot, report, opts](QList<QPair<int, QString>>& keys, QCPAxis::AxisType axisType) {
+        std::sort(keys.begin(), keys.end(), [](const QPair<int, QString>& a, const QPair<int, QString>&b){
+            return a.first < b.first;
+        });
+        auto axes = plot->axisRect()->axes(axisType);
+        for (int i = 0; i < keys.size(); i++)
+        {
+            auto key = keys.at(i).second;
+            if (i < axes.size()) {
+                // pass
+            } else if (opts.autoCreateAxes) {
+                axes << plot->addAxis(axisType);
+            } else break;
+            if (auto err = readAxis(root[key].toObject(), axes.at(i)); !err.ok() and report)
+                report->append(err);
+        }
+    };
+    readAxes(bottomAxisKeys, QCPAxis::atBottom);
+    readAxes(leftAxisKeys, QCPAxis::atLeft);
+    readAxes(topAxisKeys, QCPAxis::atTop);
+    readAxes(rightAxisKeys, QCPAxis::atRight);
+
     for (auto it = plot->additionalParts.constBegin(); it != plot->additionalParts.constEnd(); it++)
     {
         if (auto colorScale = qobject_cast<QCPColorScale*>(it.key()); colorScale)
@@ -298,7 +356,7 @@ void readPlot(const QJsonObject& root, Plot *plot, JsonReport *report)
                 report->append(err);
             continue;
         }
-        qWarning() << "readPlot: Unknown how lo read object from key" << it.value();
+        qWarning() << "readPlot: Unknown how to read object from key" << it.value();
     }
     plot->updateTitleVisibility();
 }
@@ -534,7 +592,7 @@ void FormatStorageIni::saveColorScale(QCPColorScale* scale)
 //                              Load / Save
 //------------------------------------------------------------------------------
 
-QString loadFormatFromFile(const QString& fileName, Plot* plot, JsonReport *report)
+QString loadFormatFromFile(const QString& fileName, Plot* plot, JsonReport *report, const ReadPlotOptions& opts)
 {
     QFile file(fileName);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
@@ -545,16 +603,16 @@ QString loadFormatFromFile(const QString& fileName, Plot* plot, JsonReport *repo
     if (doc.isNull())
         return "Unable to parse json file: " + error.errorString();
 
-    readPlot(doc.object(), plot, report);
+    readPlot(doc.object(), plot, report, opts);
     return {};
 }
 
-QString saveFormatToFile(const QString& fileName, Plot* plot)
+QString saveFormatToFile(const QString& fileName, Plot* plot, const WritePlotOptions& opts)
 {
     QFile file(fileName);
     if (!file.open(QFile::WriteOnly | QFile::Text))
         return "Unable to open file for writing: " + file.errorString();
-    QTextStream(&file) << QJsonDocument(writePlot(plot)).toJson();
+    QTextStream(&file) << QJsonDocument(writePlot(plot, opts)).toJson();
     return QString();
 }
 

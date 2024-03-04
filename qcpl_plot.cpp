@@ -106,15 +106,12 @@ Plot::~Plot()
     }
 }
 
-Plot::PlotPart Plot::selectedPart() const
+QCPAxis* Plot::selectedAxis() const
 {
-    if (xAxis->selectedParts().testFlag(QCPAxis::spAxis))
-        return PlotPart::AxisX;
-
-    if (yAxis->selectedParts().testFlag(QCPAxis::spAxis))
-        return PlotPart::AxisY;
-
-    return PlotPart::None;
+    foreach (auto axis, axisRect()->axes())
+        if (axis->selectedParts().testFlag(QCPAxis::spAxis))
+            return axis;
+    return nullptr;
 }
 
 void Plot::mouseDoubleClickEvent(QMouseEvent *event)
@@ -130,16 +127,10 @@ void Plot::mousePressEvent(QMouseEvent *event)
 {
     // if an axis is selected, only allow the direction of that axis to be dragged
     // if no axis is selected, both directions may be dragged
-    switch (selectedPart()) {
-    case PlotPart::AxisX:
-        axisRect()->setRangeDrag(xAxis->orientation());
-        break;
-    case PlotPart::AxisY:
-        axisRect()->setRangeDrag(yAxis->orientation());
-        break;
-    default:
+    if (auto axis = selectedAxis(); axis)
+        axisRect()->setRangeDrag(axis->orientation());
+    else
         axisRect()->setRangeDrag(Qt::Horizontal | Qt::Vertical);
-    }
     QCustomPlot::mousePressEvent(event);
 }
 
@@ -147,16 +138,10 @@ void Plot::wheelEvent(QWheelEvent *event)
 {
     // if an axis is selected, only allow the direction of that axis to be zoomed
     // if no axis is selected, both directions may be zoomed
-    switch (selectedPart()) {
-    case PlotPart::AxisX:
-        axisRect()->setRangeZoom(xAxis->orientation());
-        break;
-    case PlotPart::AxisY:
-        axisRect()->setRangeZoom(yAxis->orientation());
-        break;
-    default:
+    if (auto axis = selectedAxis(); axis)
+        axisRect()->setRangeZoom(axis->orientation());
+    else
         axisRect()->setRangeZoom(Qt::Horizontal | Qt::Vertical);
-    }
     QCustomPlot::wheelEvent(event);
 }
 
@@ -324,7 +309,7 @@ bool Plot::limitsDlg(QCPAxis* axis)
 
 bool Plot::limitsDlgXY()
 {
-    auto range = (selectedPart() == PlotPart::AxisY ? yAxis : xAxis)->range();
+    auto range = ((selectedAxis() == yAxis) ? yAxis : xAxis)->range();
     AxisLimitsDlgProps props;
     props.title = tr("Limits for X and Y");
     props.precision = _numberPrecision;
