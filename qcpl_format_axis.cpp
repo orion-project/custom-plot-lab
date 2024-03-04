@@ -556,6 +556,19 @@ void AxisFormatWidget::apply()
     ticker->setTickCount(_tickCount->value());
     ticker->setTickOrigin(_tickOffset->value());
     updateAxisTicker(_axis);
+
+    auto selectedBasePen = _axis->selectedBasePen();
+    selectedBasePen.setWidth(qMax(1, _axis->basePen().width()) + 1);
+    _axis->setSelectedBasePen(selectedBasePen);
+
+    auto selectedTickPen = _axis->selectedTickPen();
+    selectedTickPen.setWidth(qMax(1, _axis->tickPen().width()) + 1);
+    _axis->setSelectedTickPen(selectedTickPen);
+
+    auto selectedSubTickPen = _axis->selectedSubTickPen();
+    selectedSubTickPen.setWidth(qMax(1, _axis->subTickPen().width()) + 1);
+    _axis->setSelectedSubTickPen(selectedSubTickPen);
+
     _axis->parentPlot()->replot();
 }
 

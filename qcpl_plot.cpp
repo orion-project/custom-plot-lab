@@ -1,5 +1,6 @@
 #include "qcpl_plot.h"
 
+#include "qcpl_axis.h"
 #include "qcpl_axis_factor.h"
 #include "qcpl_colors.h"
 #include "qcpl_graph.h"
@@ -47,9 +48,6 @@ Plot::Plot(QWidget *parent) : QCustomPlot(parent),
         _zoomStepY(1.0/100.0),
         _numberPrecision(10)
 {
-    yAxis->setNumberPrecision(_numberPrecision);
-    xAxis->setNumberPrecision(_numberPrecision);
-
     if (!LineGraph::sharedSelectionDecorator())
     {
         // TODO: make selector customizable: line color/width/visibility, points count/color/size/visibility
@@ -83,19 +81,16 @@ Plot::Plot(QWidget *parent) : QCustomPlot(parent),
     connect(this, SIGNAL(axisDoubleClick(QCPAxis*,QCPAxis::SelectablePart,QMouseEvent*)),
             this, SLOT(axisDoubleClicked(QCPAxis*,QCPAxis::SelectablePart)));
 
-    auto labelsFont = font();
     auto titleFont = _title->font();
 #ifdef Q_OS_MAC
-    labelsFont.setPointSize(14);
     titleFont.setPointSize(16);
 #else
-    labelsFont.setPointSize(10);
     titleFont.setPointSize(14);
 #endif
-    xAxis->setLabelFont(labelsFont);
-    yAxis->setLabelFont(labelsFont);
-    xAxis->setSelectedLabelFont(labelsFont);
-    yAxis->setSelectedLabelFont(labelsFont);
+    initDefault(xAxis);
+    initDefault(xAxis2);
+    initDefault(yAxis);
+    initDefault(yAxis2);
     _title->setFont(titleFont);
     _title->setSelectedFont(titleFont);
 }
@@ -165,32 +160,45 @@ void Plot::wheelEvent(QWheelEvent *event)
     QCustomPlot::wheelEvent(event);
 }
 
-void Plot::contextMenuEvent(QContextMenuEvent *event)
+QMenu* Plot::findContextMenu(const QPointF& pos)
 {
-    QPointF pos(event->x(), event->y());
-    QMenu* menu = nullptr;
-    if (menuTitle && _title->selectTest(pos, false) >= 0) menu = menuTitle;
-    else if (menuLegend && legend->selectTest(pos, false) >= 0) menu = menuLegend;
-    else if (menuAxisX && xAxis->selectTest(pos, false) >= 0) menu = menuAxisX;
-    else if (menuAxisY && yAxis->selectTest(pos, false) >= 0) menu = menuAxisY;
-    if (!menu && menuGraph) {
-        foreach (auto g, selectedGraphs())
-            if (!isService(g)) {
-                menu = menuGraph;
-                break;
+    if (menuTitle && _title->selectTest(pos, false) >= 0)
+        return menuTitle;
+    if (menuLegend && legend->selectTest(pos, false) >= 0)
+        return menuLegend;
+    if (menuAxis) {
+        foreach (auto axis, axisRect()->axes()) {
+            if (axis->selectTest(pos, false) >= 0) {
+                axisUnderMenu = axis;
+                return menuAxis;
             }
-    }
-    if (!menu) {
-        auto it = menus.constBegin();
-        while (it != menus.constEnd()) {
-            if (it.key()->selectTest(pos, false) > 0) {
-                menu = it.value();
-                break;
-            }
-            it++;
         }
     }
-    if (!menu) menu = menuPlot;
+    if (menuAxisX && xAxis->selectTest(pos, false) >= 0) {
+        axisUnderMenu = xAxis;
+        return menuAxisX;
+    }
+    if (menuAxisY && yAxis->selectTest(pos, false) >= 0) {
+        axisUnderMenu = yAxis;
+        return menuAxisY;
+    }
+    if (menuGraph) {
+        foreach (auto g, selectedGraphs())
+            if (!isService(g))
+                return menuGraph;
+    }
+    auto it = menus.constBegin();
+    while (it != menus.constEnd()) {
+        if (it.key()->selectTest(pos, false) > 0)
+            return it.value();
+        it++;
+    }
+    return menuPlot;
+}
+
+void Plot::contextMenuEvent(QContextMenuEvent *event)
+{
+    auto menu = findContextMenu(event->pos());
     if (menu) menu->popup(event->globalPos());
 }
 
@@ -202,13 +210,10 @@ void Plot::resizeEvent(QResizeEvent *event)
 
 void Plot::plotSelectionChanged()
 {
-    // handle axis and tick labels as one selectable object:
-    if (xAxis->selectedParts().testFlag(QCPAxis::spAxis) ||
-        xAxis->selectedParts().testFlag(QCPAxis::spTickLabels))
-        xAxis->setSelectedParts(QCPAxis::spAxis | QCPAxis::spTickLabels);
-    if (yAxis->selectedParts().testFlag(QCPAxis::spAxis) ||
-        yAxis->selectedParts().testFlag(QCPAxis::spTickLabels))
-        yAxis->setSelectedParts(QCPAxis::spAxis | QCPAxis::spTickLabels);
+    foreach (auto axis, axisRect()->axes())
+        if (axis->selectedParts().testFlag(QCPAxis::spAxis) ||
+            axis->selectedParts().testFlag(QCPAxis::spTickLabels))
+            axis->setSelectedParts(QCPAxis::spAxis | QCPAxis::spTickLabels);
 }
 
 void Plot::rawGraphClicked(QCPAbstractPlottable *plottable)
@@ -305,7 +310,7 @@ bool Plot::limitsDlg(QCPAxis* axis)
 {
     auto range = axis->range();
     AxisLimitsDlgProps props;
-    props.title = tr("%1 Limits").arg(getAxisIdent(axis));
+    props.title = tr("Limits of %1").arg(axisIdent(axis));
     props.precision = _numberPrecision;
     props.unit = getAxisUnitString ? getAxisUnitString(axis) : QString();
     if (axisLimitsDlg(range, props))
@@ -336,7 +341,7 @@ bool Plot::limitsDlgXY()
 bool Plot::axisFactorDlg(QCPAxis* axis)
 {
     AxisFactorDlgProps props;
-    props.title = tr("%1 Factor").arg(getAxisIdent(axis));
+    props.title = tr("Factor of %1").arg(axisIdent(axis));
     props.plot = this;
     if (QCPL::axisFactorDlg(axis, props))
     {
@@ -349,7 +354,7 @@ bool Plot::axisFactorDlg(QCPAxis* axis)
 bool Plot::axisTextDlg(QCPAxis* axis)
 {
     AxisFormatDlgProps props;
-    props.title = tr("%1 Title").arg(getAxisIdent(axis));
+    props.title = tr("Title of %1").arg(axisIdent(axis));
     props.formatter = formatter(axis);
     props.defaultText = defaultText(axis);
     if (QCPL::axisTextDlg(axis, props))
@@ -363,7 +368,7 @@ bool Plot::axisTextDlg(QCPAxis* axis)
 bool Plot::axisFormatDlg(QCPAxis* axis)
 {
     AxisFormatDlgProps props;
-    props.title = tr("%1 Format").arg(getAxisIdent(axis));
+    props.title = tr("Format of %1").arg(axisIdent(axis));
     props.formatter = formatter(axis);
     props.defaultText = defaultText(axis);
     if (formatSaver)
@@ -379,7 +384,7 @@ bool Plot::axisFormatDlg(QCPAxis* axis)
 bool Plot::colorScaleFormatDlg(QCPColorScale* scale)
 {
     AxisFormatDlgProps props;
-    props.title = tr("%1 Format").arg(getAxisIdent(scale->axis()));
+    props.title = tr("%1 Format").arg(axisIdent(scale->axis()));
     props.formatter = formatter(scale->axis());
     props.defaultText = defaultText(scale->axis());
     if (formatSaver)
@@ -436,50 +441,60 @@ bool Plot::legendFormatDlg()
     return false;
 }
 
-static QCPAxis* getOppositeAxis(QCPAxis* axis)
-{
-    auto rect = axis->axisRect();
-    auto type = axis->axisType();
-    if (type == QCPAxis::atLeft)
-        return rect->axis(QCPAxis::atRight);
-    if (type == QCPAxis::atRight)
-        return rect->axis(QCPAxis::atLeft);
-    if (type == QCPAxis::atTop)
-        return rect->axis(QCPAxis::atBottom);
-    return rect->axis(QCPAxis::atTop);
+//static QCPAxis* getOppositeAxis(QCPAxis* axis)
+//{
+//    auto rect = axis->axisRect();
+//    auto type = axis->axisType();
+//    if (type == QCPAxis::atLeft)
+//        return rect->axis(QCPAxis::atRight);
+//    if (type == QCPAxis::atRight)
+//        return rect->axis(QCPAxis::atLeft);
+//    if (type == QCPAxis::atTop)
+//        return rect->axis(QCPAxis::atBottom);
+//    return rect->axis(QCPAxis::atTop);
+//}
+
+QString Plot::axisTypeStr(QCPAxis::AxisType type) const {
+    switch (type) {
+    case QCPAxis::atLeft: return tr("Left Axis");
+    case QCPAxis::atRight: return tr("Right Axis");
+    case QCPAxis::atTop: return tr("Top Axis");
+    case QCPAxis::atBottom: return tr("Bottom Axis");
+    }
 }
 
-QString Plot::getAxisIdent(QCPAxis* axis) const
+QString Plot::axisIdent(QCPAxis* axis) const
 {
     if (axisIdents.contains(axis))
         return axisIdents[axis];
-    auto axis2 = getOppositeAxis(axis);
-    if (axisIdents.contains(axis2))
-        return axisIdents[axis2];
-    if (axis == xAxis || axis == xAxis2)
-        return tr("X-axis");
-    if (axis == yAxis || axis == yAxis2)
-        return tr("Y-axis");
+    auto type = axis->axisType();
+    QString typeStr = axisTypeStr(type);
+    if (axis == xAxis || axis == xAxis2 || axis == yAxis || axis == yAxis2)
+        return typeStr;
+    auto axes = axis->axisRect()->axes(type);
+    for (int i = 0; i < axes.size(); i++)
+        if (axes.at(i) == axis)
+            return QString("%1 %2").arg(typeStr).arg(i);
     if (!axis->label().isEmpty())
         return axis->label();
     return tr("Axis");
 }
 
-bool Plot::isFrameVisible() const
-{
-    return xAxis2->visible();
-}
+//bool Plot::isFrameVisible() const
+//{
+//    return xAxis2->visible();
+//}
 
-void Plot::setFrameVisible(bool on)
-{
-    // Secondary axes only form frame rect
-    xAxis2->setVisible(on);
-    yAxis2->setVisible(on);
-    xAxis2->setTicks(false);
-    yAxis2->setTicks(false);
-    xAxis2->setSelectableParts({});
-    yAxis2->setSelectableParts({});
-}
+//void Plot::setFrameVisible(bool on)
+//{
+//    // Secondary axes only form frame rect
+//    xAxis2->setVisible(on);
+//    yAxis2->setVisible(on);
+//    xAxis2->setTicks(false);
+//    yAxis2->setTicks(false);
+//    xAxis2->setSelectableParts({});
+//    yAxis2->setSelectableParts({});
+//}
 
 Graph* Plot::makeNewGraph(const QString& title)
 {
@@ -645,6 +660,42 @@ void Plot::setAxisFactor(QCPAxis* axis, const AxisFactor& factor)
     if (formatAxisTitleAfterFactorSet)
         updateText(axis);
     replot();
+}
+
+void Plot::initDefault(QCPAxis* axis)
+{
+    auto labelsFont = font();
+#ifdef Q_OS_MAC
+    labelsFont.setPointSize(14);
+#else
+    labelsFont.setPointSize(10);
+#endif
+    axis->setLabelFont(labelsFont);
+    axis->setSelectedLabelFont(labelsFont);
+    axis->setNumberPrecision(_numberPrecision);
+}
+
+QCPAxis* Plot::addAxis(QCPAxis::AxisType axisType)
+{
+    if (axisType == QCPAxis::atBottom && !xAxis->visible()) {
+        xAxis->setVisible(true);
+        return xAxis;
+    }
+    if (axisType == QCPAxis::atLeft && !yAxis->visible()) {
+        yAxis->setVisible(true);
+        return yAxis;
+    }
+    if (axisType == QCPAxis::atTop && !xAxis2->visible()) {
+        xAxis2->setVisible(true);
+        return xAxis2;
+    }
+    if (axisType == QCPAxis::atRight && !yAxis2->visible()) {
+        yAxis2->setVisible(true);
+        return yAxis2;
+    }
+    auto axis = axisRect()->addAxis(axisType, new Axis(axisRect(), axisType));
+    initDefault(axis);
+    return axis;
 }
 
 } // namespace QCPL

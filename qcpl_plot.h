@@ -43,16 +43,18 @@ public:
     // Plot doesn't take ownership on context menus
     QMenu *menuAxisX = nullptr;
     QMenu *menuAxisY = nullptr;
+    QMenu *menuAxis = nullptr;
     QMenu *menuGraph = nullptr;
     QMenu *menuPlot = nullptr;
     QMenu *menuLegend = nullptr;
     QMenu *menuTitle = nullptr;
     QMap<QCPLayerable*, QMenu*> menus;
+    QCPAxis *axisUnderMenu;
 
     /// Display axis identifiers used for automatcally shown dialogs.
     /// E.g. plot shows limits dialog when an axis is double clicked,
     /// and the dialog should have some title. It tries to take a title from this map first
-    /// and substitutes some default title if nothing has been found. @see getAxisIdent()
+    /// and substitutes some default title if nothing has been found. @see axisIdent()
     QMap<QCPAxis*, QString> axisIdents;
 
     /// Map of objects with their store keys
@@ -78,8 +80,8 @@ public:
     /// This is undesired behaviour, so we need to remove the title from the main layout when it's hidden.
     void updateTitleVisibility();
 
-    bool isFrameVisible() const;
-    void setFrameVisible(bool on);
+    //bool isFrameVisible() const;
+    //void setFrameVisible(bool on);
 
     AxisLimits limitsX() const { return limits(xAxis); }
     AxisLimits limitsY() const { return limits(yAxis); }
@@ -150,6 +152,9 @@ public:
     bool colorScaleFormatDlg(QCPColorScale* axis);
     void autolimits(QCPAxis* axis, bool replot);
 
+    QString axisIdent(QCPAxis* axis) const;
+    QCPAxis* addAxis(QCPAxis::AxisType axisType);
+
 public slots:
     void autolimits(bool replot = true) { autolimits(xAxis, false); autolimits(yAxis, replot); }
     void autolimitsX(bool replot = true) { autolimits(xAxis, replot); }
@@ -210,11 +215,12 @@ private:
 
     QColor nextGraphColor();
 
+    void initDefault(QCPAxis* axis);
     void setAxisRange(QCPAxis* axis, const QCPRange &range);
     double safeMargins(QCPAxis* axis);
-    QString getAxisIdent(QCPAxis* axis) const;
+    QMenu* findContextMenu(const QPointF& pos);
+    QString axisTypeStr(QCPAxis::AxisType type) const;
 };
-
 
 } // namespace QCPL
 

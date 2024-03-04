@@ -3,6 +3,7 @@ INCLUDEPATH += $$PWD
 QT += printsupport
 
 SOURCES += \
+    $$PWD/qcpl_axis.cpp \
     $$PWD/qcpl_axis_factor.cpp \
     $$PWD/qcpl_cursor.cpp \
     $$PWD/qcpl_cursor_panel.cpp \
@@ -24,6 +25,7 @@ SOURCES += \
     $$PWD/qcpl_format_plot.cpp
 
 HEADERS  += \
+    $$PWD/qcpl_axis.h \
     $$PWD/qcpl_axis_factor.h \
     $$PWD/qcpl_cursor.h \
     $$PWD/qcpl_cursor_panel.h \
