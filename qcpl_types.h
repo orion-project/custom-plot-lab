@@ -10,10 +10,12 @@ namespace QCPL {
 
 typedef QVector<double> ValueArray;
 
-struct GraphData
+template <typename T> struct XYPair
 {
-    ValueArray x, y;
+    T x, y;
 };
+
+typedef XYPair<ValueArray> GraphData;
 
 struct AxisLimits
 {

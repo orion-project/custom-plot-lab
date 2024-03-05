@@ -1,9 +1,14 @@
 #ifndef QCPL_AXIS_H
 #define QCPL_AXIS_H
 
+#include "qcpl_types.h"
 #include "qcustomplot/qcustomplot.h"
 
 namespace QCPL {
+
+class Plot;
+
+typedef XYPair<QCPAxis*> AxisPair;
 
 class Axis : public QCPAxis
 {
@@ -19,6 +24,8 @@ protected:
 private:
     bool _highlight = false;
 };
+
+AxisPair chooseAxes(Plot* plot, const AxisPair& chosenAxes);
 
 } // namespace QCPL
 

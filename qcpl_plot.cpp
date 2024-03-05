@@ -40,7 +40,7 @@ inline QFont defaultTitleFont() {
 
 namespace QCPL {
 
-Plot::Plot(QWidget *parent) : QCustomPlot(parent),
+Plot::Plot(const PlotOptions& opts, QWidget *parent) : QCustomPlot(parent),
         // TODO: make configurable
         _safeMarginsX(1.0/100.0),
         _safeMarginsY(5.0/100.0),
@@ -48,6 +48,18 @@ Plot::Plot(QWidget *parent) : QCustomPlot(parent),
         _zoomStepY(1.0/100.0),
         _numberPrecision(10)
 {
+    foreach (auto axis, defaultAxes())
+    {
+        initDefault(axis);
+        if (opts.replaceDefaultAxes)
+        {
+            auto fmt = writeAxis(axis);
+            auto axisType = axis->axisType();
+            axisRect()->removeAxis(axis);
+            readAxis(fmt, addAxis(axisType));
+        }
+    }
+
     if (!LineGraph::sharedSelectionDecorator())
     {
         // TODO: make selector customizable: line color/width/visibility, points count/color/size/visibility
@@ -87,10 +99,6 @@ Plot::Plot(QWidget *parent) : QCustomPlot(parent),
 #else
     titleFont.setPointSize(14);
 #endif
-    initDefault(xAxis);
-    initDefault(xAxis2);
-    initDefault(yAxis);
-    initDefault(yAxis2);
     _title->setFont(titleFont);
     _title->setSelectedFont(titleFont);
 }
@@ -662,23 +670,25 @@ void Plot::initDefault(QCPAxis* axis)
 
 QCPAxis* Plot::addAxis(QCPAxis::AxisType axisType)
 {
-    if (axisType == QCPAxis::atBottom && !xAxis->visible()) {
+    if (axisType == QCPAxis::atBottom && xAxis && !xAxis->visible()) {
         xAxis->setVisible(true);
         return xAxis;
     }
-    if (axisType == QCPAxis::atLeft && !yAxis->visible()) {
+    if (axisType == QCPAxis::atLeft && yAxis && !yAxis->visible()) {
         yAxis->setVisible(true);
         return yAxis;
     }
-    if (axisType == QCPAxis::atTop && !xAxis2->visible()) {
+    if (axisType == QCPAxis::atTop && xAxis2 && !xAxis2->visible()) {
         xAxis2->setVisible(true);
         return xAxis2;
     }
-    if (axisType == QCPAxis::atRight && !yAxis2->visible()) {
+    if (axisType == QCPAxis::atRight && yAxis2 && !yAxis2->visible()) {
         yAxis2->setVisible(true);
         return yAxis2;
     }
     auto axis = axisRect()->addAxis(axisType, new Axis(axisRect(), axisType));
+    axis->setLayer(QLatin1String("axes"));
+    axis->grid()->setLayer(QLatin1String("grid"));
     initDefault(axis);
     return axis;
 }

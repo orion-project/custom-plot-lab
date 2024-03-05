@@ -1,6 +1,20 @@
 #include "qcpl_axis.h"
 
+#include "qcpl_plot.h"
+
+#include "helpers/OriDialogs.h"
+
+#include <QButtonGroup>
+#include <QGridLayout>
+#include <QFrame>
+#include <QRadioButton>
+#include <QPushButton>
+
 namespace QCPL {
+
+//------------------------------------------------------------------------------
+//                                QCPL::Axis
+//------------------------------------------------------------------------------
 
 Axis::Axis(QCPAxisRect *parent, AxisType type) : QCPAxis(parent, type)
 {
@@ -48,6 +62,79 @@ void Axis::draw(QCPPainter *painter)
       painter->drawLine(baseLine);
     }
     QCPAxis::draw(painter);
+}
+
+//------------------------------------------------------------------------------
+//                              QCPL::chooseAxes
+//------------------------------------------------------------------------------
+
+static void highlightAxes(Plot* plot, const AxisPair& pair)
+{
+    foreach (auto axis, plot->axisRect()->axes())
+        if (auto a = dynamic_cast<Axis*>(axis); a)
+            a->setHightlight(a == pair.x || a == pair.y);
+    plot->replot();
+}
+
+class AxesChooser : public QWidget
+{
+public:
+    AxesChooser(Plot* plot, const AxisPair& chosenAxes) : QWidget(), plot(plot), chosenAxes(chosenAxes)
+    {
+        auto frame = new QFrame;
+        frame->setFrameStyle(QFrame::Plain);
+        frame->setFrameShape(QFrame::Box);
+
+        xFlags = new QButtonGroup(this);
+        yFlags = new QButtonGroup(this);
+
+        auto layout = new QGridLayout(this);
+        layout->setMargin(0);
+        layout->addWidget(frame, 1, 1);
+        layout->addLayout(fillAxes(QCPAxis::atBottom, xFlags), 2, 1);
+        layout->addLayout(fillAxes(QCPAxis::atLeft, yFlags), 1, 0);
+        layout->addLayout(fillAxes(QCPAxis::atTop, xFlags), 0, 1);
+        layout->addLayout(fillAxes(QCPAxis::atRight, yFlags), 1, 2);
+        setLayout(layout);
+    }
+
+    QVBoxLayout* fillAxes(QCPAxis::AxisType axisType, QButtonGroup* group)
+    {
+        auto layout = new QVBoxLayout;
+        if (axisType == QCPAxis::atTop)
+            layout->setDirection(QBoxLayout::BottomToTop);
+        foreach (auto axis, plot->axisRect()->axes(axisType))
+        {
+            auto flag = new QPushButton(plot->axisIdent(axis));
+            flag->setCheckable(true);
+            flag->setChecked(group == xFlags ? axis == chosenAxes.x : axis == chosenAxes.y);
+            flag->connect(flag, &QPushButton::pressed, this, [this, axis]{
+                if (axis->orientation() == Qt::Horizontal)
+                    chosenAxes.x = axis;
+                else chosenAxes.y = axis;
+                highlightAxes(plot, chosenAxes);
+            });
+            group->addButton(flag);
+            layout->addWidget(flag);
+        }
+        return layout;
+    }
+
+    Plot* plot;
+    QButtonGroup *xFlags, *yFlags;
+    XYPair<QCPAxis*> chosenAxes;
+};
+
+AxisPair chooseAxes(Plot* plot, const AxisPair& chosenAxes)
+{
+    highlightAxes(plot, chosenAxes);
+    AxesChooser w(plot, chosenAxes);
+    bool ok = Ori::Dlg::Dialog(&w, false)
+        .withTitle(qApp->translate("AxesChooser", "Choose Axes"))
+        .withContentToButtonsSpacingFactor(3)
+        .exec();
+    highlightAxes(plot, {});
+    return ok ? w.chosenAxes : chosenAxes;
 }
 
 } // namespace QCPL

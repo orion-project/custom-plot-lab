@@ -17,12 +17,19 @@ struct LayoutCell
     int col;
 };
 
+struct PlotOptions
+{
+    /// Re-create default axes as instances of QCPL::Axis
+    /// which provides ability to highlight axes in multi-axis scenario
+    bool replaceDefaultAxes = false;
+};
+
 class Plot : public QCustomPlot
 {
     Q_OBJECT
 
 public:
-    explicit Plot(QWidget* parent = nullptr);
+    explicit Plot(const PlotOptions& opts = PlotOptions(), QWidget* parent = nullptr);
     ~Plot();
 
     QVector<Graph*>& serviceGraphs() { return _serviceGraphs; }
@@ -152,6 +159,7 @@ public:
     QString axisIdent(QCPAxis* axis) const;
     QCPAxis* addAxis(QCPAxis::AxisType axisType);
     QCPAxis* selectedAxis() const;
+    QVector<QCPAxis*> defaultAxes() { return {xAxis, yAxis, xAxis2, yAxis2}; }
 
 public slots:
     void autolimits(bool replot = true) { autolimits(xAxis, false); autolimits(yAxis, replot); }
