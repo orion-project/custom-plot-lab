@@ -84,17 +84,18 @@ public:
         auto frame = new QFrame;
         frame->setFrameStyle(QFrame::Plain);
         frame->setFrameShape(QFrame::Box);
+        frame->setAutoFillBackground(true);
+        frame->setBackgroundRole(QPalette::Base);
 
         xFlags = new QButtonGroup(this);
         yFlags = new QButtonGroup(this);
 
         auto layout = new QGridLayout(this);
-        layout->setMargin(0);
         layout->addWidget(frame, 1, 1);
         layout->addLayout(fillAxes(QCPAxis::atBottom, xFlags), 2, 1);
-        layout->addLayout(fillAxes(QCPAxis::atLeft, yFlags), 1, 0);
+        layout->addLayout(fillAxes(QCPAxis::atLeft, singleAxis ? xFlags : yFlags), 1, 0);
         layout->addLayout(fillAxes(QCPAxis::atTop, xFlags), 0, 1);
-        layout->addLayout(fillAxes(QCPAxis::atRight, yFlags), 1, 2);
+        layout->addLayout(fillAxes(QCPAxis::atRight, singleAxis ? xFlags : yFlags), 1, 2);
         setLayout(layout);
     }
 
@@ -109,11 +110,20 @@ public:
             flag->setCheckable(true);
             flag->setChecked(group == xFlags ? axis == chosenAxes.x : axis == chosenAxes.y);
             flag->connect(flag, &QPushButton::pressed, this, [this, axis]{
-                if (axis->orientation() == Qt::Horizontal)
+                if (axis->orientation() == Qt::Horizontal) {
                     chosenAxes.x = axis;
-                else chosenAxes.y = axis;
+                    if (singleAxis)
+                        chosenAxes.y = nullptr;
+                }
+                else {
+                    chosenAxes.y = axis;
+                    if (singleAxis)
+                        chosenAxes.x = nullptr;
+                }
                 highlightAxes(plot, chosenAxes);
             });
+            if (!axis->visible())
+                flag->setIcon(QIcon(":/qcpl_images/eye_closed"));
             group->addButton(flag);
             layout->addWidget(flag);
         }
@@ -123,6 +133,7 @@ public:
     Plot* plot;
     QButtonGroup *xFlags, *yFlags;
     XYPair<QCPAxis*> chosenAxes;
+    bool singleAxis = false;
 };
 
 AxisPair chooseAxes(Plot* plot, const AxisPair& chosenAxes)
@@ -131,10 +142,25 @@ AxisPair chooseAxes(Plot* plot, const AxisPair& chosenAxes)
     AxesChooser w(plot, chosenAxes);
     bool ok = Ori::Dlg::Dialog(&w, false)
         .withTitle(qApp->translate("AxesChooser", "Choose Axes"))
-        .withContentToButtonsSpacingFactor(3)
+        .withSkipContentMargins()
+        .withButtonsSeparator()
         .exec();
     highlightAxes(plot, {});
     return ok ? w.chosenAxes : chosenAxes;
+}
+
+QCPAxis* chooseAxis(Plot* plot)
+{
+    highlightAxes(plot, {});
+    AxesChooser w(plot, {});
+    w.singleAxis = true;
+    bool ok = Ori::Dlg::Dialog(&w, false)
+        .withTitle(qApp->translate("AxesChooser", "Choose an Axis"))
+        .withSkipContentMargins()
+        .withButtonsSeparator()
+        .exec();
+    highlightAxes(plot, {});
+    return ok ? (w.chosenAxes.x ? w.chosenAxes.x : w.chosenAxes.y) : nullptr;
 }
 
 } // namespace QCPL

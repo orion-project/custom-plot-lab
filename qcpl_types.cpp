@@ -39,7 +39,18 @@ QString axisFactorStr(const AxisFactor& factor)
     if (!isAxisFactorSet(factor))
         return QString();
     if (std::holds_alternative<int>(factor))
-        return QString("×1e%1").arg(std::get<int>(factor));
+    {
+        int f = std::get<int>(factor);
+        switch (f) {
+        case 3: return QStringLiteral("×1000");
+        case 2: return QStringLiteral("×100");
+        case 1: return QStringLiteral("×10");
+        case -1: return QStringLiteral("×0.1");
+        case -2: return QStringLiteral("×0.01");
+        case -3: return QStringLiteral("×0.001");
+        }
+        return QString("×1e%1").arg(f);
+    }
     if (std::holds_alternative<double>(factor))
         return QString("×%1").arg(std::get<double>(factor));
     return QString();

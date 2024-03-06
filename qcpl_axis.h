@@ -26,6 +26,7 @@ private:
 };
 
 AxisPair chooseAxes(Plot* plot, const AxisPair& chosenAxes);
+QCPAxis* chooseAxis(Plot* plot);
 
 } // namespace QCPL
 

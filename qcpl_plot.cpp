@@ -228,6 +228,7 @@ void Plot::autolimits(QCPAxis* axis, bool replot)
 {
     QCPRange totalRange;
     bool isTotalValid = false;
+    bool isX = axis->orientation() == Qt::Horizontal;
     for (int i = 0; i < graphCount(); i++)
     {
         auto g = graph(i);
@@ -238,8 +239,12 @@ void Plot::autolimits(QCPAxis* axis, bool replot)
             if (_serviceGraphs.contains(g))
                 continue;
 
+        if (isX) {
+            if (g->keyAxis() != axis) continue;
+        } else if (g->valueAxis() != axis) continue;
+
         bool hasRange = false;
-        auto range = axis == xAxis
+        auto range = isX
                 ? g->getKeyRange(hasRange, QCP::sdBoth)
                 : g->getValueRange(hasRange, QCP::sdBoth, QCPRange());
         if (!hasRange) continue;
@@ -289,7 +294,7 @@ AxisLimits Plot::limits(QCPAxis* axis) const
 
 double Plot::safeMargins(QCPAxis* axis)
 {
-    return axis == xAxis ? _safeMarginsX : _safeMarginsY;
+    return axis->orientation() == Qt::Horizontal ? _safeMarginsX : _safeMarginsY;
 }
 
 void Plot::setAxisRange(QCPAxis* axis, const QCPRange& range)
@@ -547,14 +552,19 @@ void Plot::addTextVar(void* target, const QString& name, const QString& descr, T
 {
     if (!_formatters.contains(target))
     {
-        if (target == xAxis)
-            _formatters[target] = new AxisTextFormatter(xAxis);
-        else if (target == yAxis)
-            _formatters[target] = new AxisTextFormatter(yAxis);
-        else if (target == _title)
+        bool targetAdded = false;
+        foreach (auto axis, axisRect()->axes()) {
+            if (axis == target) {
+                _formatters[target] = new AxisTextFormatter(axis);
+                targetAdded = true;
+                break;
+            }
+        }
+        if (!targetAdded and target == _title) {
             _formatters[target] = new TitleTextFormatter(_title);
-        else
-            return;
+            targetAdded = true;
+        }
+        if (!targetAdded) return;
     }
     _formatters[target]->addVar(name, descr, getter);
 }
