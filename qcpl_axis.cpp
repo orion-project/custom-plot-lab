@@ -3,12 +3,15 @@
 #include "qcpl_plot.h"
 
 #include "helpers/OriDialogs.h"
+#include "helpers/OriLayouts.h"
 
 #include <QButtonGroup>
 #include <QGridLayout>
 #include <QFrame>
 #include <QRadioButton>
 #include <QPushButton>
+
+using namespace Ori::Layouts;
 
 namespace QCPL {
 
@@ -96,7 +99,16 @@ public:
         layout->addLayout(fillAxes(QCPAxis::atLeft, singleAxis ? xFlags : yFlags), 1, 0);
         layout->addLayout(fillAxes(QCPAxis::atTop, xFlags), 0, 1);
         layout->addLayout(fillAxes(QCPAxis::atRight, singleAxis ? xFlags : yFlags), 1, 2);
-        setLayout(layout);
+
+        if (hasHiddenAxes) {
+            auto iconLabel = new QLabel;
+            iconLabel->setFixedWidth(24);
+            hiddenMessage = new QLabel,
+            hiddenMessage->setWordWrap(true);
+            iconLabel->setPixmap(QIcon(":/qcpl_images/eye_closed").pixmap(24));
+            layout->setRowMinimumHeight(3, 16);
+            layout->addLayout(LayoutH({iconLabel, hiddenMessage}).boxLayout(), 4, 0, 1, 3);
+        }
     }
 
     QVBoxLayout* fillAxes(QCPAxis::AxisType axisType, QButtonGroup* group)
@@ -122,8 +134,10 @@ public:
                 }
                 highlightAxes(plot, chosenAxes);
             });
-            if (!axis->visible())
+            if (!axis->visible()) {
+                hasHiddenAxes = true;
                 flag->setIcon(QIcon(":/qcpl_images/eye_closed"));
+            }
             group->addButton(flag);
             layout->addWidget(flag);
         }
@@ -134,12 +148,17 @@ public:
     QButtonGroup *xFlags, *yFlags;
     XYPair<QCPAxis*> chosenAxes;
     bool singleAxis = false;
+    bool hasHiddenAxes = false;
+    QLabel *hiddenMessage = nullptr;
 };
 
 AxisPair chooseAxes(Plot* plot, const AxisPair& chosenAxes)
 {
     highlightAxes(plot, chosenAxes);
     AxesChooser w(plot, chosenAxes);
+    if (w.hiddenMessage)
+        w.hiddenMessage->setText(qApp->translate("AxesChooser",
+            "Some axes are invisible, they will be revealed being chosen"));
     bool ok = Ori::Dlg::Dialog(&w, false)
         .withTitle(qApp->translate("AxesChooser", "Choose Axes"))
         .withSkipContentMargins()
@@ -154,6 +173,8 @@ QCPAxis* chooseAxis(Plot* plot)
     highlightAxes(plot, {});
     AxesChooser w(plot, {});
     w.singleAxis = true;
+    if (w.hiddenMessage)
+        w.hiddenMessage->setText(qApp->translate("AxesChooser", "Some axes are invisible"));
     bool ok = Ori::Dlg::Dialog(&w, false)
         .withTitle(qApp->translate("AxesChooser", "Choose an Axis"))
         .withSkipContentMargins()

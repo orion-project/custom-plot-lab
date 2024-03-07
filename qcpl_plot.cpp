@@ -131,28 +131,6 @@ void Plot::mouseDoubleClickEvent(QMouseEvent *event)
         emit emptySpaceDoubleClicked(event);
 }
 
-void Plot::mousePressEvent(QMouseEvent *event)
-{
-    // if an axis is selected, only allow the direction of that axis to be dragged
-    // if no axis is selected, both directions may be dragged
-    if (auto axis = selectedAxis(); axis)
-        axisRect()->setRangeDrag(axis->orientation());
-    else
-        axisRect()->setRangeDrag(Qt::Horizontal | Qt::Vertical);
-    QCustomPlot::mousePressEvent(event);
-}
-
-void Plot::wheelEvent(QWheelEvent *event)
-{
-    // if an axis is selected, only allow the direction of that axis to be zoomed
-    // if no axis is selected, both directions may be zoomed
-    if (auto axis = selectedAxis(); axis)
-        axisRect()->setRangeZoom(axis->orientation());
-    else
-        axisRect()->setRangeZoom(Qt::Horizontal | Qt::Vertical);
-    QCustomPlot::wheelEvent(event);
-}
-
 QMenu* Plot::findContextMenu(const QPointF& pos)
 {
     if (menuTitle && _title->selectTest(pos, false) >= 0)
@@ -203,10 +181,52 @@ void Plot::resizeEvent(QResizeEvent *event)
 
 void Plot::plotSelectionChanged()
 {
-    foreach (auto axis, axisRect()->axes())
+    auto allAxes = axisRect()->axes();
+    int countX = 0, countY = 0;
+    bool axisSelected = false;
+    for (auto axis : allAxes)
+    {
+        if (!axis->visible()) continue;
+
+        if (axis->orientation() == Qt::Horizontal)
+            countX++;
+        else countY++;
+
+        if (highlightAxesOfSelectedGraphs)
+            if (auto a = dynamic_cast<Axis*>(axis); a)
+                a->setHightlight(false);
+
         if (axis->selectedParts().testFlag(QCPAxis::spAxis) ||
             axis->selectedParts().testFlag(QCPAxis::spTickLabels))
+        {
             axis->setSelectedParts(QCPAxis::spAxis | QCPAxis::spTickLabels);
+            axisRect()->setRangeDragAxes({axis});
+            axisRect()->setRangeZoomAxes({axis});
+            axisSelected = true;
+        }
+    }
+    if (axisSelected)
+        return;
+
+    QList<QCPAxis*> graphAxes;
+    for (auto graph : qAsConst(mGraphs))
+        if (graph->selected())
+            graphAxes << graph->keyAxis() << graph->valueAxis();
+
+    if (graphAxes.empty()) {
+        axisRect()->setRangeDragAxes(allAxes);
+        axisRect()->setRangeZoomAxes(allAxes);
+        return;
+    }
+
+    if (highlightAxesOfSelectedGraphs)
+        for (auto axis : qAsConst(graphAxes))
+            if (auto a = dynamic_cast<Axis*>(axis); a)
+                if ((a->isX() and countX > 1) or (a->isY() and countY > 1))
+                    a->setHightlight(true);
+
+    axisRect()->setRangeDragAxes(graphAxes);
+    axisRect()->setRangeZoomAxes(graphAxes);
 }
 
 void Plot::rawGraphClicked(QCPAbstractPlottable *plottable)
@@ -439,19 +459,6 @@ bool Plot::legendFormatDlg()
     return false;
 }
 
-//static QCPAxis* getOppositeAxis(QCPAxis* axis)
-//{
-//    auto rect = axis->axisRect();
-//    auto type = axis->axisType();
-//    if (type == QCPAxis::atLeft)
-//        return rect->axis(QCPAxis::atRight);
-//    if (type == QCPAxis::atRight)
-//        return rect->axis(QCPAxis::atLeft);
-//    if (type == QCPAxis::atTop)
-//        return rect->axis(QCPAxis::atBottom);
-//    return rect->axis(QCPAxis::atTop);
-//}
-
 QString Plot::axisTypeStr(QCPAxis::AxisType type) const {
     switch (type) {
     case QCPAxis::atLeft: return tr("Left Axis");
@@ -459,6 +466,7 @@ QString Plot::axisTypeStr(QCPAxis::AxisType type) const {
     case QCPAxis::atTop: return tr("Top Axis");
     case QCPAxis::atBottom: return tr("Bottom Axis");
     }
+    return "Axis";
 }
 
 QString Plot::axisIdent(QCPAxis* axis) const
@@ -477,22 +485,6 @@ QString Plot::axisIdent(QCPAxis* axis) const
         return axis->label();
     return tr("Axis");
 }
-
-//bool Plot::isFrameVisible() const
-//{
-//    return xAxis2->visible();
-//}
-
-//void Plot::setFrameVisible(bool on)
-//{
-//    // Secondary axes only form frame rect
-//    xAxis2->setVisible(on);
-//    yAxis2->setVisible(on);
-//    xAxis2->setTicks(false);
-//    yAxis2->setTicks(false);
-//    xAxis2->setSelectableParts({});
-//    yAxis2->setSelectableParts({});
-//}
 
 Graph* Plot::makeNewGraph(const QString& title)
 {

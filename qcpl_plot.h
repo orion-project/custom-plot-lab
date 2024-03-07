@@ -42,6 +42,7 @@ public:
     bool useSafeMargins = true;
     bool excludeServiceGraphsFromAutolimiting = true;
     bool formatAxisTitleAfterFactorSet = false;
+    bool highlightAxesOfSelectedGraphs = false;
 
     /// Used for saving format settings of plot elements that can be used as 'default' setting.
     /// It is up to application when to load these stored default settings.
@@ -86,9 +87,6 @@ public:
     /// So we see an empty space above the plot instead of non visible title.
     /// This is undesired behaviour, so we need to remove the title from the main layout when it's hidden.
     void updateTitleVisibility();
-
-    //bool isFrameVisible() const;
-    //void setFrameVisible(bool on);
 
     AxisLimits limitsX() const { return limits(xAxis); }
     AxisLimits limitsY() const { return limits(yAxis); }
@@ -194,8 +192,6 @@ signals:
 protected:
     void contextMenuEvent(QContextMenuEvent *event) override;
     void mouseDoubleClickEvent(QMouseEvent *event) override;
-    void mousePressEvent(QMouseEvent *event) override;
-    void wheelEvent(QWheelEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
     
 private slots:

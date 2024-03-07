@@ -18,6 +18,9 @@ public:
     bool hightlight() const { return _highlight; }
     void setHightlight(bool on) { _highlight = on; }
 
+    inline bool isX() const { return orientation() == Qt::Horizontal; }
+    inline bool isY() const { return orientation() == Qt::Vertical; }
+
 protected:
     void draw(QCPPainter *painter) override;
 
