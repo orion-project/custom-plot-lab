@@ -29,7 +29,6 @@ set(QCPL_SOURCES
 )
 
 add_library(${QCPL_NAME} STATIC
-    qcpl_images.qrc
     ${QCPL_SOURCES}
 )
 
