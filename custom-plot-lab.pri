@@ -1,5 +1,7 @@
 INCLUDEPATH += $$PWD
 
+macx: DEFINES += _LIBCPP_DISABLE_AVAILABILITY
+
 QT += printsupport
 
 SOURCES += \
