@@ -1,5 +1,7 @@
 #include "qcpl_colors.h"
 
+#include <QMap>
+#include <QPalette>
 #include <QRandomGenerator>
 
 namespace QCPL {
@@ -168,6 +170,22 @@ const QVector<QColor>& defaultColorSet()
 QColor getRandomColor()
 {
     return __x11_colors.at(QRandomGenerator::global()->generate() % __x11_colors.size());
+}
+
+typedef QMap<GuiColor, QColor> GuiColorMap;
+Q_GLOBAL_STATIC(GuiColorMap, __colorMap);
+
+QColor guiColor(GuiColor kind)
+{
+    if (__colorMap->contains(kind))
+        return __colorMap->value(kind);
+    return QPalette().mid().color().name(QColor::HexRgb);
+}
+
+void setGuiColors(const QMap<GuiColor, QColor> &colors)
+{
+    for (auto it = colors.constBegin(); it != colors.constEnd(); it++)
+        __colorMap->insert(it.key(), it.value());
 }
 
 } // namespace QCPL

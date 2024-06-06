@@ -51,6 +51,7 @@ QWidget* makeLabelSeparator(const QString& title)
 QWidget* makeDialogHeader()
 {
     auto header = new QFrame();
+    header->setProperty("qcpl_role", "dlg_header");
     header->setBackgroundRole(QPalette::Light);
     header->setAutoFillBackground(true);
     return header;

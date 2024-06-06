@@ -1,5 +1,6 @@
 #include "qcpl_format_axis.h"
 
+#include "qcpl_colors.h"
 #include "qcpl_format.h"
 #include "qcpl_format_editors.h"
 #include "qcpl_io_json.h"
@@ -129,13 +130,14 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis, const Props &props) :
     p.setVerticalStretch(255);
     setSizePolicy(p);
 
-    auto hintColor = palette().mid().color().name(QColor::HexRgb);
+    auto hintColor = guiColor(HintLabelColor).name();
 
     //-------------------------------------------------------
 
     auto layoutPages = new QStackedLayout;
 
     _tabs = new QTabBar;
+    _tabs->setProperty("qcpl_role", "dlg_header_tabs");
     _tabs->setShape(QTabBar::TriangularNorth);
     connect(_tabs, &QTabBar::currentChanged, layoutPages, &QStackedLayout::setCurrentIndex);
 
@@ -351,7 +353,7 @@ AxisFormatWidget::AxisFormatWidget(QCPAxis* axis, const Props &props) :
         else gradientLayout = new QHBoxLayout;
         foreach (auto preset, gradientPresets())
         {
-            auto tile = new Ori::Widgets::SelectableTile(new SelectableTileContentGradient(axisType, preset));
+            auto tile = new Ori::Widgets::SelectableTile(new SelectableTileContentGradient(axisType, preset), false);
             tile->setData(int(preset));
             _gradientGroup->addTile(tile);
             gradientLayout->addWidget(tile);
