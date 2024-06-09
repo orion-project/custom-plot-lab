@@ -38,6 +38,7 @@ bool axisLimitsDlg(QCPRange& range, const AxisLimitsDlgProps& props)
 
     if (Ori::Dlg::Dialog(&w, false)
             .withTitle(props.title)
+            .withActiveWidget(editorMin)
             .withContentToButtonsSpacingFactor(3)
             .exec())
     {

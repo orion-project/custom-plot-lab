@@ -182,6 +182,7 @@ void CursorPanel::setCursorX()
     if (Ori::Dlg::Dialog(&editor, false)
             .withHorizontalPrompt("<b>X:</b>")
             .withTitle(tr("Cursor Position"))
+            .withActiveWidget(&editor)
             .exec())
         _cursor->setPositionX(editor.value());
 }
@@ -193,6 +194,7 @@ void CursorPanel::setCursorY()
     if (Ori::Dlg::Dialog(&editor, false)
             .withHorizontalPrompt("<b>Y:</b>")
             .withTitle(tr("Cursor Position"))
+            .withActiveWidget(&editor)
             .exec())
         _cursor->setPositionY(editor.value());
 }
