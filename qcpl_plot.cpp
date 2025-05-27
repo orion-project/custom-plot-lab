@@ -209,7 +209,7 @@ void Plot::plotSelectionChanged()
         return;
 
     QList<QCPAxis*> graphAxes;
-    for (auto graph : qAsConst(mGraphs))
+    for (auto graph : std::as_const(mGraphs))
         if (graph->selected())
             graphAxes << graph->keyAxis() << graph->valueAxis();
 
@@ -220,7 +220,7 @@ void Plot::plotSelectionChanged()
     }
 
     if (highlightAxesOfSelectedGraphs)
-        for (auto axis : qAsConst(graphAxes))
+        for (auto axis : std::as_const(graphAxes))
             if (auto a = dynamic_cast<Axis*>(axis); a)
                 if ((a->isX() and countX > 1) or (a->isY() and countY > 1))
                     a->setHightlight(true);

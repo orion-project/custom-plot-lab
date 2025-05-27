@@ -53,6 +53,8 @@ void FactorAxisTicker::generate(const QCPRange &range, const QLocale &locale, QC
 
 AxisFactorWidget::AxisFactorWidget(QCPAxis *axis, const Props& props) : QWidget()
 {
+    Q_UNUSED(props)
+
     _comboMetric = new QComboBox;
     _comboMetric->setEditable(false);
     _comboMetric->addItem(tr("Exa (×1e18)"), 18);
