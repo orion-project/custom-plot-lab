@@ -679,7 +679,11 @@ QCPPainter *QCPPaintBufferPixmap::startPainting()
 {
   QCPPainter *result = new QCPPainter(&mBuffer);
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+  #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+  result->setRenderHint(QPainter::Antialiasing);
+  #else
   result->setRenderHint(QPainter::HighQualityAntialiasing);
+  #endif
 #endif
   return result;
 }
@@ -15489,7 +15493,11 @@ void QCustomPlot::paintEvent(QPaintEvent *event)
   if (painter.isActive())
   {
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+  #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+  painter.setRenderHint(QPainter::Antialiasing);
+  #else
   painter.setRenderHint(QPainter::HighQualityAntialiasing); // to make Antialiasing look good if using the OpenGL graphicssystem
+  #endif
 #endif
     if (mBackgroundBrush.style() != Qt::NoBrush)
       painter.fillRect(mViewport, mBackgroundBrush);
@@ -32127,7 +32135,7 @@ QCPPolarAxisRadial::SelectablePart QCPPolarAxisRadial::getPartAt(const QPointF &
   else if (mAxisPainter->labelSelectionBox().contains(pos.toPoint()))
     return spAxisLabel;
   else */
-    return spNone;
+  return spNone;
 }
 
 /* inherits documentation from base class */
@@ -32947,7 +32955,7 @@ QCPPolarAxisAngular::SelectablePart QCPPolarAxisAngular::getPartAt(const QPointF
   else if (mAxisPainter->labelSelectionBox().contains(pos.toPoint()))
     return spAxisLabel;
   else */
-    return spNone;
+  return spNone;
 }
 
 /* inherits documentation from base class */
