@@ -22,7 +22,7 @@ class QCPColorScale;
 
 namespace QCPL {
 
-class AxisFormatDlgProps;
+struct AxisFormatDlgProps;
 class MarginsEditorWidget;
 class PenEditorWidget;
 class TextEditorWidget;
