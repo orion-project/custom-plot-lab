@@ -304,9 +304,9 @@ QJsonObject writeGraph(QCPGraph * graph)
 
 void readPlot(const QJsonObject& root, Plot *plot, JsonReport *report, const ReadPlotOptions& opts)
 {
-    if (auto err = readLegend(root[KEY_LEGEND].toObject(), plot->legend); !err.ok() and report)
+    if (auto err = readLegend(root[KEY_LEGEND].toObject(), plot->legend); !err.ok() && report)
         report->append(err);
-    if (auto err = readTitle(root[KEY_TITLE].toObject(), plot->title()); !err.ok() and report)
+    if (auto err = readTitle(root[KEY_TITLE].toObject(), plot->title()); !err.ok() && report)
         report->append(err);
 
     const QLatin1String axisKeyPrefix("axis_");
@@ -339,7 +339,7 @@ void readPlot(const QJsonObject& root, Plot *plot, JsonReport *report, const Rea
             } else if (opts.autoCreateAxes) {
                 axes << plot->addAxis(axisType);
             } else break;
-            if (auto err = readAxis(root[key].toObject(), axes.at(i)); !err.ok() and report)
+            if (auto err = readAxis(root[key].toObject(), axes.at(i)); !err.ok() && report)
                 report->append(err);
         }
     };
@@ -352,7 +352,7 @@ void readPlot(const QJsonObject& root, Plot *plot, JsonReport *report, const Rea
     {
         if (auto colorScale = qobject_cast<QCPColorScale*>(it.key()); colorScale)
         {
-            if (auto err = readColorScale(root[it.value()].toObject(), colorScale); !err.ok() and report)
+            if (auto err = readColorScale(root[it.value()].toObject(), colorScale); !err.ok() && report)
                 report->append(err);
             continue;
         }
@@ -543,19 +543,19 @@ void FormatStorageIni::load(Plot *plot, JsonReport* report)
     s.beginGroup(SECTION_INI);
     // Non existent settings keys can be safely read too, they result in empty json objects
     // and read functons should skip empty objects without substituting default values for every prop.
-    if (auto err = readLegend(varToJson(s.value(KEY_LEGEND)), plot->legend); !err.ok() and report)
+    if (auto err = readLegend(varToJson(s.value(KEY_LEGEND)), plot->legend); !err.ok() && report)
         report->append(err);
-    if (auto err = readTitle(varToJson(s.value(KEY_TITLE)), plot->title()); !err.ok() and report)
+    if (auto err = readTitle(varToJson(s.value(KEY_TITLE)), plot->title()); !err.ok() && report)
             report->append(err);
-    if (auto err = readAxis(varToJson(s.value(KEY_AXIS_X)), plot->xAxis); !err.ok() and report)
+    if (auto err = readAxis(varToJson(s.value(KEY_AXIS_X)), plot->xAxis); !err.ok() && report)
         report->append(err);
-    if (auto err = readAxis(varToJson(s.value(KEY_AXIS_Y)), plot->yAxis); !err.ok() and report)
+    if (auto err = readAxis(varToJson(s.value(KEY_AXIS_Y)), plot->yAxis); !err.ok() && report)
         report->append(err);
     for (auto it = plot->additionalParts.constBegin(); it != plot->additionalParts.constEnd(); it++)
     {
         if (auto colorScale = qobject_cast<QCPColorScale*>(it.key()); colorScale)
         {
-            if (auto err = readColorScale(varToJson(s.value(it.value())), colorScale); !err.ok() and report)
+            if (auto err = readColorScale(varToJson(s.value(it.value())), colorScale); !err.ok() && report)
                 report->append(err);
             continue;
         }

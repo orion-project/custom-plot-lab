@@ -149,7 +149,7 @@ bool genericFormatDlg(TEditor *editor, const TProps& props)
     auto buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     buttons->connect(buttons, &QDialogButtonBox::accepted, &dlg, [&dlg, editor, props](){
         editor->apply();
-        if (props.onSaveDefault and editor->needSaveDefault())
+        if (props.onSaveDefault && editor->needSaveDefault())
             props.onSaveDefault();
         dlg.accept();
     });

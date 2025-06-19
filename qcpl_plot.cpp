@@ -222,7 +222,7 @@ void Plot::plotSelectionChanged()
     if (highlightAxesOfSelectedGraphs)
         for (auto axis : std::as_const(graphAxes))
             if (auto a = dynamic_cast<Axis*>(axis); a)
-                if ((a->isX() and countX > 1) or (a->isY() and countY > 1))
+                if ((a->isX() && countX > 1) || (a->isY() && countY > 1))
                     a->setHightlight(true);
 
     axisRect()->setRangeDragAxes(graphAxes);
@@ -552,7 +552,7 @@ void Plot::addTextVar(void* target, const QString& name, const QString& descr, T
                 break;
             }
         }
-        if (!targetAdded and target == _title) {
+        if (!targetAdded && target == _title) {
             _formatters[target] = new TitleTextFormatter(_title);
             targetAdded = true;
         }
@@ -598,10 +598,10 @@ void Plot::updateTitleVisibility()
     if (auto f = formatter(_title); f)
         text = f->text();
     else text = _title->text();
-    if (!_title->visible() or text.isEmpty())
+    if (!_title->visible() || text.isEmpty())
     {
         // it's ok to get element without checking, but a console warning is printed then
-        if (_backupLayout->hasElement(0, 0) and _backupLayout->element(0, 0) == _title)
+        if (_backupLayout->hasElement(0, 0) && _backupLayout->element(0, 0) == _title)
             return;
         _backupLayout->addElement(0, 0, _title);
     }
@@ -609,7 +609,7 @@ void Plot::updateTitleVisibility()
     {
         auto mainLayout = plotLayout();
         auto p = titleRC();
-        if (mainLayout->hasElement(p.row, p.col) and mainLayout->element(p.row, p.col) == _title)
+        if (mainLayout->hasElement(p.row, p.col) && mainLayout->element(p.row, p.col) == _title)
             return;
         mainLayout->addElement(p.row, p.col, _title);
     }
@@ -621,9 +621,9 @@ int Plot::graphsCount(GraphCountFlags flags) const
     for (int i = 0; i < graphCount(); i++)
     {
         auto g = graph(i);
-        if (!g->visible() and (flags & COUNT_ONLY_VISIBLE))
+        if (!g->visible() && (flags & COUNT_ONLY_VISIBLE))
             continue;
-        if (isService(g) and !(flags & COUNT_SERVICE))
+        if (isService(g) && !(flags & COUNT_SERVICE))
             continue;
         count++;
     }

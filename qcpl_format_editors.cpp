@@ -166,7 +166,7 @@ PenEditorWidget::PenEditorWidget(PenEditorWidgetOptions opts, QWidget *parent) :
         labelColor = new QLabel(tr("Color:"));
     }
 
-    if (opts.gridLayout and !opts.noLabels)
+    if (opts.gridLayout && !opts.noLabels)
     {
         opts.gridLayout->addWidget(labelStyle, opts.gridRow, 0);
         opts.gridLayout->addWidget(_style, opts.gridRow, 1);
@@ -175,7 +175,7 @@ PenEditorWidget::PenEditorWidget(PenEditorWidgetOptions opts, QWidget *parent) :
         opts.gridLayout->addWidget(labelColor, opts.gridRow, 4);
         opts.gridLayout->addWidget(_color, opts.gridRow, 5);
     }
-    else if (opts.narrow and !opts.noLabels)
+    else if (opts.narrow && !opts.noLabels)
     {
         LayoutH({
             LayoutV({ labelStyle, _style }).setSpacing(3).setMargin(0),

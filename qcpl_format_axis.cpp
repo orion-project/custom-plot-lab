@@ -549,7 +549,7 @@ void AxisFormatWidget::apply()
     {
         _scale->setMargins(_colorScaleMargins->value());
         auto selectedGradient = _gradientGroup->selectedData();
-        if (!selectedGradient.isNull() and selectedGradient.isValid())
+        if (!selectedGradient.isNull() && selectedGradient.isValid())
             _scale->setGradient(QCPColorGradient::GradientPreset(selectedGradient.toInt()));
         _scale->setBarWidth(_colorScaleWidth->value());
     }

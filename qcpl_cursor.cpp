@@ -108,7 +108,7 @@ void Cursor::mouseMove(QMouseEvent *evt)
                     && mouseX > r->left()
                     && mouseX < r->right() && qAbs(cursorY - mouseY) <= 2;
 #ifdef Q_OS_MAC
-            parentPlot()->skipDragging = _canDragX or _canDragY;
+            parentPlot()->skipDragging = _canDragX || _canDragY;
 #endif
             QApplication::restoreOverrideCursor();
             if (_canDragX && _canDragY)

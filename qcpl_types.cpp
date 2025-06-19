@@ -10,7 +10,7 @@ namespace QCPL {
 
 bool AxisLimits::isInvalid() const
 {
-    return std::isnan(min) or std::isnan(max);
+    return std::isnan(min) || std::isnan(max);
 }
 
 QString AxisLimits::str() const
