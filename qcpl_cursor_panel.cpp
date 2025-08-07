@@ -74,7 +74,7 @@ void CursorPanel::createActions()
     addAction(actnCursorSetY); // activates shortcut
 }
 
-void CursorPanel::placeIn(class QToolBar* toolbar)
+void CursorPanel::placeIn(class QToolBar* toolbar, const QList<QAction*> &auxActions)
 {
     QActionGroup *group = new QActionGroup(this);
     group->addAction(actnCursorVert);
@@ -83,6 +83,12 @@ void CursorPanel::placeIn(class QToolBar* toolbar)
 
     QMenu *menu = new QMenu(this);
     menu->addActions(group->actions());
+    
+    if (!auxActions.isEmpty()) {
+        menu->addSeparator();
+        for (auto a : std::as_const(auxActions))
+            menu->addAction(a);
+    }
 
     QToolButton *button = new QToolButton;
     button->setStyleSheet("padding-top: 3px; padding-bottom: 3px; "

@@ -24,7 +24,7 @@ public:
 
     void update();
     void update(const QString& info);
-    void placeIn(QToolBar* toolbar);
+    void placeIn(QToolBar* toolbar, const QList<QAction*> &auxActions = {});
     void fillMenu(QMenu *menu);
 
     void setNumberPrecision(int value, bool update);
