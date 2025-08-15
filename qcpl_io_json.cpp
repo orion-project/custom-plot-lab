@@ -167,31 +167,49 @@ static QString makeAxisKey(const QString base, int index) {
 
 QJsonObject writePlot(Plot* plot, const WritePlotOptions &opts)
 {
+    auto titleJson = writeTitle(plot->title());
+    if (opts.titleText)
+        titleJson["formatter_text"] = plot->formatterText(plot->title());
+
     QJsonObject root({
         { KEY_LEGEND, writeLegend(plot->legend) },
-        { KEY_TITLE, writeTitle(plot->title()) },
+        { KEY_TITLE, titleJson },
     });
 
+    QMap<QString, QCPAxis*> saveAxes;
     auto axes = plot->axisRect()->axes(QCPAxis::atBottom);
     for (int i = 0; i < axes.size(); i++) {
-        root[makeAxisKey("axis_x", i)] = writeAxis(axes.at(i));
+        saveAxes.insert(makeAxisKey("axis_x", i), axes.at(i));
         if (opts.onlyPrimaryAxes) break;
     }
     axes = plot->axisRect()->axes(QCPAxis::atLeft);
     for (int i = 0; i < axes.size(); i++) {
-        root[makeAxisKey("axis_y", i)] = writeAxis(axes.at(i));
+        saveAxes.insert(makeAxisKey("axis_y", i), axes.at(i));
         if (opts.onlyPrimaryAxes) break;
     }
     if (!opts.onlyPrimaryAxes) {
         axes = plot->axisRect()->axes(QCPAxis::atTop);
         for (int i = 0; i < axes.size(); i++)
-            root[makeAxisKey("axis_x2", i)] = writeAxis(axes.at(i));
+            saveAxes.insert(makeAxisKey("axis_x2", i), axes.at(i));
         axes = plot->axisRect()->axes(QCPAxis::atRight);
         for (int i = 0; i < axes.size(); i++)
-            root[makeAxisKey("axis_y2", i)] = writeAxis(axes.at(i));
+            saveAxes.insert(makeAxisKey("axis_y2", i), axes.at(i));
+    }
+    for (auto it = saveAxes.cbegin(); it != saveAxes.cend(); it++) {
+        auto axis = it.value();
+        auto axisJson = writeAxis(axis, opts.axesTexts, opts.axesLimits);
+        if (opts.axesTexts)
+            axisJson["formatter_text"] = plot->formatterText(axis);
+        if (opts.axesLimits) {
+            auto factor = plot->axisFactor(axis);
+            if (std::holds_alternative<int>(factor))
+                axisJson["factor"] = std::get<int>(factor);
+            else axisJson["factor_custom"] = std::get<double>(factor);
+        }
+        root[it.key()] = axisJson;
     }
 
-    for (auto it = plot->additionalParts.constBegin(); it != plot->additionalParts.constEnd(); it++)
+    for (auto it = plot->additionalParts.cbegin(); it != plot->additionalParts.cend(); it++)
     {
         if (auto colorScale = qobject_cast<QCPColorScale*>(it.key()); colorScale)
         {
@@ -220,7 +238,7 @@ QJsonObject writeLegend(QCPLegend* legend)
     });
 }
 
-QJsonObject writeTitle(QCPTextElement* title)
+QJsonObject writeTitle(QCPTextElement* title, bool andText)
 {
     auto obj = QJsonObject({
         { "version", CURRENT_TITLE_VERSION },
@@ -230,10 +248,12 @@ QJsonObject writeTitle(QCPTextElement* title)
         { "text_flags", title->textFlags() },
         { "margins", writeMargins(title->margins()) },
     });
+    if (andText)
+        obj["text"] = title->text();
     return obj;
 }
 
-QJsonObject writeAxis(QCPAxis *axis)
+QJsonObject writeAxis(QCPAxis *axis, bool andText, bool andLimits)
 {
     auto grid = axis->grid();
     auto ticker = axis->ticker();
@@ -273,6 +293,13 @@ QJsonObject writeAxis(QCPAxis *axis)
         { "tick_count", ticker->tickCount() },
         { "tick_offset", ticker->tickOrigin() },
     });
+    if (andText)
+        obj["text"] = axis->label();
+    if (andLimits) {
+        auto range = axis->range();
+        obj["range_min"] = range.lower;
+        obj["range_max"] = range.upper;
+    }
     return obj;
 }
 
@@ -306,8 +333,12 @@ void readPlot(const QJsonObject& root, Plot *plot, JsonReport *report, const Rea
 {
     if (auto err = readLegend(root[KEY_LEGEND].toObject(), plot->legend); !err.ok() && report)
         report->append(err);
-    if (auto err = readTitle(root[KEY_TITLE].toObject(), plot->title()); !err.ok() && report)
+
+    auto titleJson = root[KEY_TITLE].toObject();
+    if (auto err = readTitle(titleJson, plot->title(), opts.titleText); !err.ok() && report)
         report->append(err);
+    if (opts.titleText && titleJson.contains("formatter_text"))
+        plot->setFormatterText(plot->title(), titleJson["formatter_text"].toString());
 
     const QLatin1String axisKeyPrefix("axis_");
     QList<QPair<int, QString>> bottomAxisKeys, leftAxisKeys, topAxisKeys, rightAxisKeys;
@@ -339,8 +370,17 @@ void readPlot(const QJsonObject& root, Plot *plot, JsonReport *report, const Rea
             } else if (opts.autoCreateAxes) {
                 axes << plot->addAxis(axisType);
             } else break;
-            if (auto err = readAxis(root[key].toObject(), axes.at(i)); !err.ok() && report)
+            auto axis = axes.at(i);
+            auto axisJson = root[key].toObject();
+            if (auto err = readAxis(axisJson, axis, opts.axesTexts, opts.axesLimits); !err.ok() && report)
                 report->append(err);
+            if (opts.axesTexts && axisJson.contains("formatter_text"))
+                plot->setFormatterText(axis, axisJson["formatter_text"].toString());
+            if (opts.axesLimits && (axisJson.contains("factor") || axisJson.contains("factor_custom"))) {
+                if (axisJson.contains("factor"))
+                    plot->setAxisFactor(axis, axisJson["factor"].toInt());
+                else plot->setAxisFactor(axis, axisJson["factor_custom"].toDouble());
+            }
         }
     };
     readAxes(bottomAxisKeys, QCPAxis::atBottom);
@@ -384,7 +424,7 @@ JsonError readLegend(const QJsonObject& obj, QCPLegend* legend)
     return {};
 }
 
-JsonError readTitle(const QJsonObject &obj, QCPTextElement* title)
+JsonError readTitle(const QJsonObject &obj, QCPTextElement* title, bool andText)
 {
     if (obj.isEmpty())
         return { JsonError::NoData, "Title object is empty" };
@@ -399,10 +439,12 @@ JsonError readTitle(const QJsonObject &obj, QCPTextElement* title)
     title->setTextColor(jsonToColor(obj["text_color"], title->textColor()));
     title->setTextFlags(obj["text_flags"].toInt(title->textFlags()));
     title->setMargins(readMargins(obj["margins"].toObject(), title->margins()));
+    if (andText && obj.contains("text"))
+        title->setText(obj["text"].toString());
     return {};
 }
 
-JsonError readAxis(const QJsonObject &obj, QCPAxis* axis)
+JsonError readAxis(const QJsonObject &obj, QCPAxis* axis, bool andText, bool andLimits)
 {
     if (obj.isEmpty())
         return { JsonError::NoData, "Axis object is empty" };
@@ -449,6 +491,10 @@ JsonError readAxis(const QJsonObject &obj, QCPAxis* axis)
     ticker->setTickCount(obj["tick_count"].toInt(ticker->tickCount()));
     ticker->setTickOrigin(obj["tick_offset"].toDouble(ticker->tickOrigin()));
     updateAxisTicker(axis);
+    if (andText && obj.contains("text"))
+        axis->setLabel(obj["text"].toString());
+    if (andText && obj.contains("range_min") && obj.contains("range_max"))
+        axis->setRange(QCPRange(obj["range_min"].toDouble(), obj["range_max"].toDouble()));
     return {};
 }
 

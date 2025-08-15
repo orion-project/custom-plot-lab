@@ -31,11 +31,14 @@ using JsonReport = QVector<JsonError>;
 struct WritePlotOptions
 {
     bool onlyPrimaryAxes = true;
+    bool titleText = false;
+    bool axesTexts = false;
+    bool axesLimits = false;
 };
 QJsonObject writePlot(Plot *plot, const WritePlotOptions& opts = WritePlotOptions());
 QJsonObject writeLegend(QCPLegend* legend);
-QJsonObject writeTitle(QCPTextElement* title);
-QJsonObject writeAxis(QCPAxis *axis);
+QJsonObject writeTitle(QCPTextElement* title, bool andText = false);
+QJsonObject writeAxis(QCPAxis *axis, bool andText = false, bool andLimits = false);
 QJsonObject writeColorScale(QCPColorScale *scale);
 QJsonObject writeGraph(QCPGraph * graph);
 QJsonObject writePen(const QPen& pen);
@@ -43,11 +46,14 @@ QJsonObject writePen(const QPen& pen);
 struct ReadPlotOptions
 {
     bool autoCreateAxes = false;
+    bool titleText = false;
+    bool axesTexts = false;
+    bool axesLimits = false;
 };
 void readPlot(const QJsonObject& root, Plot *plot, JsonReport* report, const ReadPlotOptions& opts = ReadPlotOptions());
 JsonError readLegend(const QJsonObject &obj, QCPLegend* legend);
-JsonError readTitle(const QJsonObject &obj, QCPTextElement* title);
-JsonError readAxis(const QJsonObject &obj, QCPAxis* axis);
+JsonError readTitle(const QJsonObject &obj, QCPTextElement* title, bool andText = false);
+JsonError readAxis(const QJsonObject &obj, QCPAxis* axis, bool andText = false, bool andLimits = false);
 JsonError readColorScale(const QJsonObject &obj, QCPColorScale *scale);
 JsonError readGraph(const QJsonObject &obj, QCPGraph * graph);
 QPen readPen(const QJsonObject& obj, const QPen& def);
