@@ -262,6 +262,9 @@ QString TextProcessor::process(const QString& text) const
 
 void TextFormatterBase::addVar(const QString& name, const QString& descr, TextVarGetter getter)
 {
+    for (const auto &var : std::as_const(_vars))
+        if (var.name == name)
+            return;
     _vars.append({name, descr});
     _processor.addVar(name, getter);
 }

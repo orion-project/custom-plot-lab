@@ -375,7 +375,8 @@ void readPlot(const QJsonObject& root, Plot *plot, JsonReport *report, const Rea
             if (auto err = readAxis(axisJson, axis, opts.axesTexts, opts.axesLimits); !err.ok() && report)
                 report->append(err);
             if (opts.axesTexts && axisJson.contains("formatter_text"))
-                plot->setFormatterText(axis, axisJson["formatter_text"].toString());
+                if (plot->ensureFormatter(axis))
+                    plot->setFormatterText(axis, axisJson["formatter_text"].toString());
             if (opts.axesLimits && (axisJson.contains("factor") || axisJson.contains("factor_custom"))) {
                 if (axisJson.contains("factor"))
                     plot->setAxisFactor(axis, axisJson["factor"].toInt());

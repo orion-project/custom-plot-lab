@@ -533,32 +533,39 @@ void Plot::copyPlotImage()
     qApp->clipboard()->setImage(image);
 }
 
-void Plot::addFormatter(void* target, TextFormatterBase* formatter)
+bool Plot::addFormatter(void* target, TextFormatterBase* formatter)
+{
+    if (_formatters.contains(target)) {
+        qWarning() << "Formatter is already registered for this target";
+        return false;
+    }
+    _formatters[target] = formatter;
+    return true;
+}
+
+bool Plot::ensureFormatter(void* target)
 {
     if (_formatters.contains(target))
-        qWarning() << "Formatter is already registerd for this target, it will be lost (possible memory leak)";
-    _formatters[target] = formatter;
+        return true;
+    bool added = false;
+    foreach (auto axis, axisRect()->axes()) {
+        if (axis == target) {
+            _formatters[target] = new AxisTextFormatter(axis);
+            added = true;
+            break;
+        }
+    }
+    if (!added && target == _title) {
+        _formatters[target] = new TitleTextFormatter(_title);
+        added = true;
+    }
+    return added;
 }
 
 void Plot::addTextVar(void* target, const QString& name, const QString& descr, TextVarGetter getter)
 {
-    if (!_formatters.contains(target))
-    {
-        bool targetAdded = false;
-        foreach (auto axis, axisRect()->axes()) {
-            if (axis == target) {
-                _formatters[target] = new AxisTextFormatter(axis);
-                targetAdded = true;
-                break;
-            }
-        }
-        if (!targetAdded && target == _title) {
-            _formatters[target] = new TitleTextFormatter(_title);
-            targetAdded = true;
-        }
-        if (!targetAdded) return;
-    }
-    _formatters[target]->addVar(name, descr, getter);
+    if (ensureFormatter(target))
+        _formatters[target]->addVar(name, descr, getter);
 }
 
 void Plot::updateTexts()
