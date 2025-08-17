@@ -184,7 +184,7 @@ void Plot::plotSelectionChanged()
     auto allAxes = axisRect()->axes();
     int countX = 0, countY = 0;
     bool axisSelected = false;
-    for (auto axis : allAxes)
+    for (auto axis : std::as_const(allAxes))
     {
         if (!axis->visible()) continue;
 
@@ -675,6 +675,7 @@ void Plot::initDefault(QCPAxis* axis)
     axis->setLabelFont(labelsFont);
     axis->setSelectedLabelFont(labelsFont);
     axis->setNumberPrecision(_numberPrecision);
+    axis->setObjectName(QUuid::createUuid().toString(QUuid::Id128));
 }
 
 QCPAxis* Plot::addAxis(QCPAxis::AxisType axisType)
@@ -700,6 +701,15 @@ QCPAxis* Plot::addAxis(QCPAxis::AxisType axisType)
     axis->grid()->setLayer(QLatin1String("grid"));
     initDefault(axis);
     return axis;
+}
+
+QCPAxis* Plot::findAxisById(const QString &id)
+{
+    auto axes = axisRect()->axes();
+    for (auto a : std::as_const(axes))
+        if (a->objectName() == id)
+            return a;
+    return nullptr;
 }
 
 } // namespace QCPL

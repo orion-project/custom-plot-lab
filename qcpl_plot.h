@@ -158,6 +158,7 @@ public:
     QString axisIdent(QCPAxis* axis) const;
     QCPAxis* addAxis(QCPAxis::AxisType axisType);
     QCPAxis* selectedAxis() const;
+    QCPAxis* findAxisById(const QString &id);
     QVector<QCPAxis*> defaultAxes() { return {xAxis, yAxis, xAxis2, yAxis2}; }
 
 public slots:

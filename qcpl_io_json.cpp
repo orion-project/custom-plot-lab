@@ -198,6 +198,9 @@ QJsonObject writePlot(Plot* plot, const WritePlotOptions &opts)
     for (auto it = saveAxes.cbegin(); it != saveAxes.cend(); it++) {
         auto axis = it.value();
         auto axisJson = writeAxis(axis, opts.axesTexts, opts.axesLimits);
+        auto id = axis->objectName();
+        if (!id.isEmpty())
+            axisJson["id"] = id;
         if (opts.axesTexts)
             axisJson["formatter_text"] = plot->formatterText(axis);
         if (opts.axesLimits) {
@@ -259,6 +262,7 @@ QJsonObject writeAxis(QCPAxis *axis, bool andText, bool andLimits)
     auto ticker = axis->ticker();
     auto obj = QJsonObject({
         { "version", CURRENT_AXIS_VERSION },
+        { "id", axis->objectName() },
         { "visible", axis->visible() },
         { "title_font", writeFont(axis->labelFont()) },
         { "title_color", colorToJson(axis->labelColor()) },
@@ -382,6 +386,8 @@ void readPlot(const QJsonObject& root, Plot *plot, JsonReport *report, const Rea
                     plot->setAxisFactor(axis, axisJson["factor"].toInt());
                 else plot->setAxisFactor(axis, axisJson["factor_custom"].toDouble());
             }
+            if (axisJson.contains("id"))
+                axis->setObjectName(axisJson["id"].toString());
         }
     };
     readAxes(bottomAxisKeys, QCPAxis::atBottom);
