@@ -254,10 +254,9 @@ void Plot::autolimits(QCPAxis* axis, bool replot)
         auto g = graph(i);
 
         if (!g->visible()) continue;
-
-        if (excludeServiceGraphsFromAutolimiting)
-            if (_serviceGraphs.contains(g))
-                continue;
+        
+        if (g->property(PROP_GRAPH_SKIP_AUTOLIMITS).toBool())
+            continue;
 
         if (isX) {
             if (g->keyAxis() != axis) continue;

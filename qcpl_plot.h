@@ -4,6 +4,8 @@
 #include "qcpl_types.h"
 #include "qcustomplot/qcustomplot.h"
 
+#define PROP_GRAPH_SKIP_AUTOLIMITS "ori-skip-autolimits" 
+
 namespace QCPL {
 
 typedef QCPGraph Graph;
@@ -40,7 +42,6 @@ public:
 
     bool graphAutoColors = true;
     bool useSafeMargins = true;
-    bool excludeServiceGraphsFromAutolimiting = true;
     bool formatAxisTitleAfterFactorSet = false;
     bool highlightAxesOfSelectedGraphs = false;
 
