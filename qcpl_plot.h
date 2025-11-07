@@ -121,6 +121,11 @@ public:
     void addTextVarT(const QString& name, const QString& descr, TextVarGetter getter) { addTextVar(_title, name, descr, getter); }
     void addTextVarX(const QString& name, const QString& descr, TextVarGetter getter) { addTextVar(xAxis, name, descr, getter); }
     void addTextVarY(const QString& name, const QString& descr, TextVarGetter getter) { addTextVar(yAxis, name, descr, getter); }
+    void addTextVar(const QString& name, const QString& descr, TextVarGetter getter) {
+        addTextVar(_title, name, descr, getter);
+        addTextVar(yAxis, name, descr, getter);
+        addTextVar(yAxis, name, descr, getter);
+    }
 
     bool addFormatter(void* target, TextFormatterBase* formatter);
     bool ensureFormatter(void* target);
