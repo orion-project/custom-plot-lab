@@ -103,7 +103,7 @@ bool graphFormatDlg(QCPGraph* graph, const GraphFormatDlgProps& props);
 class TextProcessor
 {
 public:
-    void addVar(const QString& name, TextVarGetter getter);
+    void putVar(const QString& name, TextVarGetter getter);
 
     QString process(const QString& text) const;
 
@@ -126,7 +126,7 @@ class TextFormatterBase
 {
 public:
     virtual ~TextFormatterBase() {}
-    void addVar(const QString& name, const QString& descr, TextVarGetter getter);
+    void putVar(const QString& name, const QString& descr, TextVarGetter getter);
     const QVector<TextVariable>& vars() const { return _vars; }
     virtual void format() = 0;
     QString text() const { return _text; };

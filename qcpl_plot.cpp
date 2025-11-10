@@ -561,10 +561,10 @@ bool Plot::ensureFormatter(void* target)
     return added;
 }
 
-void Plot::addTextVar(void* target, const QString& name, const QString& descr, TextVarGetter getter)
+void Plot::putTextVar(void* target, const QString& name, const QString& descr, TextVarGetter getter)
 {
     if (ensureFormatter(target))
-        _formatters[target]->addVar(name, descr, getter);
+        _formatters[target]->putVar(name, descr, getter);
 }
 
 void Plot::updateTexts()

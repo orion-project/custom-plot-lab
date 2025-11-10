@@ -117,14 +117,14 @@ public:
     /// Layout row and column when the title is placed.
     constexpr LayoutCell titleRC() const { return { 0, 0 }; }
 
-    void addTextVar(void* target, const QString& name, const QString& descr, TextVarGetter getter);
-    void addTextVarT(const QString& name, const QString& descr, TextVarGetter getter) { addTextVar(_title, name, descr, getter); }
-    void addTextVarX(const QString& name, const QString& descr, TextVarGetter getter) { addTextVar(xAxis, name, descr, getter); }
-    void addTextVarY(const QString& name, const QString& descr, TextVarGetter getter) { addTextVar(yAxis, name, descr, getter); }
-    void addTextVar(const QString& name, const QString& descr, TextVarGetter getter) {
-        addTextVar(_title, name, descr, getter);
-        addTextVar(yAxis, name, descr, getter);
-        addTextVar(yAxis, name, descr, getter);
+    void putTextVar(void* target, const QString& name, const QString& descr, TextVarGetter getter);
+    void putTextVarT(const QString& name, const QString& descr, TextVarGetter getter) { putTextVar(_title, name, descr, getter); }
+    void putTextVarX(const QString& name, const QString& descr, TextVarGetter getter) { putTextVar(xAxis, name, descr, getter); }
+    void putTextVarY(const QString& name, const QString& descr, TextVarGetter getter) { putTextVar(yAxis, name, descr, getter); }
+    void putTextVar(const QString& name, const QString& descr, TextVarGetter getter) {
+        putTextVar(_title, name, descr, getter);
+        putTextVar(yAxis, name, descr, getter);
+        putTextVar(yAxis, name, descr, getter);
     }
 
     bool addFormatter(void* target, TextFormatterBase* formatter);
