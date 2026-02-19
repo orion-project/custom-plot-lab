@@ -46,6 +46,7 @@ public:
     bool formatAxisTitleAfterFactorSet = false;
     bool highlightAxesOfSelectedGraphs = false;
     bool autolimitOnlyPrimaryAxes = true;
+    bool manualLimitOnlyPrimaryAxes = true;
 
     /// Used for saving format settings of plot elements that can be used as 'default' setting.
     /// It is up to application when to load these stored default settings.
@@ -172,8 +173,8 @@ public slots:
     void autolimits(bool replot = true);
     void autolimitsX(bool replot = true);
     void autolimitsY(bool replot = true);
-    bool limitsDlgX() { return limitsDlg(xAxis); }
-    bool limitsDlgY() { return limitsDlg(yAxis); }
+    bool limitsDlgX();
+    bool limitsDlgY();
     bool limitsDlgXY();
     bool axisFactorDlgX() { return axisFactorDlg(xAxis); }
     bool axisFactorDlgY() { return axisFactorDlg(yAxis); }

@@ -7,6 +7,8 @@
 #include "qcpl_format.h"
 #include "qcpl_io_json.h"
 
+#include "helpers/OriDialogs.h"
+
 /// Returns true when range is corrected, false when it's unchanged.
 static bool correctZeroRange(QCPRange& range, double safeMargin)
 {
@@ -487,6 +489,32 @@ bool Plot::limitsDlg(QCPAxis* axis)
         replot();
         return true;
     }
+    return false;
+}
+
+bool Plot::limitsDlgX()
+{
+    if (manualLimitOnlyPrimaryAxes)
+        return limitsDlg(xAxis);
+    auto pairs = getActiveAxisPairs();
+    if (pairs.isEmpty())
+        return limitsDlg(xAxis);
+    if (pairs.size() == 1)
+        return limitsDlg(pairs.values().at(0).first);
+    Ori::Dlg::info(tr("There are several horizontal axes corresponding to the selected object, can not change them all at the same time"));
+    return false;
+}
+
+bool Plot::limitsDlgY()
+{
+    if (manualLimitOnlyPrimaryAxes)
+        return limitsDlg(yAxis);
+    auto pairs = getActiveAxisPairs();
+    if (pairs.isEmpty())
+        return limitsDlg(yAxis);
+    if (pairs.size() == 1)
+        return limitsDlg(pairs.values().at(0).second);
+    Ori::Dlg::info(tr("There are several vertical axes corresponding to the selected object, can not change them all at the same time"));
     return false;
 }
 
