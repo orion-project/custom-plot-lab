@@ -4,8 +4,6 @@
 #include "qcpl_types.h"
 #include "qcustomplot/qcustomplot.h"
 
-#define PROP_GRAPH_SKIP_AUTOLIMITS "ori-skip-autolimits" 
-
 namespace QCPL {
 
 typedef QCPGraph Graph;
@@ -34,10 +32,9 @@ public:
     explicit Plot(const PlotOptions& opts = PlotOptions(), QWidget* parent = nullptr);
     ~Plot();
 
-    QVector<Graph*>& serviceGraphs() { return _serviceGraphs; }
     Graph* selectedGraph() const;
 
-    enum GraphCountFlags {COUNT_DEFAULT = 0x0, COUNT_ONLY_VISIBLE = 0x1, COUNT_SERVICE = 0x2};
+    enum GraphCountFlags {COUNT_DEFAULT = 0x0, COUNT_ONLY_VISIBLE = 0x1};
     int graphsCount(GraphCountFlags flags = COUNT_DEFAULT) const;
 
     bool graphAutoColors = true;
@@ -213,7 +210,6 @@ private slots:
     void axisDoubleClicked(QCPAxis*, QCPAxis::SelectablePart);
 
 private:
-    QVector<Graph*> _serviceGraphs;
     QCP::SelectionType _selectionType = QCP::stWhole;
     QCPTextElement *_title;
     int _nextColorIndex = 0;
@@ -225,8 +221,6 @@ private:
     QMap<void*, TextFormatterBase*> _formatters;
     QMap<void*, QString> _defaultTexts;
     QCPLayoutGrid *_backupLayout;
-
-    bool isService(Graph* g) const { return _serviceGraphs.contains(g); }
 
     QColor nextGraphColor();
 

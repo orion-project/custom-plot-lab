@@ -3,6 +3,7 @@
 #include "qcpl_axis.h"
 #include "qcpl_axis_factor.h"
 #include "qcpl_colors.h"
+#include "qcpl_consts.h"
 #include "qcpl_graph.h"
 #include "qcpl_format.h"
 #include "qcpl_io_json.h"
@@ -159,8 +160,7 @@ QMenu* Plot::findContextMenu(const QPointF& pos)
     }
     if (menuGraph) {
         foreach (auto g, selectedGraphs())
-            if (!isService(g))
-                return menuGraph;
+            return menuGraph;
     }
     auto it = menus.constBegin();
     while (it != menus.constEnd()) {
@@ -259,7 +259,10 @@ void Plot::plotSelectionChanged()
 void Plot::rawGraphClicked(QCPAbstractPlottable *plottable)
 {
     auto g = dynamic_cast<QCPGraph*>(plottable);
-    if (_serviceGraphs.contains(g)) g = nullptr;
+    
+    if (g && g->property(PROP_GRAPH_SKIP_CLICKS).toBool())
+        g = nullptr;
+    
     emit graphClicked(g);
 }
 
@@ -289,7 +292,7 @@ QSet<QPair<QCPAxis*, QCPAxis*>> Plot::getActiveAxisPairs() const
             
         if (!g->visible()) continue;
 
-        if (g->property(PROP_GRAPH_SKIP_AUTOLIMITS).toBool())
+        if (g->property(PROP_GRAPH_IS_CURSOR).toBool())
             continue;
                 
         if (selectedAxes.contains(x) || selectedAxes.contains(y))
@@ -310,7 +313,7 @@ void Plot::autolimits(QCPAxis* axis, bool replot)
 
         if (!g->visible()) continue;
         
-        if (g->property(PROP_GRAPH_SKIP_AUTOLIMITS).toBool())
+        if (g->property(PROP_GRAPH_IS_CURSOR).toBool())
             continue;
 
         if (isX) {
@@ -849,8 +852,6 @@ int Plot::graphsCount(GraphCountFlags flags) const
     {
         auto g = graph(i);
         if (!g->visible() && (flags & COUNT_ONLY_VISIBLE))
-            continue;
-        if (isService(g) && !(flags & COUNT_SERVICE))
             continue;
         count++;
     }
