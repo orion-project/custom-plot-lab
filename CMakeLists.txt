@@ -8,24 +8,25 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(QCPL_SOURCES
     qcpl_axis.cpp
     qcpl_axis_factor.cpp
+    qcpl_colors.cpp
     qcpl_cursor.cpp
     qcpl_cursor_panel.cpp
     qcpl_export.cpp
+    qcpl_format.cpp
+    qcpl_format_axis.cpp
     qcpl_format_editors.cpp
     qcpl_format_graph.cpp
     qcpl_format_legend.cpp
-    qcpl_format_title.cpp
-    qcpl_io_json.cpp
-    qcpl_text_editor.cpp
-    qcpl_plot.cpp
-    qcpl_colors.cpp
-    qcpl_graph.cpp
-    qcpl_types.cpp
-    qcpl_graph_grid.cpp
-    qcpl_utils.cpp
-    qcpl_format.cpp
-    qcpl_format_axis.cpp
     qcpl_format_plot.cpp
+    qcpl_format_title.cpp
+    qcpl_graph.cpp
+    qcpl_graph_grid.cpp
+    qcpl_graph_select.cpp
+    qcpl_io_json.cpp
+    qcpl_plot.cpp
+    qcpl_text_editor.cpp
+    qcpl_types.cpp
+    qcpl_utils.cpp
 )
 
 add_library(${QCPL_NAME} STATIC

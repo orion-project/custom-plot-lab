@@ -6,6 +6,9 @@
         <file alias="align_just">./img/align_just.svg</file>
         <file alias="back_color">./img/back_color.svg</file>
         <file alias="bold">./img/bold.svg</file>
+        <file alias="check_all">./img/check_all.svg</file>
+        <file alias="check_none">./img/check_none.svg</file>
+        <file alias="check_invert">./img/check_invert.svg</file>
         <file alias="eye_closed">./img/eye_closed.svg</file>
         <file alias="font_dlg">./img/font_dlg.svg</file>
         <file alias="frame">./img/frame.svg</file>

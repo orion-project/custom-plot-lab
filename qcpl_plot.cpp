@@ -741,6 +741,11 @@ Graph* Plot::selectedGraph() const
     return graphs.isEmpty() ? nullptr : graphs.first();
 }
 
+void Plot::selectGraph(Graph *graph)
+{
+    graph->setSelection(QCPDataSelection(graph->data()->dataRange()));
+}
+
 void Plot::copyPlotImage()
 {
     QImage image(width(), height(), QImage::Format_RGB32);

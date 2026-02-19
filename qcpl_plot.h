@@ -33,6 +33,7 @@ public:
     ~Plot();
 
     Graph* selectedGraph() const;
+    void selectGraph(Graph*);
 
     int userGraphsCount() const;
 
