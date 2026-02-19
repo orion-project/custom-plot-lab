@@ -122,6 +122,19 @@ QCPAxis* Plot::selectedAxis() const
     return nullptr;
 }
 
+QVector<QCPAxis*> Plot::selectedAxes(std::optional<Qt::Orientation> dir) const
+{
+    QVector<QCPAxis*> axes;
+    for (auto axis : axisRect()->axes())
+    {
+        if (dir.has_value() && dir.value() != axis->orientation())
+            continue;
+        if (axis->selectedParts().testFlag(QCPAxis::spAxis))
+            axes << axis;
+    }
+    return axes;
+}
+
 void Plot::mouseDoubleClickEvent(QMouseEvent *event)
 {
     QCustomPlot::mouseDoubleClickEvent(event);
@@ -286,6 +299,80 @@ void Plot::autolimits(QCPAxis* axis, bool replot)
         extendLimits(axis, safeMargins(axis), false);
 
     if (replot) this->replot();
+}
+
+void Plot::autolimits(Qt::Orientation dir, bool replot)
+{
+    auto selected = selectedAxes(dir);
+    if (selected.isEmpty())
+    {
+        for (auto axis : axisRect()->axes())
+            if (axis->orientation() == dir)
+                autolimits(axis, false);
+    }
+    else
+    {
+        for (auto axis : std::as_const(selected))
+            if (axis->orientation() == dir)
+                autolimits(axis, false);
+    }
+    if (replot) this->replot();
+}
+
+void Plot::autolimits(bool replot)
+{
+    if (autolimitOnlyPrimaryAxes)
+    {
+        autolimits(xAxis, false);
+        autolimits(yAxis, replot);
+        return;
+    }
+    auto selected = selectedAxes();
+    if (selected.isEmpty())
+    {
+        autolimits(Qt::Horizontal, false);
+        autolimits(Qt::Vertical, replot);
+        return;
+    }
+    // If there are some axes selected, then find their pair axes,
+    // so they form a coordinate system, and do autolimit them all.
+    // This is what effectively happens when we don't use additional axes:
+    // then we have a single coordinate system and it's autolimited.
+    QSet<QCPAxis*> axes;
+    for (auto axis : std::as_const(selected))
+        axes.insert(axis);
+    for (int i = 0; i < graphCount(); i++)
+    {
+        auto g = graph(i);
+        if (!g->visible())
+            continue;
+        if (excludeServiceGraphsFromAutolimiting)
+            if (_serviceGraphs.contains(g))
+                continue;
+        if (axes.contains(g->keyAxis()))
+            axes.insert(g->valueAxis());
+        else if (axes.contains(g->valueAxis()))
+            axes.insert(g->keyAxis());
+    }
+    for (auto axis : std::as_const(axes))
+        autolimits(axis, false);
+    if (replot) this->replot();
+}
+
+void Plot::autolimitsX(bool replot)
+{
+    if (autolimitOnlyPrimaryAxes)
+        autolimits(xAxis, replot);
+    else
+        autolimits(Qt::Horizontal, replot);
+}
+
+void Plot::autolimitsY(bool replot)
+{
+    if (autolimitOnlyPrimaryAxes)
+        autolimits(yAxis, replot);
+    else
+        autolimits(Qt::Vertical, replot);
 }
 
 void Plot::extendLimits(QCPAxis* axis, double factor, bool replot)

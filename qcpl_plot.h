@@ -4,6 +4,8 @@
 #include "qcpl_types.h"
 #include "qcustomplot/qcustomplot.h"
 
+#include <optional>
+
 namespace QCPL {
 
 typedef QCPGraph Graph;
@@ -43,6 +45,7 @@ public:
     bool excludeServiceGraphsFromAutolimiting = true;
     bool formatAxisTitleAfterFactorSet = false;
     bool highlightAxesOfSelectedGraphs = false;
+    bool autolimitOnlyPrimaryAxes = true;
 
     /// Used for saving format settings of plot elements that can be used as 'default' setting.
     /// It is up to application when to load these stored default settings.
@@ -154,17 +157,19 @@ public:
     bool axisFormatDlg(QCPAxis* axis);
     bool colorScaleFormatDlg(QCPColorScale* axis);
     void autolimits(QCPAxis* axis, bool replot);
+    void autolimits(Qt::Orientation dir, bool replot);
 
     QString axisIdent(QCPAxis* axis) const;
     QCPAxis* addAxis(QCPAxis::AxisType axisType);
     QCPAxis* selectedAxis() const;
+    QVector<QCPAxis*> selectedAxes(std::optional<Qt::Orientation> dir = {}) const;
     QCPAxis* findAxisById(const QString &id);
-    QVector<QCPAxis*> defaultAxes() { return {xAxis, yAxis, xAxis2, yAxis2}; }
+    QVector<QCPAxis*> defaultAxes() const { return {xAxis, yAxis, xAxis2, yAxis2}; }
 
 public slots:
-    void autolimits(bool replot = true) { autolimits(xAxis, false); autolimits(yAxis, replot); }
-    void autolimitsX(bool replot = true) { autolimits(xAxis, replot); }
-    void autolimitsY(bool replot = true) { autolimits(yAxis, replot); }
+    void autolimits(bool replot = true);
+    void autolimitsX(bool replot = true);
+    void autolimitsY(bool replot = true);
     bool limitsDlgX() { return limitsDlg(xAxis); }
     bool limitsDlgY() { return limitsDlg(yAxis); }
     bool limitsDlgXY();
