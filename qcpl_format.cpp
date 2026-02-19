@@ -232,9 +232,17 @@ bool graphFormatDlg(QCPGraph* graph, const GraphFormatDlgProps& props)
 //                            QCPL::TextProcessor
 //------------------------------------------------------------------------------
 
-void TextProcessor::addVar(const QString& name, TextVarGetter getter)
+void TextProcessor::putVar(const QString& name, TextVarGetter getter)
 {
-    _vars.append({name, getter});
+    bool found = false;
+    for (auto &var : _vars)
+        if (var.name == name) {
+            var.getter = getter;
+            found = true;
+            break;
+        }
+    if (!found)
+        _vars.append({name, getter});
 }
 
 QString TextProcessor::process(const QString& text) const
@@ -260,13 +268,18 @@ QString TextProcessor::process(const QString& text) const
 //                           QCPL::TextFormatterBase
 //------------------------------------------------------------------------------
 
-void TextFormatterBase::addVar(const QString& name, const QString& descr, TextVarGetter getter)
+void TextFormatterBase::putVar(const QString& name, const QString& descr, TextVarGetter getter)
 {
-    for (const auto &var : std::as_const(_vars))
-        if (var.name == name)
-            return;
-    _vars.append({name, descr});
-    _processor.addVar(name, getter);
+    bool found = false;
+    for (auto &var : _vars)
+        if (var.name == name) {
+            var.descr = descr;
+            found = true;
+            break;
+        }
+    if (!found)
+        _vars.append({name, descr});
+    _processor.putVar(name, getter);
 }
 
 //------------------------------------------------------------------------------

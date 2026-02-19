@@ -291,9 +291,8 @@ QSet<QPair<QCPAxis*, QCPAxis*>> Plot::getActiveAxisPairs() const
             
         if (!g->visible()) continue;
 
-        if (excludeServiceGraphsFromAutolimiting)
-            if (_serviceGraphs.contains(g))
-                continue;
+        if (g->property(PROP_GRAPH_SKIP_AUTOLIMITS).toBool())
+            continue;
                 
         if (selectedAxes.contains(x) || selectedAxes.contains(y))
             pairs.insert({x, y});
@@ -312,10 +311,9 @@ void Plot::autolimits(QCPAxis* axis, bool replot)
         auto g = graph(i);
 
         if (!g->visible()) continue;
-
-        if (excludeServiceGraphsFromAutolimiting)
-            if (_serviceGraphs.contains(g))
-                continue;
+        
+        if (g->property(PROP_GRAPH_SKIP_AUTOLIMITS).toBool())
+            continue;
 
         if (isX) {
             if (g->keyAxis() != axis) continue;
@@ -781,10 +779,10 @@ bool Plot::ensureFormatter(void* target)
     return added;
 }
 
-void Plot::addTextVar(void* target, const QString& name, const QString& descr, TextVarGetter getter)
+void Plot::putTextVar(void* target, const QString& name, const QString& descr, TextVarGetter getter)
 {
     if (ensureFormatter(target))
-        _formatters[target]->addVar(name, descr, getter);
+        _formatters[target]->putVar(name, descr, getter);
 }
 
 void Plot::updateTexts()

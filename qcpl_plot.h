@@ -4,7 +4,7 @@
 #include "qcpl_types.h"
 #include "qcustomplot/qcustomplot.h"
 
-#include <optional>
+#define PROP_GRAPH_SKIP_AUTOLIMITS "ori-skip-autolimits" 
 
 namespace QCPL {
 
@@ -42,7 +42,6 @@ public:
 
     bool graphAutoColors = true;
     bool useSafeMargins = true;
-    bool excludeServiceGraphsFromAutolimiting = true;
     bool formatAxisTitleAfterFactorSet = false;
     bool highlightAxesOfSelectedGraphs = false;
     bool autolimitOnlyPrimaryAxes = true;
@@ -122,10 +121,15 @@ public:
     /// Layout row and column when the title is placed.
     constexpr LayoutCell titleRC() const { return { 0, 0 }; }
 
-    void addTextVar(void* target, const QString& name, const QString& descr, TextVarGetter getter);
-    void addTextVarT(const QString& name, const QString& descr, TextVarGetter getter) { addTextVar(_title, name, descr, getter); }
-    void addTextVarX(const QString& name, const QString& descr, TextVarGetter getter) { addTextVar(xAxis, name, descr, getter); }
-    void addTextVarY(const QString& name, const QString& descr, TextVarGetter getter) { addTextVar(yAxis, name, descr, getter); }
+    void putTextVar(void* target, const QString& name, const QString& descr, TextVarGetter getter);
+    void putTextVarT(const QString& name, const QString& descr, TextVarGetter getter) { putTextVar(_title, name, descr, getter); }
+    void putTextVarX(const QString& name, const QString& descr, TextVarGetter getter) { putTextVar(xAxis, name, descr, getter); }
+    void putTextVarY(const QString& name, const QString& descr, TextVarGetter getter) { putTextVar(yAxis, name, descr, getter); }
+    void putTextVar(const QString& name, const QString& descr, TextVarGetter getter) {
+        putTextVar(_title, name, descr, getter);
+        putTextVar(yAxis, name, descr, getter);
+        putTextVar(yAxis, name, descr, getter);
+    }
 
     bool addFormatter(void* target, TextFormatterBase* formatter);
     bool ensureFormatter(void* target);
