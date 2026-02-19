@@ -11,6 +11,7 @@ Cursor::Cursor(QCustomPlot *plot) : QCPGraph(plot->xAxis, plot->yAxis)
     setAntialiased(false);
     setPen(QPen(QColor::fromRgb(80, 80, 255))); // TODO make customizable
     setProperty(PROP_GRAPH_IS_CURSOR, true);
+    setProperty(PROP_GRAPH_DONT_COUNT, true);
 
     connect(plot, SIGNAL(emptySpaceDoubleClicked(QMouseEvent*)), this, SLOT(mouseDoubleClick(QMouseEvent*)));
     connect(plot, SIGNAL(mousePress(QMouseEvent*)), this, SLOT(mousePress(QMouseEvent*)));

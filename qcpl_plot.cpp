@@ -307,10 +307,8 @@ void Plot::autolimits(QCPAxis* axis, bool replot)
     QCPRange totalRange;
     bool isTotalValid = false;
     bool isX = axis->orientation() == Qt::Horizontal;
-    for (int i = 0; i < graphCount(); i++)
+    for (auto g : std::as_const(mGraphs))
     {
-        auto g = graph(i);
-
         if (!g->visible()) continue;
         
         if (g->property(PROP_GRAPH_IS_CURSOR).toBool())
@@ -845,13 +843,12 @@ void Plot::updateAxesInteractivity()
     plotSelectionChanged();
 }
 
-int Plot::graphsCount(GraphCountFlags flags) const
+int Plot::userGraphsCount() const
 {
     int count = 0;
-    for (int i = 0; i < graphCount(); i++)
+    for (auto g : std::as_const(mGraphs))
     {
-        auto g = graph(i);
-        if (!g->visible() && (flags & COUNT_ONLY_VISIBLE))
+        if (g->property(PROP_GRAPH_DONT_COUNT).toBool())
             continue;
         count++;
     }

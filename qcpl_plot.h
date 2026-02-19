@@ -34,8 +34,7 @@ public:
 
     Graph* selectedGraph() const;
 
-    enum GraphCountFlags {COUNT_DEFAULT = 0x0, COUNT_ONLY_VISIBLE = 0x1};
-    int graphsCount(GraphCountFlags flags = COUNT_DEFAULT) const;
+    int userGraphsCount() const;
 
     bool graphAutoColors = true;
     bool useSafeMargins = true;
