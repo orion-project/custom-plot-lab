@@ -103,8 +103,6 @@ Plot::Plot(const PlotOptions& opts, QWidget *parent) : QCustomPlot(parent),
 #endif
     _title->setFont(titleFont);
     _title->setSelectedFont(titleFont);
-    
-    updateAxesInteractivity();
 }
 
 Plot::~Plot()
@@ -227,7 +225,7 @@ void Plot::plotSelectionChanged()
         // Lock zoom/pan only to the axes of selected graphs.
         // But when there is an axis selected by user directly,
         // then we ignore selected graph axes and use only that axis for zoom/pan
-        if (!anAxisSelected)
+        if (lockPanZoomToSelectedGraphs && !anAxisSelected)
         {
             if (!axesX.contains(x)) axesX << x;
             if (!axesY.contains(y)) axesY << y;
