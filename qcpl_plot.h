@@ -90,6 +90,8 @@ public:
     /// So we see an empty space above the plot instead of non visible title.
     /// This is undesired behaviour, so we need to remove the title from the main layout when it's hidden.
     void updateTitleVisibility();
+    
+    void updateAxesInteractivity();
 
     AxisLimits limitsX() const { return limits(xAxis); }
     AxisLimits limitsY() const { return limits(yAxis); }
@@ -229,6 +231,7 @@ private:
     double safeMargins(QCPAxis* axis);
     QMenu* findContextMenu(const QPointF& pos);
     QString axisTypeStr(QCPAxis::AxisType type) const;
+    QSet<QPair<QCPAxis*, QCPAxis*>> getActiveAxisPairs() const;
 };
 
 } // namespace QCPL

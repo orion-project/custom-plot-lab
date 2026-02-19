@@ -101,6 +101,8 @@ Plot::Plot(const PlotOptions& opts, QWidget *parent) : QCustomPlot(parent),
 #endif
     _title->setFont(titleFont);
     _title->setSelectedFont(titleFont);
+    
+    updateAxesInteractivity();
 }
 
 Plot::~Plot()
@@ -152,6 +154,8 @@ QMenu* Plot::findContextMenu(const QPointF& pos)
         return menuLegend;
     if (menuAxis) {
         foreach (auto axis, axisRect()->axes()) {
+            if (!axis->visible())
+                continue;
             if (axis->selectTest(pos, false) >= 0) {
                 axisUnderMenu = axis;
                 return menuAxis;
@@ -196,7 +200,7 @@ void Plot::plotSelectionChanged()
 {
     auto allAxes = axisRect()->axes();
     int countX = 0, countY = 0;
-    bool axisSelected = false;
+    QList<QCPAxis*> axesX, axesY;
     for (auto axis : std::as_const(allAxes))
     {
         if (!axis->visible()) continue;
@@ -215,31 +219,54 @@ void Plot::plotSelectionChanged()
             axis->setSelectedParts(QCPAxis::spAxis | QCPAxis::spTickLabels);
             axisRect()->setRangeDragAxes({axis});
             axisRect()->setRangeZoomAxes({axis});
-            axisSelected = true;
+            if (axis->orientation() == Qt::Horizontal)
+                axesX << axis;
+            else axesY << axis;
         }
     }
-    if (axisSelected)
-        return;
+    
+    bool anAxisSelected = !axesX.isEmpty() || !axesY.isEmpty();
 
-    QList<QCPAxis*> graphAxes;
-    for (auto graph : std::as_const(mGraphs))
-        if (graph->selected())
-            graphAxes << graph->keyAxis() << graph->valueAxis();
+    for (auto g : std::as_const(mGraphs))
+    {
+        if (!g->visible() || !g->selected())
+            continue;
 
-    if (graphAxes.empty()) {
-        axisRect()->setRangeDragAxes(allAxes);
-        axisRect()->setRangeZoomAxes(allAxes);
-        return;
+        auto x = g->keyAxis();
+        auto y = g->valueAxis();
+
+        // Lock zoom/pan only to the axes of selected graphs.
+        // But when there is an axis selected by user directly,
+        // then we ignore selected graph axes and use only that axis for zoom/pan
+        if (!anAxisSelected)
+        {
+            if (!axesX.contains(x)) axesX << x;
+            if (!axesY.contains(y)) axesY << y;
+        }
+
+        // When there are several axes of the same orientation
+        // then we highlight those showing the selected graph
+        if (highlightAxesOfSelectedGraphs && (countX > 1 || countY > 1))
+        {
+            if (auto a = dynamic_cast<Axis*>(x); a)
+                a->setHightlight(true);
+            if (auto a = dynamic_cast<Axis*>(y); a)
+                a->setHightlight(true);
+        }
     }
-
-    if (highlightAxesOfSelectedGraphs)
-        for (auto axis : std::as_const(graphAxes))
-            if (auto a = dynamic_cast<Axis*>(axis); a)
-                if ((a->isX() && countX > 1) || (a->isY() && countY > 1))
-                    a->setHightlight(true);
-
-    axisRect()->setRangeDragAxes(graphAxes);
-    axisRect()->setRangeZoomAxes(graphAxes);
+    
+    if (axesX.isEmpty() && axesY.isEmpty())
+    {
+        for (auto axis : std::as_const(allAxes))
+        {
+            if (!axis->visible()) continue;
+            if (axis->orientation() == Qt::Horizontal)
+                axesX << axis;
+            else axesY << axis;
+        }
+    }
+    axisRect()->setRangeDragAxes(axesX, axesY);
+    axisRect()->setRangeZoomAxes(axesX, axesY);
 }
 
 void Plot::rawGraphClicked(QCPAbstractPlottable *plottable)
@@ -255,6 +282,35 @@ void Plot::axisDoubleClicked(QCPAxis *axis, QCPAxis::SelectablePart part)
         axisTextDlg(axis);
     else
         limitsDlg(axis);
+}
+
+QSet<QPair<QCPAxis*, QCPAxis*>> Plot::getActiveAxisPairs() const
+{
+    QSet<QPair<QCPAxis*, QCPAxis*>> pairs;
+    
+    QSet<QCPAxis*> selectedAxes;
+    for (auto axis : this->selectedAxes())
+        selectedAxes.insert(axis);
+
+    for (auto g : std::as_const(mGraphs))
+    {
+        auto x = g->keyAxis();
+        auto y = g->valueAxis();
+    
+        if (g->selected())
+            pairs.insert({x, y});
+            
+        if (!g->visible()) continue;
+
+        if (excludeServiceGraphsFromAutolimiting)
+            if (_serviceGraphs.contains(g))
+                continue;
+                
+        if (selectedAxes.contains(x) || selectedAxes.contains(y))
+            pairs.insert({x, y});
+    }
+
+    return pairs;
 }
 
 void Plot::autolimits(QCPAxis* axis, bool replot)
@@ -327,52 +383,59 @@ void Plot::autolimits(bool replot)
         autolimits(yAxis, replot);
         return;
     }
-    auto selected = selectedAxes();
-    if (selected.isEmpty())
+    auto pairs = getActiveAxisPairs();
+    if (pairs.isEmpty())
     {
         autolimits(Qt::Horizontal, false);
         autolimits(Qt::Vertical, replot);
         return;
     }
-    // If there are some axes selected, then find their pair axes,
-    // so they form a coordinate system, and do autolimit them all.
-    // This is what effectively happens when we don't use additional axes:
-    // then we have a single coordinate system and it's autolimited.
-    QSet<QCPAxis*> axes;
-    for (auto axis : std::as_const(selected))
-        axes.insert(axis);
-    for (int i = 0; i < graphCount(); i++)
+    for (const auto &pair : std::as_const(pairs))
     {
-        auto g = graph(i);
-        if (!g->visible())
-            continue;
-        if (excludeServiceGraphsFromAutolimiting)
-            if (_serviceGraphs.contains(g))
-                continue;
-        if (axes.contains(g->keyAxis()))
-            axes.insert(g->valueAxis());
-        else if (axes.contains(g->valueAxis()))
-            axes.insert(g->keyAxis());
+        autolimits(pair.first, false);
+        autolimits(pair.second, false);
     }
-    for (auto axis : std::as_const(axes))
-        autolimits(axis, false);
     if (replot) this->replot();
 }
 
 void Plot::autolimitsX(bool replot)
 {
     if (autolimitOnlyPrimaryAxes)
+    {
         autolimits(xAxis, replot);
-    else
+        return;
+    }
+    auto pairs = getActiveAxisPairs();
+    if (pairs.isEmpty())
+    {
         autolimits(Qt::Horizontal, replot);
+        return;
+    }
+    for (const auto &pair : std::as_const(pairs))
+    {
+        autolimits(pair.first, false);
+    }
+    if (replot) this->replot();
 }
 
 void Plot::autolimitsY(bool replot)
 {
     if (autolimitOnlyPrimaryAxes)
+    {
         autolimits(yAxis, replot);
-    else
+        return;
+    }
+    auto pairs = getActiveAxisPairs();
+    if (pairs.isEmpty())
+    {
         autolimits(Qt::Vertical, replot);
+        return;
+    }
+    for (const auto &pair : std::as_const(pairs))
+    {
+        autolimits(pair.second, false);
+    }
+    if (replot) this->replot();
 }
 
 void Plot::extendLimits(QCPAxis* axis, double factor, bool replot)
@@ -472,6 +535,7 @@ bool Plot::axisTextDlg(QCPAxis* axis)
 
 bool Plot::axisFormatDlg(QCPAxis* axis)
 {
+    bool wasVisible = axis->visible();
     AxisFormatDlgProps props;
     props.title = tr("Format of %1").arg(axisIdent(axis));
     props.formatter = formatter(axis);
@@ -480,6 +544,8 @@ bool Plot::axisFormatDlg(QCPAxis* axis)
         props.onSaveDefault = [this, axis ](){ formatSaver->saveAxis(axis); };
     if (QCPL::axisFormatDlg(axis, props))
     {
+        if (wasVisible != axis->visible())
+            updateAxesInteractivity();
         emit modified("Plot::axisFormatDlg");
         return true;
     }
@@ -707,6 +773,11 @@ void Plot::updateTitleVisibility()
             return;
         mainLayout->addElement(p.row, p.col, _title);
     }
+}
+
+void Plot::updateAxesInteractivity()
+{
+    plotSelectionChanged();
 }
 
 int Plot::graphsCount(GraphCountFlags flags) const

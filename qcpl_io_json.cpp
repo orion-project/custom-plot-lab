@@ -406,6 +406,7 @@ void readPlot(const QJsonObject& root, Plot *plot, JsonReport *report, const Rea
         qWarning() << "readPlot: Unknown how to read object from key" << it.value();
     }
     plot->updateTitleVisibility();
+    plot->updateAxesInteractivity();
 }
 
 JsonError readLegend(const QJsonObject& obj, QCPLegend* legend)
