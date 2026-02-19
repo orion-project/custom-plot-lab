@@ -104,9 +104,9 @@ public:
     void setLimits(QCPAxis* axis, const AxisLimits& p, bool replot) { setLimits(axis, p.min, p.max, replot); }
     void setLimits(QCPAxis* axis, double min, double max, bool replot);
     void extendLimits(QCPAxis* axis, double factor, bool replot);
-    void extendLimits(double factor, bool replot = true) { extendLimits(xAxis, factor, false); extendLimits(yAxis, factor, replot); }
-    void extendLimitsX(double factor, bool replot = true) { extendLimits(xAxis, factor, replot); }
-    void extendLimitsY(double factor, bool replot = true) { extendLimits(yAxis, factor, replot); }
+    void extendLimits(double factor, bool replot = true);
+    void extendLimitsX(double factor, bool replot = true);
+    void extendLimitsY(double factor, bool replot = true);
     AxisFactor axisFactor(QCPAxis* axis) const;
     AxisFactor axisFactorX() const { return axisFactor(xAxis); }
     AxisFactor axisFactorY() const { return axisFactor(yAxis); }
@@ -160,12 +160,10 @@ public:
     bool axisFormatDlg(QCPAxis* axis);
     bool colorScaleFormatDlg(QCPColorScale* axis);
     void autolimits(QCPAxis* axis, bool replot);
-    void autolimits(Qt::Orientation dir, bool replot);
 
     QString axisIdent(QCPAxis* axis) const;
     QCPAxis* addAxis(QCPAxis::AxisType axisType);
     QCPAxis* selectedAxis() const;
-    QVector<QCPAxis*> selectedAxes(std::optional<Qt::Orientation> dir = {}) const;
     QCPAxis* findAxisById(const QString &id);
     QVector<QCPAxis*> defaultAxes() const { return {xAxis, yAxis, xAxis2, yAxis2}; }
 
@@ -175,7 +173,7 @@ public slots:
     void autolimitsY(bool replot = true);
     bool limitsDlgX();
     bool limitsDlgY();
-    bool limitsDlgXY();
+    //bool limitsDlgXY();
     bool axisFactorDlgX() { return axisFactorDlg(xAxis); }
     bool axisFactorDlgY() { return axisFactorDlg(yAxis); }
     void zoomIn() { extendLimits(-(_zoomStepX+_zoomStepY)/2.0); }

@@ -126,19 +126,6 @@ QCPAxis* Plot::selectedAxis() const
     return nullptr;
 }
 
-QVector<QCPAxis*> Plot::selectedAxes(std::optional<Qt::Orientation> dir) const
-{
-    QVector<QCPAxis*> axes;
-    for (auto axis : axisRect()->axes())
-    {
-        if (dir.has_value() && dir.value() != axis->orientation())
-            continue;
-        if (axis->selectedParts().testFlag(QCPAxis::spAxis))
-            axes << axis;
-    }
-    return axes;
-}
-
 void Plot::mouseDoubleClickEvent(QMouseEvent *event)
 {
     QCustomPlot::mouseDoubleClickEvent(event);
@@ -359,24 +346,6 @@ void Plot::autolimits(QCPAxis* axis, bool replot)
     if (replot) this->replot();
 }
 
-void Plot::autolimits(Qt::Orientation dir, bool replot)
-{
-    auto selected = selectedAxes(dir);
-    if (selected.isEmpty())
-    {
-        for (auto axis : axisRect()->axes())
-            if (axis->orientation() == dir)
-                autolimits(axis, false);
-    }
-    else
-    {
-        for (auto axis : std::as_const(selected))
-            if (axis->orientation() == dir)
-                autolimits(axis, false);
-    }
-    if (replot) this->replot();
-}
-
 void Plot::autolimits(bool replot)
 {
     if (autolimitOnlyPrimaryAxes)
@@ -385,17 +354,18 @@ void Plot::autolimits(bool replot)
         autolimits(yAxis, replot);
         return;
     }
-    auto pairs = getActiveAxisPairs();
-    if (pairs.isEmpty())
+    if (auto pairs = getActiveAxisPairs(); !pairs.isEmpty())
     {
-        autolimits(Qt::Horizontal, false);
-        autolimits(Qt::Vertical, replot);
-        return;
+        for (const auto &pair : std::as_const(pairs))
+        {
+            autolimits(pair.first, false);
+            autolimits(pair.second, false);
+        }
     }
-    for (const auto &pair : std::as_const(pairs))
+    else
     {
-        autolimits(pair.first, false);
-        autolimits(pair.second, false);
+        for (auto axis : axisRect()->axes())
+            autolimits(axis, false);
     }
     if (replot) this->replot();
 }
@@ -407,15 +377,16 @@ void Plot::autolimitsX(bool replot)
         autolimits(xAxis, replot);
         return;
     }
-    auto pairs = getActiveAxisPairs();
-    if (pairs.isEmpty())
+    if (auto pairs = getActiveAxisPairs(); !pairs.isEmpty())
     {
-        autolimits(Qt::Horizontal, replot);
-        return;
+        for (const auto &pair : std::as_const(pairs))
+            autolimits(pair.first, false);
     }
-    for (const auto &pair : std::as_const(pairs))
+    else
     {
-        autolimits(pair.first, false);
+        for (auto axis : axisRect()->axes())
+            if (axis->orientation() == Qt::Horizontal)
+                autolimits(axis, false);
     }
     if (replot) this->replot();
 }
@@ -427,15 +398,16 @@ void Plot::autolimitsY(bool replot)
         autolimits(yAxis, replot);
         return;
     }
-    auto pairs = getActiveAxisPairs();
-    if (pairs.isEmpty())
+    if (auto pairs = getActiveAxisPairs(); !pairs.isEmpty())
     {
-        autolimits(Qt::Vertical, replot);
-        return;
+        for (const auto &pair : std::as_const(pairs))
+            autolimits(pair.second, false);
     }
-    for (const auto &pair : std::as_const(pairs))
+    else
     {
-        autolimits(pair.second, false);
+        for (auto axis : axisRect()->axes())
+            if (axis->orientation() == Qt::Vertical)
+                autolimits(axis, false);
     }
     if (replot) this->replot();
 }
@@ -447,6 +419,72 @@ void Plot::extendLimits(QCPAxis* axis, double factor, bool replot)
     range.upper += delta;
     range.lower -= delta;
     setAxisRange(axis, range);
+    if (replot) this->replot();
+}
+
+void Plot::extendLimits(double factor, bool replot)
+{
+    if (manualLimitOnlyPrimaryAxes)
+    {
+        extendLimits(xAxis, factor, false);
+        extendLimits(yAxis, factor, replot);
+        return;
+    }
+    if (auto pairs = getActiveAxisPairs(); !pairs.isEmpty())
+    {
+        for (const auto &pair : std::as_const(pairs))
+        {
+            extendLimits(pair.first, factor, false);
+            extendLimits(pair.second, factor, false);
+        }
+    }
+    else
+    {
+        for (auto axis : axisRect()->axes())
+            extendLimits(axis, factor, false);
+    }
+    if (replot) this->replot();
+}
+
+void Plot::extendLimitsX(double factor, bool replot)
+{
+    if (manualLimitOnlyPrimaryAxes)
+    {
+        extendLimits(xAxis, factor, replot);
+        return;
+    }
+    if (auto pairs = getActiveAxisPairs(); !pairs.isEmpty())
+    {
+        for (const auto &pair : std::as_const(pairs))
+            extendLimits(pair.first, factor, false);
+    }
+    else
+    {
+        for (auto axis : axisRect()->axes())
+            if (axis->orientation() == Qt::Horizontal)
+                extendLimits(axis, factor, false);
+    }
+    if (replot) this->replot();
+}
+
+void Plot::extendLimitsY(double factor, bool replot)
+{
+    if (manualLimitOnlyPrimaryAxes)
+    {
+        extendLimits(yAxis, factor, replot);
+        return;
+    }
+    if (auto pairs = getActiveAxisPairs(); !pairs.isEmpty())
+    {
+        for (const auto &pair : std::as_const(pairs))
+            extendLimits(pair.second, factor, false);
+    }
+    else
+    {
+        for (auto axis : axisRect()->axes())
+            if (axis->orientation() == Qt::Vertical)
+                extendLimits(axis, factor, false);
+    }
     if (replot) this->replot();
 }
 
@@ -518,21 +556,21 @@ bool Plot::limitsDlgY()
     return false;
 }
 
-bool Plot::limitsDlgXY()
-{
-    auto range = ((selectedAxis() == yAxis) ? yAxis : xAxis)->range();
-    AxisLimitsDlgProps props;
-    props.title = tr("Limits for X and Y");
-    props.precision = _numberPrecision;
-    if (axisLimitsDlg(range, props))
-    {
-        setAxisRange(xAxis, range);
-        setAxisRange(yAxis, range);
-        replot();
-        return true;
-    }
-    return false;
-}
+// bool Plot::limitsDlgXY()
+// {
+//     auto range = ((selectedAxis() == yAxis) ? yAxis : xAxis)->range();
+//     AxisLimitsDlgProps props;
+//     props.title = tr("Limits for X and Y");
+//     props.precision = _numberPrecision;
+//     if (axisLimitsDlg(range, props))
+//     {
+//         setAxisRange(xAxis, range);
+//         setAxisRange(yAxis, range);
+//         replot();
+//         return true;
+//     }
+//     return false;
+// }
 
 bool Plot::axisFactorDlg(QCPAxis* axis)
 {
